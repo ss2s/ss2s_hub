@@ -2,15 +2,17 @@ class ProgDateCalc {
 
 	int z1 = 0, z2 = 0;
 	char znak1 = '^', znak2 = '^';
-	double a, b, c;
+	double a = 0, b = 0, c = 0, d = 0;
 	int counter = 1, n = 1;
 	long maxVal = 562949953421312 * n;
 
 public ProgDateCalc () {
-a = 2;
-b = 2;
+a = 0;
+b = 0;
 c = 0;
 }
+
+public ProgDateCalc () {}
 
 public void nSet (int nf) {
 	this.n = nf;
@@ -41,6 +43,6 @@ public void startProg () {
 
 public int findDay () {}
 
-public int startCalc () {}
+public double startCalc () {}
 
 }
