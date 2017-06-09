@@ -4,7 +4,7 @@ class MyProgDateCalc {
 	char znak = '^';
 	double a,b,c;
 	int counter = 1;
-	int maxVal = 562949953421312;
+	long maxVal = 562949953421312;
 
 public MyProgDateCalc () {
 a = 2;
