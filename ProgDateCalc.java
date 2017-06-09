@@ -39,8 +39,8 @@ public void startProg () {
 	}
 }
 
-public void findDay () {}
+public int findDay () {}
 
-public void startCalc () {}
+public int startCalc () {}
 
 }
