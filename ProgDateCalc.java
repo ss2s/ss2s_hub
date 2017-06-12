@@ -76,9 +76,15 @@ public void startProg () {
 
 public int findDay () {
 
+	// функция расчитывает день недели из даты в формате dd/mm/yyyy
+	// на выходе int 0-сб 1-вс 2-пн 3-вт 4-ср 5-чт 6-пт
+
 	int dd = 32, mm = 13, yyyy = -1;
 	int nyyyy, nmm, iday, day, flag = 0;
-	boolean enFlag = false; // enable findDay
+	boolean enStart = false; // enable findDay
+	boolean enFlagD = false; // validation check of dd
+	boolean enFlagM = false; // validation check of mm
+	boolean enFlagY = false; // validation check of yyyy
 	int fd = 10; // здесь будет значение возвращаемое функцией
 	// 0-сб 1-вс 2-пн 3-вт 4-ср 5-чт 6-пт
 	// 28-ошибка(невысокосный год) 90-ошибка(некoректный ввод)
@@ -88,8 +94,17 @@ public int findDay () {
     mm = b;
     yyyy = c;
 
-    if ()
+    if (dd <= 31 && dd > 0) {
+    	enFlagD = true;
+    }
 
+    if (mm <= 12 && mm > 0) {
+       	enFlagM = true;
+    }
+
+    if (yyyy > 0) {
+    	enFlagY = true;
+    }
 
 }
 
