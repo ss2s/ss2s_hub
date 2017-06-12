@@ -69,7 +69,7 @@ public void startProg () {
 			a = a * b;
 			counter ++;
 		}
-	}else{
+	} else {
 		//cout << "err: a >= maxVal";
 	}
 }
@@ -105,6 +105,35 @@ public int findDay () {
     if (yyyy > 0) {
     	enFlagY = true;
     }
+
+    if (enFlagD == true && enFlagM == true && enFlagY == true) {
+    	enStart = true;
+
+    } else if (enFlagD == false && enFlagM == true && enFlagY == true) {
+
+    	enStart = false;
+    	fd = 91;
+    	return fd;
+
+    } else if (enFlagD == true && enFlagM == false && enFlagY == true) {
+
+    	enStart = false;
+    	fd = 92;
+    	return fd;
+
+    } else if (enFlagD == true && enFlagM == true && enFlagY == false) {
+
+    	enStart = false;
+    	fd = 93;
+    	return fd;
+
+    } else {
+    	enStart = false;
+    	fd = 90;
+    	return fd;
+    }
+
+
 
 }
 
