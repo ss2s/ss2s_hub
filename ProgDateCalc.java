@@ -78,16 +78,17 @@ public int findDay () {
 
 	int dd = 32, mm = 13, yyyy = -1;
 	int nyyyy, nmm, iday, day, flag = 0;
-
-	/*string month[] = {"January", "February",
-					  "March", "April", "May",
-					 "June", "July", "August",
-                      "September", "October",
-                      "November" ,"December"};  */
+	boolean enFlag = false; // enable findDay
+	int fd = 10; // здесь будет значение возвращаемое функцией
+	// 0-сб 1-вс 2-пн 3-вт 4-ср 5-чт 6-пт
+	// 28-ошибка(невысокосный год) 9_-ошибка(некoректный ввод)
+	// 91-dd==false 92-mm==false 93-yyyy==false 99-other error
 
     dd = a;
     mm = b;
     yyyy = c;
+
+    if ()
 
 
 }
