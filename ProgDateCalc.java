@@ -64,12 +64,16 @@ public void znak2Set (char znak2f) {
 public void startProg () {
 
 	if (a <= maxVal) {
+
 		while (a <= maxVal) {
+
 			//cout << "N "<<counter<<".     "<<a<<endl;
 			a = a * b;
 			counter ++;
 		}
+
 	} else {
+
 		//cout << "err: a >= maxVal";
 	}
 }
@@ -85,28 +89,32 @@ public int findDay () {
 	boolean enFlagD = false; // validation check of dd
 	boolean enFlagM = false; // validation check of mm
 	boolean enFlagY = false; // validation check of yyyy
-	int fd = 10; // здесь будет значение возвращаемое функцией
-	// 0-сб 1-вс 2-пн 3-вт 4-ср 5-чт 6-пт
-	// 28-ошибка(невысокосный год) 90-ошибка(некoректный ввод)
-	// 91-dd==false 92-mm==false 93-yyyy==false 99-other error
+	int fd = 98; // здесь будет значение возвращаемое функцией
+	// 0-сб 1-вс 2-пн 3-вт 4-ср 5-чт 6-пт 30-ошибка в этом мес. 30 дней
+	// 28-ошибка(невысокосный год 28 дней) 90-ошибка(некoректный ввод)
+	// 91-dd==false 92-mm==false 93-yyyy==false 98,99-other error
 
     dd = a;
     mm = b;
     yyyy = c;
 
     if (dd <= 31 && dd > 0) {
+
     	enFlagD = true;
     }
 
     if (mm <= 12 && mm > 0) {
+
        	enFlagM = true;
     }
 
     if (yyyy > 0) {
+
     	enFlagY = true;
     }
 
     if (enFlagD == true && enFlagM == true && enFlagY == true) {
+
     	enStart = true;
 
     } else if (enFlagD == false && enFlagM == true && enFlagY == true) {
@@ -128,12 +136,19 @@ public int findDay () {
     	return fd;
 
     } else {
+
     	enStart = false;
     	fd = 90;
     	return fd;
     }
 
+    switch (mm) {
 
+    	case 2:
+    		if ((yyyy %))
+    }
+
+    if (enStart == true) {}
 
 }
 
