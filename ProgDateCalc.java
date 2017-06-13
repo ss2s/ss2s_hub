@@ -90,8 +90,8 @@ public int findDay () {
 	boolean enFlagM = false; // validation check of mm
 	boolean enFlagY = false; // validation check of yyyy
 	int fd = 98; // здесь будет значение возвращаемое функцией
-	// 0-сб 1-вс 2-пн 3-вт 4-ср 5-чт 6-пт 30-ошибка в этом мес. 30 дней
-	// 28-ошибка(невысокосный год 28 дней) 90-ошибка(некoректный ввод)
+	// 1-пн 2-вт 3-ср 4-чт 5-пт... 29,30-ошибка в этом мес. 29,30 дней
+	// 28-ошибка(не выс. год 28 дней) 90-ошибка(некoректный ввод)
 	// 91-dd==false 92-mm==false 93-yyyy==false 98,99-other error
 
     dd = a;
@@ -145,10 +145,126 @@ public int findDay () {
     switch (mm) {
 
     	case 2:
-    		if ((yyyy %))
+
+    		if ((yyyy % 400) == 0 || ((yyyy % 4) == 0 && (yyyy % 100) != 0)) {
+
+    			if (dd > 29) {
+
+    				enStart = false;
+    				fd = 29;
+    				return fd;
+    			}
+
+    		} else {
+
+    			if (dd > 28) {
+
+    				enStart = false;
+    				fd = 28;
+    				return fd;
+    			}
+    		}
+
+    		break;
+
+    	case 4:
+
+    		if (dd > 30) {
+
+    			enStart = false;
+    			fd = 30;
+    			return fd;
+    		}
+
+    		break;
+
+    	case 6:
+
+    		if (dd > 30) {
+
+    			enStart = false;
+    			fd = 30;
+    			return fd;
+    		}
+
+    		break;
+
+    	case 9:
+
+    		if (dd > 30) {
+
+    			enStart = false;
+    			fd = 30;
+    			return fd;
+    		}
+
+    		break;
+
+    	case 11:
+
+    		if (dd > 30) {
+
+    			enStart = false;
+    			fd = 30;
+    			return fd;
+    		}
+
+    		break;
     }
 
-    if (enStart == true) {}
+    if (enStart == true) {
+
+    	if (mm <= 2) {
+
+    		nyyyy = yyyy - 1;
+    		nmm = 0;
+    	}
+    	else {
+
+    		nyyyy = yyyy;
+    		nmm = (4 * mm + 23) / 10;
+    	}
+
+    	iday = 365 * yyyy + dd + 31 * (mm - 1) - nmm + (nyyyy / 4) - ((3 * ((nyyyy / 100) + 1) / 4));
+    	day = iday % 7;
+
+    	switch (day) {
+
+    		case 0:
+    			fd = 6;
+    			break;
+
+    		case 1:
+    			fd = 7;
+    			break;
+
+    		case 2:
+    			fd = 1;
+    			break;
+
+    		case 3:
+    			fd = 2;
+    			break;
+
+    		case 4:
+    			fd = 3;
+    			break;
+
+    		case 5:
+    			fd = 4;
+    			break;
+
+    		case 6:
+    			fd = 5;
+    			break;
+
+    	}
+
+
+
+    }
+
+    return fd;
 
 }
 
