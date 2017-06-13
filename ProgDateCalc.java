@@ -19,7 +19,7 @@ public void nSet (int nf) {
 	this.n = nf;
 }
 
-public void abcSet (double af,bf,cf) {
+public void abcSet (double af, double bf, double cf) {
 
 	this.a = af;
 	this.b = bf;
@@ -41,7 +41,7 @@ public void cSet (double cf) {
 	this.c = cf;
 }
 
-public void znakSet (char znak1f,znak2f) {
+public void znakSet (char znak1f, char znak2f) {
 
 	this.znak1 = znak1f;
 	this.znak2 = znak2f;
