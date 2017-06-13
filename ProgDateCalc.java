@@ -94,6 +94,7 @@ public int findDay () {
 	// 28-ошибка(не выс. год 28 дней) 90-ошибка(некoректный ввод)
 	// 91-dd==false 92-mm==false 93-yyyy==false 98,99-other error
 
+	fd +=1;
     dd = a;
     mm = b;
     yyyy = c;
