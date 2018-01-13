@@ -1,24 +1,24 @@
 
+#include "Arduino.h"
+
 #define greenPikVariantDatchika 1  // вариант подключения датчика 0 аналог 1 цифровой
-#define ignitionPinD 2
-#define ignitionPinA A1
-#define datchikRazrejeniaPin A0
+#define ignitionPinD 2             // пин для подключения датчика на искровой провод если greenPikVariantDatchika 1
+#define ignitionPinA A1            // пин для подключения датчика на искровой провод если greenPikVariantDatchika 0
+#define datchikRazrejeniaPin A0    // пин для подключения датчика разрежения
 #define dvaObDEF 720UL
 #define kolichestvoWhiteRiseVDvuhOborotah 5
 #define gisterezisDatchikaRazrejenia 5
+#define zeroDatchikaRazrejenia 0
 #define gisterezisDatchikaZajigania 1000
+#define zeroDatchikaZajigania 0
 
 unsigned long tStartForGrenPik = 0;
 unsigned long tStartForWhiteRise = 0;
 unsigned long tStopForWhiteRise = 0;
 unsigned long otstavanieVgr = 0;
-unsigned long calibrVal = 0;
+unsigned long calibrVal = 0;  // калибровка. влияет на отставание в градусах
 
-// unsigned long otstavanieVms = 0;
-// unsigned long dvaOborotaVms = 0;
-// unsigned long koefVmsgr = 0;
-
-byte greenPikVariantDVS = 1;  // вариант двигателя
+byte greenPikVariantDVS = 1;  // вариант двигателя. для выбора разных алгоритмов отслеживания старта измерений
 byte whiteRiseCounter = 0;
 byte whiteZeroCrossCounter = 0;
 boolean greenPikFlag = 0;
@@ -44,9 +44,9 @@ inline void greenPikVD1(){
 inline void greenPikVA1(){
 	int previousAnalogVal = 1;
 	int thisAnalogVal = 0;
-	// while(previousAnalogVal > 0){
-	// 	previousAnalogVal = analogRead(ignitionPinA);
-	// }
+	while(previousAnalogVal > zeroDatchikaZajigania){
+		previousAnalogVal = analogRead(ignitionPinA);
+	}
 	while(thisAnalogVal <= gisterezisDatchikaZajigania){
 		thisAnalogVal = analogRead(ignitionPinA);
 	}
@@ -65,7 +65,7 @@ inline void greenPik(){
 		greenPikVD3();
 		break;
 	}
-	#elif greenPikVariantDatchika = 0
+	#elif greenPikVariantDatchika == 0
 	switch(greenPikVariantDVS){
 		case 1:
 		greenPikVA1();
@@ -85,7 +85,7 @@ inline void whiteRise(){
 	int thisAnalogVal = 0;
 
 	if(whiteRiseCounter != 0){
-		while(previousAnalogVal > 0){
+		while(previousAnalogVal > zeroDatchikaRazrejenia){
 			previousAnalogVal = analogRead(datchikRazrejeniaPin);
 		}
 	}
@@ -115,7 +115,10 @@ inline void raschetOtstavania(){
 }
 
 void setup() {
+	Serial.begin(9600);
 }
 
 void loop() {
+	raschetOtstavania();
+	Serial.println(otstavanieVgr);
 }
