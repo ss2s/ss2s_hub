@@ -37,8 +37,8 @@ const byte pin_pwmLeft = 10;  // 10 pin скорость левых колес �
 const byte pin_pwmRight = 9;  // 9 pin скорость правых колес ШИМ 0-255
 const byte pin_voltBat  = 4;  // A4 pin вольтметр батареи
 
-const byte trigPin = 1;       // ultrasonik
-const byte echoPin = 0;       // ultrasonik
+const byte trigPin = 2;       // ultrasonik
+const byte echoPin = 3;       // ultrasonik
 
 // переменные управленияи пинами
 boolean dirLeft = HIGH;       // направление левых колес 1↑ 0↓ HIGH or LOW
@@ -57,6 +57,26 @@ long duration, cm, lcm;       // ultrasonik
 // переменные вольтметра
 int analogVal = 0;  // значение analogRead(pin_voltBat)
 int voltVal = 0;    // значение после мап 0,123,0,500 приведение к 5вольтам. 500 для большего разрешения. напр: 3.7v = 370
+
+void fBlink(int qnt = 1){
+	int bQnt = qnt;
+	for(int i; i > bQnt; i --){	
+		digitalWrite(LED_BUILTIN, HIGH);
+  		delay(200);
+  		digitalWrite(LED_BUILTIN, LOW);
+  		delay(500);
+	}
+}
+
+void fExtBlink(int qnt = 1, dl1 = 200, dl2 = 500){
+	int bQnt = qnt, bDl1 = dl1, bDl2 = dl2;
+	for(int i; i > bQnt; i --){
+		digitalWrite(LED_BUILTIN, HIGH);
+  		delay(bDl1);
+  		digitalWrite(LED_BUILTIN, LOW);
+  		delay(bDl2);
+	}
+}
 
 int testBat(){  // функция теста напряжения батареи, возвращает значение от 0 до 500, 0-5 вольт; Li-ion 370-420, 3.7-4.2v;
 
@@ -90,6 +110,10 @@ void setup() {
 
 	DEF_START_PIN_USTPO_CONFIG_DEF DDRD;  // pinMode(1,OUTPUT);  // установить 1 как выход // ultrasonik
 	DEF_START_PIN_USEPI_CONFIG_DEF DDRD;  // pinMode(0,INPUT);   // установить 0 как вход  // ultrasonik
+
+	pinMode(trigPin, OUTPUT);
+	pinMode(echoPin, INPUT);
+	pinMode(LED_BUILTIN, OUTPUT);
   
 }
 
