@@ -1,12 +1,18 @@
+
+#define DEFportDEF 0
+#define DEFpinDEF 8
+
 void setup() {
-  DDRB = 1<<5;
+  DDRB = 1<<DEFportDEF;
 }
 
 void loop() {
-  PORTB = 1<<5;
-  //digitalWrite(13, HIGH);
+  PORTB = 1<<DEFportDEF;
+  //PORTB |= B1;
+  digitalWrite(13, digitalRead(DEFpinDEF));
   delay(1000);
-  PORTB = 0<<5;
-  //digitalWrite(13, LOW);
+  PORTB = 0<<DEFportDEF;
+  //PORTB &= B11111110;
+  digitalWrite(13, digitalRead(DEFpinDEF));
   delay(1000);
 }
