@@ -27,14 +27,14 @@
 #define DEF_SPD_L_DEF PORTB &= B11111001;          // digitalWrite(10,9,LOW)     // скорость 0
 
 // ЛЕВЫЕ
-#define DEF_FORWARD_DIR_LEFT_DEF PORTB = 1<<3;     // digitalWrite(11,HIGH)       // направление вперед левых
-#define DEF_BACKWARD_DIR_LEFT_DEF PORTB = 0<<3;    // digitalWrite(11,LOW)        // направление назад левых
+#define DEF_FORWARD_DIR_LEFT_DEF /*PORTB = 1<<3;     //*/ digitalWrite(11,HIGH)       // направление вперед левых***
+#define DEF_BACKWARD_DIR_LEFT_DEF /*PORTB = 0<<3;    //*/ digitalWrite(11,LOW)        // направление назад левых
 #define DEF_SPD_H_LEFT_DEF PORTB = 1<<2;           // digitalWrite(10,HIGH)       // скорость 255 левых
 #define DEF_SPD_L_LEFT_DEF PORTB = 0<<2;           // digitalWrite(10,LOW)        // скорость 0 левых
 
 // ПРАВЫЕ
-#define DEF_FORWARD_DIR_RIGHT_DEF PORTB = 1<<0;    // digitalWrite(8,HIGH)        // направление вперед правых
-#define DEF_BACKWARD_DIR_RIGHT_DEF PORTB = 0<<0;   // digitalWrite(8,LOW)         // направление назад правых
+#define DEF_FORWARD_DIR_RIGHT_DEF /*PORTB = 1<<0;    //*/ digitalWrite(8,HIGH)        // направление вперед правых
+#define DEF_BACKWARD_DIR_RIGHT_DEF /*PORTB = 0<<0;   //*/ digitalWrite(8,LOW)         // направление назад правых
 #define DEF_SPD_H_RIGHT_DEF PORTB = 1<<1;          // digitalWrite(9,HIGH)        // скорость 255 правых
 #define DEF_SPD_L_RIGHT_DEF PORTB = 0<<1;          // digitalWrite(9,LOW)         // скорость 0 правых
 
@@ -42,6 +42,11 @@
 #define DEF_START_PIN_USTPO_CONFIG_DEF DDRD |= B10;        // pinMode(1,OUTPUT);  // установить как выход
 #define DEF_START_PIN_USEPI_CONFIG_DEF DDRD &= B11111110;  // pinMode(0,INPUT);   // установить как вход
 // конец макросов для двигателей
+
+#define MIN_ROTATE_TIME 500
+#define MAX_ROTATE_TIME 2000
+#define MIN_BACKWARD_TIME 300
+#define MAX_BACKWARD_TIME 1000
           
 // переменные управленияи пинами
 boolean dirLeft = HIGH;       // направление левых колес 1↑ 0↓ HIGH or LOW
@@ -132,9 +137,34 @@ void mashinaRider(int dir = 1, int spd = 1){
 	}
 }
 
-void mashinaRotate(){}
+void mashinaRotate(int dir = 0, int dur = 1000){
+	int MRdir = dir;
+	int MRdur = dur;
+	if(dir == 0){
+		DEF_BACKWARD_DIR_LEFT_DEF;
+		DEF_FORWARD_DIR_RIGHT_DEF;
+		DEF_SPD_H_DEF;
+	}else if(dir == 1){
+		DEF_FORWARD_DIR_LEFT_DEF;
+		DEF_BACKWARD_DIR_RIGHT_DEF;
+		DEF_SPD_H_DEF;
+	}else{
+		DEF_BACKWARD_DIR_DEF;
+		DEF_SPD_H_DEF;
+	}
+	delay(dur);
+}
 
-void randRotate(){}
+void randRotate(){
+	long randNumber1 = random(0, 3);
+	long randNumber2;
+	if(randNumber1 < 2){
+		randNumber2 = random(MIN_ROTATE_TIME, MAX_ROTATE_TIME);
+	}else{
+		randNumber2 = random(MIN_BACKWARD_TIME, MAX_BACKWARD_TIME);
+	}
+	mashinaRotate(randNumber1,randNumber2);
+}
 
 void robotRider(void){
 	int distance = dist();
@@ -150,6 +180,10 @@ void robotRiderTest(void){
 		rrtSpd = 1;
 	}
 	mashinaRider(1, rrtSpd);
+	if(rrtSpd == 0){
+		delay(50);
+		randRotate();
+	}
 }
 
 void setup() {
@@ -164,6 +198,8 @@ void setup() {
 	pinMode(trigPin, OUTPUT);
 	pinMode(echoPin, INPUT);
 	pinMode(LED_BUILTIN, OUTPUT);
+
+	randomSeed(analogRead(0));
 }
 
 void loop() {
@@ -171,7 +207,7 @@ void loop() {
 	//mashinaRider();
 	//robotRider();
 	robotRiderTest();
-	delay(200);
+	delay(100);
 }
 
 
