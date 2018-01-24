@@ -310,18 +310,18 @@ void setup() {
 	int Lvolt = testBat();
 	if(voltVal > 412){
 		delay(1000);
-		fExtBeeper(2, 200, 30);
+		fExtBeeper(15, 30, 30);
 		blinkMah();
 	}else{
 
 		tone(pin_pwmLeft, 1000);
-		delay(200);
+		delay(150);
 		noTone(pin_pwmLeft);
 		tone(pin_pwmRight, 2000);
-		delay(200);
+		delay(150);
 		noTone(pin_pwmRight);
 		tone(pin_pwmLeft, 3000);
-		delay(200);
+		delay(150);
 		noTone(pin_pwmLeft);
 	}
 }
