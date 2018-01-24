@@ -129,15 +129,15 @@ int blinkMah(){
 
 	BMvolt = testBat();
 	Serial.println(BMvolt);
-	if(BMvolt <= 377){
+	if(BMvolt <= 370){
 		fExtBlink(1, BMBdel, BMBdel);
-	}else if((BMvolt > 377) && (BMvolt <= 384)){
+	}else if((BMvolt > 370) && (BMvolt <= 380)){
 		fExtBlink(2, BMBdel, BMBdel);
-	}else if((BMvolt > 384) && (BMvolt <= 391)){
+	}else if((BMvolt > 380) && (BMvolt <= 390)){
 		fExtBlink(3, BMBdel, BMBdel);
-	}else if((BMvolt > 391) && (BMvolt <= 402)){
+	}else if((BMvolt > 390) && (BMvolt <= 400)){
 		fExtBlink(4, BMBdel, BMBdel);
-	}else if((BMvolt > 402) && (BMvolt <= 415)){
+	}else if((BMvolt > 400) && (BMvolt <= 415)){
 		fExtBlink(5, BMBdel, BMBdel);
 	}else if(BMvolt > 415){
 		while(ciklControl){
@@ -146,12 +146,12 @@ int blinkMah(){
 			if(BMvolt <= 412){
 				ciklControl = 0;
 				blinkMah();
-			}else if((BMvolt > 412 ) && (BMvolt <= 430)){
+			}else if((BMvolt > 412 ) && (BMvolt <= 435)){
 				digitalWrite(LED_BUILTIN, HIGH);
 				while(ciklControl2){
 					BMvolt = testBat();
 					Serial.println(BMvolt);
-					if((BMvolt <= 412) || (BMvolt > 430)){
+					if((BMvolt <= 412) || (BMvolt > 435)){
 						// ciklControl2 = 0;
 						blinkMah();
 						digitalWrite(LED_BUILTIN, LOW);
