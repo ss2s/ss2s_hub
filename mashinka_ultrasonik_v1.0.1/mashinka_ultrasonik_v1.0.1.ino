@@ -92,6 +92,19 @@ int fExtBlink(int qnt = 1, int dl1 = 200, int dl2 = 500){
 	}
 }
 
+int fExtBeeper(int qnt = 1, int dl1 = 200, int dl2 = 500, byte fpwm = 50){
+	int bQnt = qnt, bDl1 = dl1, bDl2 = dl2;
+	byte bFpwm = fpwm;
+	for(int i=bQnt; i > 0; i --){
+		analogWrite(pin_pwmLeft, bFpwm);
+		analogWrite(pin_pwmRight, bFpwm);
+  		delay(bDl1);
+  		digitalWrite(pin_pwmLeft, LOW);
+  		digitalWrite(pin_pwmRight, LOW);
+  		delay(bDl2);
+	}
+}
+
 int testBat(){  // функция теста напряжения батареи, возвращает значение от 0 до 500, 0-5 вольт; Li-ion 370-420, 3.7-4.2v;
 
 	analogVal = analogRead(pin_voltBat);
@@ -146,31 +159,38 @@ int blinkMah(){
 			if(BMvolt <= 412){
 				ciklControl = 0;
 				blinkMah();
-			}else if((BMvolt > 412 ) && (BMvolt <= 435)){
+			}else if((BMvolt > 412 ) && (BMvolt <= 440)){
 				digitalWrite(LED_BUILTIN, HIGH);
 				while(ciklControl2){
 					BMvolt = testBat();
 					Serial.println(BMvolt);
-					if((BMvolt <= 412) || (BMvolt > 435)){
+					if((BMvolt <= 412) || (BMvolt > 440)){
 						// ciklControl2 = 0;
 						blinkMah();
 						digitalWrite(LED_BUILTIN, LOW);
 					}
 					delay(5000);
 				}
-			}else if(BMvolt > 430){
+			}else if(BMvolt > 440){
 				while(ciklControl3){
-					digitalWrite(LED_BUILTIN, HIGH);
 					BMvolt = testBat();
 					Serial.println(BMvolt);
-					if(BMvolt <= 430){
+					if(BMvolt <= 440){
 						// ciklControl3 = 0;
 						blinkMah();
 						delay(3000);
+					}else{
+						fExtBlink(10, BMBdel, BMBdel);
+						delay(500);
+						fExtBeeper(5, BMBdel, BMBdel);
+						delay(500);
 					}
-					delay(500);
-					digitalWrite(LED_BUILTIN, LOW);
-					delay(500);
+
+
+					// digitalWrite(LED_BUILTIN, HIGH);
+					// delay(500);
+					// digitalWrite(LED_BUILTIN, LOW);
+					// delay(500);
 				}
 			}
 		}
@@ -286,14 +306,27 @@ void setup() {
 	randomSeed(analogRead(0));
 
 	Serial.begin(9600);
-}
-
-void loop() {
 
 	int Lvolt = testBat();
 	if(voltVal > 412){
+		delay(1000);
+		fExtBeeper(2, 200, 30);
 		blinkMah();
+	}else{
+
+		tone(pin_pwmLeft, 1000);
+		delay(200);
+		noTone(pin_pwmLeft);
+		tone(pin_pwmRight, 2000);
+		delay(200);
+		noTone(pin_pwmRight);
+		tone(pin_pwmLeft, 3000);
+		delay(200);
+		noTone(pin_pwmLeft);
 	}
+}
+
+void loop() {
 
 	robotRider();
 	delay(50);
