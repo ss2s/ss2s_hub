@@ -117,57 +117,60 @@ int dist(){  // функция проверки расстояния пред с
 }
 
 int blinkMah(){
-	int BMdist = dist();
+	// int BMdist = dist();
 	int BMvolt;
 	int BMBdel = 500;
 	boolean ciklControl = 1;
 	boolean ciklControl2 = 1;
 	boolean ciklControl3 = 1;
-	delay(50);
-	if(BMdist < 8){
-		DEF_SPD_L_DEF;
-		delay(500);
-		BMvolt = testBat();
-		Serial.println(BMvolt);
-		if(BMvolt <= 377){
-			fExtBlink(1, BMBdel, BMBdel);
-		}else if((BMvolt > 377) && (BMvolt <= 384)){
-			fExtBlink(2, BMBdel, BMBdel);
-		}else if((BMvolt > 384) && (BMvolt <= 391)){
-			fExtBlink(3, BMBdel, BMBdel);
-		}else if((BMvolt > 391) && (BMvolt <= 402)){
-			fExtBlink(4, BMBdel, BMBdel);
-		}else if((BMvolt > 402) && (BMvolt <= 415)){
-			fExtBlink(5, BMBdel, BMBdel);
-		}else if(BMvolt > 415){
-			while(ciklControl){
-				BMvolt = testBat();
-				Serial.println(BMvolt);
-				if(BMvolt <= 412){
-					ciklControl = 0;
-				}else if((BMvolt > 412 ) && (BMvolt <= 430)){
-					digitalWrite(LED_BUILTIN, HIGH);
-					while(ciklControl2){
-						BMvolt = testBat();
-						Serial.println(BMvolt);
-						if((BMvolt <= 412) || (BMvolt > 430)){
-							ciklControl2 = 0;
-							digitalWrite(LED_BUILTIN, LOW);
-						}
-						delay(2000);
-					}
-				}else if(BMvolt > 430){
-					while(ciklControl3){
-						digitalWrite(LED_BUILTIN, HIGH);
-						BMvolt = testBat();
-						Serial.println(BMvolt);
-						if(BMvolt <= 430){
-							ciklControl3 = 0;
-						}
-						delay(500);
+
+	DEF_SPD_L_DEF;
+	delay(500);
+
+	BMvolt = testBat();
+	Serial.println(BMvolt);
+	if(BMvolt <= 377){
+		fExtBlink(1, BMBdel, BMBdel);
+	}else if((BMvolt > 377) && (BMvolt <= 384)){
+		fExtBlink(2, BMBdel, BMBdel);
+	}else if((BMvolt > 384) && (BMvolt <= 391)){
+		fExtBlink(3, BMBdel, BMBdel);
+	}else if((BMvolt > 391) && (BMvolt <= 402)){
+		fExtBlink(4, BMBdel, BMBdel);
+	}else if((BMvolt > 402) && (BMvolt <= 415)){
+		fExtBlink(5, BMBdel, BMBdel);
+	}else if(BMvolt > 415){
+		while(ciklControl){
+			BMvolt = testBat();
+			Serial.println(BMvolt);
+			if(BMvolt <= 412){
+				ciklControl = 0;
+				blinkMah();
+			}else if((BMvolt > 412 ) && (BMvolt <= 430)){
+				digitalWrite(LED_BUILTIN, HIGH);
+				while(ciklControl2){
+					BMvolt = testBat();
+					Serial.println(BMvolt);
+					if((BMvolt <= 412) || (BMvolt > 430)){
+						// ciklControl2 = 0;
+						blinkMah();
 						digitalWrite(LED_BUILTIN, LOW);
-						delay(500);
 					}
+					delay(5000);
+				}
+			}else if(BMvolt > 430){
+				while(ciklControl3){
+					digitalWrite(LED_BUILTIN, HIGH);
+					BMvolt = testBat();
+					Serial.println(BMvolt);
+					if(BMvolt <= 430){
+						// ciklControl3 = 0;
+						blinkMah();
+						delay(3000);
+					}
+					delay(500);
+					digitalWrite(LED_BUILTIN, LOW);
+					delay(500);
 				}
 			}
 		}
@@ -245,8 +248,12 @@ void robotRider(void){
 	int distance = dist();
 	int stopDistance2 = stopDistance + 10;
 	int rrtSpd = 0;
-	if(distance < 8){
+	if(distance < 6){
+		delay(50);
+		distance = dist();
+		if(distance < 6){
 		blinkMah();
+		}
 	}else if(distance < stopDistance){
 		rrtSpd = 0;
 	}else if(distance >= (stopDistance2)){
@@ -282,6 +289,11 @@ void setup() {
 }
 
 void loop() {
+
+	int Lvolt = testBat();
+	if(voltVal > 412){
+		blinkMah();
+	}
 
 	robotRider();
 	delay(50);
