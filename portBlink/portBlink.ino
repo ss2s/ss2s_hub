@@ -7,11 +7,11 @@ void setup() {
 }
 
 void loop() {
-  PORTB = 1<<DEFportDEF;
+  PORTB |= 1<<DEFportDEF;
   //PORTB |= B1;
   digitalWrite(13, digitalRead(DEFpinDEF));
-  delay(1000);
-  PORTB = 0<<DEFportDEF;
+  delay(100);
+  PORTB &= 0<<DEFportDEF;
   //PORTB &= B11111110;
   digitalWrite(13, digitalRead(DEFpinDEF));
   delay(1000);
