@@ -2,13 +2,15 @@
 //  ЗАГОЛВОЧНЫЙ ФАЙЛ С МАКРОСАМИ ДЛЯ Atmega328, Atmega32u4, Atmega2560, Attiny13
 //  ДЛЯ БОЛЕЕ УДОБНОГО УПРАВЛЕНИЯ ПОРТАМИ ЧЕРЕЗ РЕГИСРЫ С ПОМОЩЬЮ МАКРОСОВ
 //  ФАЙЛ НЕ ЗАНИМАЕТ ПАМЯТЬ УСТРОЙСТВА. ИСПОЛЬЗУЕТСЯ ТОЛЬКО ПРИ КОМПИЛЯЦИИ
-//  14, 15, 16, 17, 18, 19, ПИНЫ В УНО И ЛЕОНАРДО НЕ СОВМЕСТИМЫ С АРДУИНО МЕГА(ТОЕСТЬ НА МЕГЕ ОНИ В ДРУГОМ МЕСТЕ)
+//  created by SS2S
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  ВЫБОР КОНТРОЛЛЕРА
 #ifndef PLATFORM
 #define PLATFORM 328 // 328 - UNO; 324 - Leonardo; 2560 - MEGA2560; 13 - attiny13;
 #endif
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #if PLATFORM == 328 // UNO (Atmega328)  (UNO, Nano, proMini)
 
@@ -27,12 +29,13 @@
 #define ADF_PMI11 DDRB &= B11110111 // B3
 #define ADF_PMI12 DDRB &= B11101111 // B4
 #define ADF_PMI13 DDRB &= B11011111 // B5
-#define ADF_PMI14 DDRC &= B11111110 // C0
-#define ADF_PMI15 DDRC &= B11111101 // C1
-#define ADF_PMI16 DDRC &= B11111011 // C2
-#define ADF_PMI17 DDRC &= B11110111 // C3
-#define ADF_PMI18 DDRC &= B11101111 // C4
-#define ADF_PMI19 DDRC &= B11011111 // C5
+
+#define ADF_PMIA0 DDRC &= B11111110 // C0
+#define ADF_PMIA1 DDRC &= B11111101 // C1
+#define ADF_PMIA2 DDRC &= B11111011 // C2
+#define ADF_PMIA3 DDRC &= B11110111 // C3
+#define ADF_PMIA4 DDRC &= B11101111 // C4
+#define ADF_PMIA5 DDRC &= B11011111 // C5
 //  pinMode(pin, OUTPUT);
 #define ADF_PMO0  DDRD |= B00000001 // D0
 #define ADF_PMO1  DDRD |= B00000010 // D1
@@ -48,12 +51,13 @@
 #define ADF_PMO11 DDRB |= B00001000 // B3
 #define ADF_PMO12 DDRB |= B00010000 // B4
 #define ADF_PMO13 DDRB |= B00100000 // B5
-#define ADF_PMO14 DDRC |= B00000001 // C0
-#define ADF_PMO15 DDRC |= B00000010 // C1
-#define ADF_PMO16 DDRC |= B00000100 // C2
-#define ADF_PMO17 DDRC |= B00001000 // C3
-#define ADF_PMO18 DDRC |= B00010000 // C4
-#define ADF_PMO19 DDRC |= B00100000 // C5
+
+#define ADF_PMOA0 DDRC |= B00000001 // C0
+#define ADF_PMOA1 DDRC |= B00000010 // C1
+#define ADF_PMOA2 DDRC |= B00000100 // C2
+#define ADF_PMOA3 DDRC |= B00001000 // C3
+#define ADF_PMOA4 DDRC |= B00010000 // C4
+#define ADF_PMOA5 DDRC |= B00100000 // C5
 //  pinMode(pin, INPUT_PULLUP);
 #define ADF_PMIP0  DDRD &= B11111110; PORTD |= B00000001 // D0
 #define ADF_PMIP1  DDRD &= B11111101; PORTD |= B00000010 // D1
@@ -69,12 +73,13 @@
 #define ADF_PMIP11 DDRB &= B11110111; PORTB |= B00001000 // B3
 #define ADF_PMIP12 DDRB &= B11101111; PORTB |= B00010000 // B4
 #define ADF_PMIP13 DDRB &= B11011111; PORTB |= B00100000 // B5
-#define ADF_PMIP14 DDRC &= B11111110; PORTC |= B00000001 // C0
-#define ADF_PMIP15 DDRC &= B11111101; PORTC |= B00000010 // C1
-#define ADF_PMIP16 DDRC &= B11111011; PORTC |= B00000100 // C2
-#define ADF_PMIP17 DDRC &= B11110111; PORTC |= B00001000 // C3
-#define ADF_PMIP18 DDRC &= B11101111; PORTC |= B00010000 // C4
-#define ADF_PMIP19 DDRC &= B11011111; PORTC |= B00100000 // C5
+
+#define ADF_PMIPA0 DDRC &= B11111110; PORTC |= B00000001 // C0
+#define ADF_PMIPA1 DDRC &= B11111101; PORTC |= B00000010 // C1
+#define ADF_PMIPA2 DDRC &= B11111011; PORTC |= B00000100 // C2
+#define ADF_PMIPA3 DDRC &= B11110111; PORTC |= B00001000 // C3
+#define ADF_PMIPA4 DDRC &= B11101111; PORTC |= B00010000 // C4
+#define ADF_PMIPA5 DDRC &= B11011111; PORTC |= B00100000 // C5
 //  digitalWrite(pin, HIGH);
 #define ADF_DWH0  PORTD |= B00000001 // D0
 #define ADF_DWH1  PORTD |= B00000010 // D1
@@ -90,12 +95,13 @@
 #define ADF_DWH11 PORTB |= B00001000 // B3
 #define ADF_DWH12 PORTB |= B00010000 // B4
 #define ADF_DWH13 PORTB |= B00100000 // B5
-#define ADF_DWH14 PORTC |= B00000001 // C0
-#define ADF_DWH15 PORTC |= B00000010 // C1
-#define ADF_DWH16 PORTC |= B00000100 // C2
-#define ADF_DWH17 PORTC |= B00001000 // C3
-#define ADF_DWH18 PORTC |= B00010000 // C4
-#define ADF_DWH19 PORTC |= B00100000 // C5
+
+#define ADF_DWHA0 PORTC |= B00000001 // C0
+#define ADF_DWHA1 PORTC |= B00000010 // C1
+#define ADF_DWHA2 PORTC |= B00000100 // C2
+#define ADF_DWHA3 PORTC |= B00001000 // C3
+#define ADF_DWHA4 PORTC |= B00010000 // C4
+#define ADF_DWHA5 PORTC |= B00100000 // C5
 //  digitalWrite(pin, LOW);
 #define ADF_DWL0  PORTD &= B11111110 // D0
 #define ADF_DWL1  PORTD &= B11111101 // D1
@@ -111,12 +117,13 @@
 #define ADF_DWL11 PORTB &= B11110111 // B3
 #define ADF_DWL12 PORTB &= B11101111 // B4
 #define ADF_DWL13 PORTB &= B11011111 // B5
-#define ADF_DWL14 PORTC &= B11111110 // C0
-#define ADF_DWL15 PORTC &= B11111101 // C1
-#define ADF_DWL16 PORTC &= B11111011 // C2
-#define ADF_DWL17 PORTC &= B11110111 // C3
-#define ADF_DWL18 PORTC &= B11101111 // C4
-#define ADF_DWL19 PORTC &= B11011111 // C5
+
+#define ADF_DWLA0 PORTC &= B11111110 // C0
+#define ADF_DWLA1 PORTC &= B11111101 // C1
+#define ADF_DWLA2 PORTC &= B11111011 // C2
+#define ADF_DWLA3 PORTC &= B11110111 // C3
+#define ADF_DWLA4 PORTC &= B11101111 // C4
+#define ADF_DWLA5 PORTC &= B11011111 // C5
 //  digitalRead(pin);
 #define ADF_DR0  PIND &= B00000001 // D0
 #define ADF_DR1  PIND &= B00000010 // D1
@@ -132,13 +139,16 @@
 #define ADF_DR11 PINB &= B00001000 // B3
 #define ADF_DR12 PINB &= B00010000 // B4
 #define ADF_DR13 PINB &= B00100000 // B5
-#define ADF_DR14 PINC &= B00000001 // C0
-#define ADF_DR15 PINC &= B00000010 // C1
-#define ADF_DR16 PINC &= B00000100 // C2
-#define ADF_DR17 PINC &= B00001000 // C3
-#define ADF_DR18 PINC &= B00010000 // C4
-#define ADF_DR19 PINC &= B00100000 // C5
 
+#define ADF_DRA0 PINC &= B00000001 // C0
+#define ADF_DRA1 PINC &= B00000010 // C1
+#define ADF_DRA2 PINC &= B00000100 // C2
+#define ADF_DRA3 PINC &= B00001000 // C3
+#define ADF_DRA4 PINC &= B00010000 // C4
+#define ADF_DRA5 PINC &= B00100000 // C5
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #elif PLATFORM == 324 // Leonardo (Atmega32u4)  (Leonardo, proMicro)
 
@@ -157,12 +167,13 @@
 #define ADF_PMI11 DDRB &= B01111111 // B7
 #define ADF_PMI12 DDRD &= B10111111 // D6
 #define ADF_PMI13 DDRC &= B01111111 // C7
-#define ADF_PMI14 DDRF &= B01111111 // F7
-#define ADF_PMI15 DDRF &= B10111111 // F6
-#define ADF_PMI16 DDRF &= B11011111 // F5
-#define ADF_PMI17 DDRF &= B11101111 // F4
-#define ADF_PMI18 DDRF &= B11111101 // F1
-#define ADF_PMI19 DDRF &= B11111110 // F0
+
+#define ADF_PMIA0 DDRF &= B01111111 // F7
+#define ADF_PMIA1 DDRF &= B10111111 // F6
+#define ADF_PMIA2 DDRF &= B11011111 // F5
+#define ADF_PMIA3 DDRF &= B11101111 // F4
+#define ADF_PMIA4 DDRF &= B11111101 // F1
+#define ADF_PMIA5 DDRF &= B11111110 // F0
 //  pinMode(pin, OUTPUT);
 #define ADF_PMO0  DDRD |= B00000100 // D2
 #define ADF_PMO1  DDRD |= B00001000 // D3
@@ -178,12 +189,13 @@
 #define ADF_PMO11 DDRB |= B10000000 // B7
 #define ADF_PMO12 DDRD |= B01000000 // D6
 #define ADF_PMO13 DDRC |= B10000000 // C7
-#define ADF_PMO14 DDRF |= B10000000 // F7
-#define ADF_PMO15 DDRF |= B01000000 // F6
-#define ADF_PMO16 DDRF |= B00100000 // F5
-#define ADF_PMO17 DDRF |= B00010000 // F4
-#define ADF_PMO18 DDRF |= B00000010 // F1
-#define ADF_PMO19 DDRF |= B00000001 // F0
+
+#define ADF_PMOA0 DDRF |= B10000000 // F7
+#define ADF_PMOA1 DDRF |= B01000000 // F6
+#define ADF_PMOA2 DDRF |= B00100000 // F5
+#define ADF_PMOA3 DDRF |= B00010000 // F4
+#define ADF_PMOA4 DDRF |= B00000010 // F1
+#define ADF_PMOA5 DDRF |= B00000001 // F0
 //  pinMode(pin, INPUT_PULLUP);
 #define ADF_PMIP0  DDRD &= B11111011; PORTD |= B00000100 // D2
 #define ADF_PMIP1  DDRD &= B11110111; PORTD |= B00001000 // D3
@@ -199,33 +211,35 @@
 #define ADF_PMIP11 DDRB &= B01111111; PORTB |= B10000000 // B7
 #define ADF_PMIP12 DDRD &= B10111111; PORTD |= B01000000 // D6
 #define ADF_PMIP13 DDRC &= B01111111; PORTC |= B10000000 // C7
-#define ADF_PMIP14 DDRF &= B01111111; PORTF |= B10000000 // F7
-#define ADF_PMIP15 DDRF &= B10111111; PORTF |= B01000000 // F6
-#define ADF_PMIP16 DDRF &= B11011111; PORTF |= B00100000 // F5
-#define ADF_PMIP17 DDRF &= B11101111; PORTF |= B00010000 // F4
-#define ADF_PMIP18 DDRF &= B11111101; PORTF |= B00000010 // F1
-#define ADF_PMIP19 DDRF &= B11111110; PORTF |= B00000001 // F0
+
+#define ADF_PMIPA0 DDRF &= B01111111; PORTF |= B10000000 // F7
+#define ADF_PMIPA1 DDRF &= B10111111; PORTF |= B01000000 // F6
+#define ADF_PMIPA2 DDRF &= B11011111; PORTF |= B00100000 // F5
+#define ADF_PMIPA3 DDRF &= B11101111; PORTF |= B00010000 // F4
+#define ADF_PMIPA4 DDRF &= B11111101; PORTF |= B00000010 // F1
+#define ADF_PMIPA5 DDRF &= B11111110; PORTF |= B00000001 // F0
 //  digitalWrite(pin, HIGH);
-#define ADF_DWH0D2  PORTD |= B00000100 // D2
-#define ADF_DWH1D3  PORTD |= B00001000 // D3
-#define ADF_DWH2D1  PORTD |= B00000010 // D1
-#define ADF_DWH3D0  PORTD |= B00000001 // D0
-#define ADF_DWH4D4  PORTD |= B00010000 // D4
-#define ADF_DWH5C6  PORTC |= B01000000 // C6
-#define ADF_DWH6D7  PORTD |= B10000000 // D7
-#define ADF_DWH7E6  PORTE |= B01000000 // E6
-#define ADF_DWH8B4  PORTB |= B00010000 // B4
-#define ADF_DWH9B5  PORTB |= B00100000 // B5
-#define ADF_DWH10B6 PORTB |= B01000000 // B6
-#define ADF_DWH11B7 PORTB |= B10000000 // B7
-#define ADF_DWH12D6 PORTD |= B01000000 // D6
-#define ADF_DWH13C7 PORTC |= B10000000 // C7
-#define ADF_DWH14F7 PORTF |= B10000000 // F7
-#define ADF_DWH15F6 PORTF |= B01000000 // F6
-#define ADF_DWH16F5 PORTF |= B00100000 // F5
-#define ADF_DWH17F4 PORTF |= B00010000 // F4
-#define ADF_DWH18F1 PORTF |= B00000010 // F1
-#define ADF_DWH19F0 PORTF |= B00000001 // F0
+#define ADF_DWH0  PORTD |= B00000100 // D2
+#define ADF_DWH1  PORTD |= B00001000 // D3
+#define ADF_DWH2  PORTD |= B00000010 // D1
+#define ADF_DWH3  PORTD |= B00000001 // D0
+#define ADF_DWH4  PORTD |= B00010000 // D4
+#define ADF_DWH5  PORTC |= B01000000 // C6
+#define ADF_DWH6  PORTD |= B10000000 // D7
+#define ADF_DWH7  PORTE |= B01000000 // E6
+#define ADF_DWH8  PORTB |= B00010000 // B4
+#define ADF_DWH9  PORTB |= B00100000 // B5
+#define ADF_DWH10 PORTB |= B01000000 // B6
+#define ADF_DWH11 PORTB |= B10000000 // B7
+#define ADF_DWH12 PORTD |= B01000000 // D6
+#define ADF_DWH13 PORTC |= B10000000 // C7
+
+#define ADF_DWHA0 PORTF |= B10000000 // F7
+#define ADF_DWHA1 PORTF |= B01000000 // F6
+#define ADF_DWHA2 PORTF |= B00100000 // F5
+#define ADF_DWHA3 PORTF |= B00010000 // F4
+#define ADF_DWHA4 PORTF |= B00000010 // F1
+#define ADF_DWHA5 PORTF |= B00000001 // F0
 //  digitalWrite(pin, LOW);
 #define ADF_DWL0  PORTD &= B11111011 // D2
 #define ADF_DWL1  PORTD &= B11110111 // D3
@@ -241,12 +255,13 @@
 #define ADF_DWL11 PORTB &= B01111111 // B7
 #define ADF_DWL12 PORTD &= B10111111 // D6
 #define ADF_DWL13 PORTC &= B01111111 // C7
-#define ADF_DWL14 PORTF &= B01111111 // F7
-#define ADF_DWL15 PORTF &= B10111111 // F6
-#define ADF_DWL16 PORTF &= B11011111 // F5
-#define ADF_DWL17 PORTF &= B11101111 // F4
-#define ADF_DWL18 PORTF &= B11111101 // F1
-#define ADF_DWL19 PORTF &= B11111110 // F0
+
+#define ADF_DWLA0 PORTF &= B01111111 // F7
+#define ADF_DWLA1 PORTF &= B10111111 // F6
+#define ADF_DWLA2 PORTF &= B11011111 // F5
+#define ADF_DWLA3 PORTF &= B11101111 // F4
+#define ADF_DWLA4 PORTF &= B11111101 // F1
+#define ADF_DWLA5 PORTF &= B11111110 // F0
 //  digitalRead(pin);
 #define ADF_DR0  PIND &= B00000100 // D2
 #define ADF_DR1  PIND &= B00001000 // D3
@@ -262,13 +277,16 @@
 #define ADF_DR11 PINB &= B10000000 // B7
 #define ADF_DR12 PIND &= B01000000 // D6
 #define ADF_DR13 PINC &= B10000000 // C7
-#define ADF_DR14 PINF &= B10000000 // F7
-#define ADF_DR15 PINF &= B01000000 // F6
-#define ADF_DR16 PINF &= B00100000 // F5
-#define ADF_DR17 PINF &= B00010000 // F4
-#define ADF_DR18 PINF &= B00000010 // F1
-#define ADF_DR19 PINF &= B00000001 // F0
 
+#define ADF_DRA0 PINF &= B10000000 // F7
+#define ADF_DRA1 PINF &= B01000000 // F6
+#define ADF_DRA2 PINF &= B00100000 // F5
+#define ADF_DRA3 PINF &= B00010000 // F4
+#define ADF_DRA4 PINF &= B00000010 // F1
+#define ADF_DRA5 PINF &= B00000001 // F0
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #elif PLATFORM == 2560 // MEGA2560 (Atmega2560)
 
@@ -327,6 +345,23 @@
 #define ADF_PMI51 DDRB &= B11111011 // B2
 #define ADF_PMI52 DDRB &= B11111101 // B1
 #define ADF_PMI53 DDRB &= B11111110 // B0
+
+#define ADF_PMIA0  DDRF &= B11111110 // F0
+#define ADF_PMIA1  DDRF &= B11111101 // F1
+#define ADF_PMIA2  DDRF &= B11111011 // F2
+#define ADF_PMIA3  DDRF &= B11110111 // F3
+#define ADF_PMIA4  DDRF &= B11101111 // F4
+#define ADF_PMIA5  DDRF &= B11011111 // F5
+#define ADF_PMIA6  DDRF &= B10111111 // F6
+#define ADF_PMIA7  DDRF &= B01111111 // F7
+#define ADF_PMIA8  DDRK &= B11111110 // K0
+#define ADF_PMIA9  DDRK &= B11111101 // K1
+#define ADF_PMIA10 DDRK &= B11111011 // K2
+#define ADF_PMIA11 DDRK &= B11110111 // K3
+#define ADF_PMIA12 DDRK &= B11101111 // K4
+#define ADF_PMIA13 DDRK &= B11011111 // K5
+#define ADF_PMIA14 DDRK &= B10111111 // K6
+#define ADF_PMIA15 DDRK &= B01111111 // K7
 //  pinMode(pin, OUTPUT);
 #define ADF_PMO0  DDRE |= B00000001 // E0
 #define ADF_PMO1  DDRE |= B00000010 // E1
@@ -382,6 +417,23 @@
 #define ADF_PMO51 DDRB |= B00000100 // B2
 #define ADF_PMO52 DDRB |= B00000010 // B1
 #define ADF_PMO53 DDRB |= B00000001 // B0
+
+#define ADF_PMOA0  DDRF |= B00000001 // F0
+#define ADF_PMOA1  DDRF |= B00000010 // F1
+#define ADF_PMOA2  DDRF |= B00000100 // F2
+#define ADF_PMOA3  DDRF |= B00001000 // F3
+#define ADF_PMOA4  DDRF |= B00010000 // F4
+#define ADF_PMOA5  DDRF |= B00100000 // F5
+#define ADF_PMOA6  DDRF |= B01000000 // F6
+#define ADF_PMOA7  DDRF |= B10000000 // F7
+#define ADF_PMOA8  DDRK |= B00000001 // K0
+#define ADF_PMOA9  DDRK |= B00000010 // K1
+#define ADF_PMOA10 DDRK |= B00000100 // K2
+#define ADF_PMOA11 DDRK |= B00001000 // K3
+#define ADF_PMOA12 DDRK |= B00010000 // K4
+#define ADF_PMOA13 DDRK |= B00100000 // K5
+#define ADF_PMOA14 DDRK |= B01000000 // K6
+#define ADF_PMOA15 DDRK |= B10000000 // K7
 //  pinMode(pin, INPUT_PULLUP);
 #define ADF_PMIP0  DDRE &= B11111110; PORTE |= B00000001 // E0
 #define ADF_PMIP1  DDRE &= B11111101; PORTE |= B00000010 // E1
@@ -437,6 +489,23 @@
 #define ADF_PMIP51 DDRB &= B11111011; PORTB |= B00000100 // B2
 #define ADF_PMIP52 DDRB &= B11111101; PORTB |= B00000010 // B1
 #define ADF_PMIP53 DDRB &= B11111110; PORTB |= B00000001 // B0
+
+#define ADF_PMIPA0  DDRF &= B11111110; PORTF |= B00000001 // F0
+#define ADF_PMIPA1  DDRF &= B11111101; PORTF |= B00000010 // F1
+#define ADF_PMIPA2  DDRF &= B11111011; PORTF |= B00000100 // F2
+#define ADF_PMIPA3  DDRF &= B11110111; PORTF |= B00001000 // F3
+#define ADF_PMIPA4  DDRF &= B11101111; PORTF |= B00010000 // F4
+#define ADF_PMIPA5  DDRF &= B11011111; PORTF |= B00100000 // F5
+#define ADF_PMIPA6  DDRF &= B10111111; PORTF |= B01000000 // F6
+#define ADF_PMIPA7  DDRF &= B01111111; PORTF |= B10000000 // F7
+#define ADF_PMIPA8  DDRK &= B11111110; PORTK |= B00000001 // K0
+#define ADF_PMIPA9  DDRK &= B11111101; PORTK |= B00000010 // K1
+#define ADF_PMIPA10 DDRK &= B11111011; PORTK |= B00000100 // K2
+#define ADF_PMIPA11 DDRK &= B11110111; PORTK |= B00001000 // K3
+#define ADF_PMIPA12 DDRK &= B11101111; PORTK |= B00010000 // K4
+#define ADF_PMIPA13 DDRK &= B11011111; PORTK |= B00100000 // K5
+#define ADF_PMIPA14 DDRK &= B10111111; PORTK |= B01000000 // K6
+#define ADF_PMIPA15 DDRK &= B01111111; PORTK |= B10000000 // K7
 //  digitalWrite(pin, HIGH);
 #define ADF_DWH0  PORTE |= B00000001 // E0
 #define ADF_DWH1  PORTE |= B00000010 // E1
@@ -492,6 +561,23 @@
 #define ADF_DWH51 PORTB |= B00000100 // B2
 #define ADF_DWH52 PORTB |= B00000010 // B1
 #define ADF_DWH53 PORTB |= B00000001 // B0
+
+#define ADF_DWHA0  PORTF |= B00000001 // F0
+#define ADF_DWHA1  PORTF |= B00000010 // F1
+#define ADF_DWHA2  PORTF |= B00000100 // F2
+#define ADF_DWHA3  PORTF |= B00001000 // F3
+#define ADF_DWHA4  PORTF |= B00010000 // F4
+#define ADF_DWHA5  PORTF |= B00100000 // F5
+#define ADF_DWHA6  PORTF |= B01000000 // F6
+#define ADF_DWHA7  PORTF |= B10000000 // F7
+#define ADF_DWHA8  PORTK |= B00000001 // K0
+#define ADF_DWHA9  PORTK |= B00000010 // K1
+#define ADF_DWHA10 PORTK |= B00000100 // K2
+#define ADF_DWHA11 PORTK |= B00001000 // K3
+#define ADF_DWHA12 PORTK |= B00010000 // K4
+#define ADF_DWHA13 PORTK |= B00100000 // K5
+#define ADF_DWHA14 PORTK |= B01000000 // K6
+#define ADF_DWHA15 PORTK |= B10000000 // K7
 //  digitalWrite(pin, LOW);
 #define ADF_DWL0  PORTE &= B11111110 // E0
 #define ADF_DWL1  PORTE &= B11111101 // E1
@@ -547,6 +633,23 @@
 #define ADF_DWL51 PORTB &= B11111011 // B2
 #define ADF_DWL52 PORTB &= B11111101 // B1
 #define ADF_DWL53 PORTB &= B11111110 // B0
+
+#define ADF_DWLA0  PORTF &= B11111110 // F0
+#define ADF_DWLA1  PORTF &= B11111101 // F1
+#define ADF_DWLA2  PORTF &= B11111011 // F2
+#define ADF_DWLA3  PORTF &= B11110111 // F3
+#define ADF_DWLA4  PORTF &= B11101111 // F4
+#define ADF_DWLA5  PORTF &= B11011111 // F5
+#define ADF_DWLA6  PORTF &= B10111111 // F6
+#define ADF_DWLA7  PORTF &= B01111111 // F7
+#define ADF_DWLA8  PORTK &= B11111110 // K0
+#define ADF_DWLA9  PORTK &= B11111101 // K1
+#define ADF_DWLA10 PORTK &= B11111011 // K2
+#define ADF_DWLA11 PORTK &= B11110111 // K3
+#define ADF_DWLA12 PORTK &= B11101111 // K4
+#define ADF_DWLA13 PORTK &= B11011111 // K5
+#define ADF_DWLA14 PORTK &= B10111111 // K6
+#define ADF_DWLA15 PORTK &= B01111111 // K7
 //  digitalRead(pin);
 #define ADF_DR0  PINE &= B00000001 // E0
 #define ADF_DR1  PINE &= B00000010 // E1
@@ -603,6 +706,25 @@
 #define ADF_DR52 PINB &= B00000010 // B1
 #define ADF_DR53 PINB &= B00000001 // B0
 
+#define ADF_DRA0  PINF &= B00000001 // F0
+#define ADF_DRA1  PINF &= B00000010 // F1
+#define ADF_DRA2  PINF &= B00000100 // F2
+#define ADF_DRA3  PINF &= B00001000 // F3
+#define ADF_DRA4  PINF &= B00010000 // F4
+#define ADF_DRA5  PINF &= B00100000 // F5
+#define ADF_DRA6  PINF &= B01000000 // F6
+#define ADF_DRA7  PINF &= B10000000 // F7
+#define ADF_DRA8  PINK &= B00000001 // K0
+#define ADF_DRA9  PINK &= B00000010 // K1
+#define ADF_DRA10 PINK &= B00000100 // K2
+#define ADF_DRA11 PINK &= B00001000 // K3
+#define ADF_DRA12 PINK &= B00010000 // K4
+#define ADF_DRA13 PINK &= B00100000 // K5
+#define ADF_DRA14 PINK &= B01000000 // K6
+#define ADF_DRA15 PINK &= B10000000 // K7
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #elif PLATFORM == 13 // attiny13 (Attiny13)
 
@@ -650,4 +772,6 @@
 #define ADF_DR5  PINB &= B00100000 // B5
 
 #endif
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
