@@ -28,7 +28,7 @@ String rdayofYear;
 String temperatureDS3231; // переменная для хранения температуры
 
 // МАСИВ С РАСПИСАНИЕМ
-byte raspisanie[32] = {1,0,0,0,0,43,43,43,43,43,43,43,43,43,43,43,43,43,43,43,43,43,43,43,43,1,63,64,65,1,0,0};
+byte raspisanie[32] = {1,0,0,0,0,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,1,63,64,65,1,0,66};
 // 0 разрешить почасовое расписание 1, запретить 0
 // 1  индекс мелодии для 01:00
 // 2  индекс мелодии для 02:00
@@ -59,8 +59,8 @@ byte raspisanie[32] = {1,0,0,0,0,43,43,43,43,43,43,43,43,43,43,43,43,43,43,43,43
 // 27 индекс мелодии для 30 минут
 // 28 индекс мелодии для 45 минут
 // 29 разрешить отбивать время колоколом 1, запретить 0
-// 30 резерв
-// 31 резерв
+// 30 разрешить отбивать будничный
+// 31 индекс мелодии для будничный
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DS3231 clock;           // Связываем объект clock с библиотекой DS3231
@@ -196,222 +196,105 @@ void budnichniy(){  // будничный колокол
 void playMelodyToIndex(byte _index){
 	byte index = _index;
 
-	if(index > 70){return;}
+	if(index == 0){
+		return;
+	}else if(index > 70){
+		return;
+	}else if(index > 0 && index <= 40){
+		FmasMelodiaPlay(index);
+	}else if(index > 40 && index <= 70){
+		switch(index){
+			case 41:
+				melodiaEX1();
+			break;
+			case 42:
+				melodiaEX2();
+			break;
+			case 43:
+				melodiaEX3();
+			break;
+			case 44:
+				melodiaRes1();
+			break;
+			case 45:
+				melodiaRes2();
+			break;
+			case 46:
+				melodiaRes3();
+			break;
+			case 47:
+				melodiaRes4();
+			break;
+			case 48:
+				melodiaRes5();
+			break;
+			case 49:
+				melodiaRes6();
+			break;
+			case 50:
+				melodiaRes7();
+			break;
+			case 51:
+				melodia1();
+			break;
+			case 52:
+				melodia2();
+			break;
+			case 53:
+				melodia3();
+			break;
+			case 54:
+				melodia4();
+			break;
+			case 55:
+				melodia5();
+			break;
+			case 56:
+				melodia6();
+			break;
+			case 57:
+				melodia7();
+			break;
+			case 58:
+				melodia8();
+			break;
+			case 59:
+				melodia9();
+			break;
+			case 60:
+				melodia10();
+			break;
+			case 61:
+				melodia11();
+			break;
+			case 62:
+				melodia12();
+			break;
+			case 63:
+				melodia15();
+			break;
+			case 64:
+				melodia30();
+			break;
+			case 65:
+				melodia45();
+			break;
+			case 66:
+				budnichniy();
+			break;
+			case 67:
 
-	switch(index){
-		case 0:
+			break;
+			case 68:
 
-		break;
-		case 1:
+			break;
+			case 69:
 
-		break;
-		case 2:
+			break;
+			case 70:
 
-		break;
-		case 3:
-
-		break;
-		case 4:
-
-		break;
-		case 5:
-
-		break;
-		case 6:
-
-		break;
-		case 7:
-
-		break;
-		case 8:
-
-		break;
-		case 9:
-
-		break;
-		case 10:
-
-		break;
-		case 11:
-
-		break;
-		case 12:
-
-		break;
-		case 13:
-
-		break;
-		case 14:
-
-		break;
-		case 15:
-
-		break;
-		case 16:
-
-		break;
-		case 17:
-
-		break;
-		case 18:
-
-		break;
-		case 19:
-
-		break;
-		case 20:
-
-		break;
-		case 21:
-
-		break;
-		case 22:
-
-		break;
-		case 23:
-
-		break;
-		case 24:
-
-		break;
-		case 25:
-
-		break;
-		case 26:
-
-		break;
-		case 27:
-
-		break;
-		case 28:
-
-		break;
-		case 29:
-
-		break;
-		case 30:
-
-		break;
-		case 31:
-
-		break;
-		case 32:
-
-		break;
-		case 33:
-
-		break;
-		case 34:
-
-		break;
-		case 35:
-
-		break;
-		case 36:
-
-		break;
-		case 37:
-
-		break;
-		case 38:
-
-		break;
-		case 39:
-
-		break;
-		case 40:
-
-		break;
-		case 41:
-			melodiaEX1();
-		break;
-		case 42:
-			melodiaEX2();
-		break;
-		case 43:
-			melodiaEX3();
-		break;
-		case 44:
-			melodiaRes1();
-		break;
-		case 45:
-			melodiaRes2();
-		break;
-		case 46:
-			melodiaRes3();
-		break;
-		case 47:
-			melodiaRes4();
-		break;
-		case 48:
-			melodiaRes5();
-		break;
-		case 49:
-			melodiaRes6();
-		break;
-		case 50:
-			melodiaRes7();
-		break;
-		case 51:
-			melodia1();
-		break;
-		case 52:
-			melodia2();
-		break;
-		case 53:
-			melodia3();
-		break;
-		case 54:
-			melodia4();
-		break;
-		case 55:
-			melodia5();
-		break;
-		case 56:
-			melodia6();
-		break;
-		case 57:
-			melodia7();
-		break;
-		case 58:
-			melodia8();
-		break;
-		case 59:
-			melodia9();
-		break;
-		case 60:
-			melodia10();
-		break;
-		case 61:
-			melodia11();
-		break;
-		case 62:
-			melodia12();
-		break;
-		case 63:
-			melodia15();
-		break;
-		case 64:
-			melodia30();
-		break;
-		case 65:
-			melodia45();
-		break;
-		case 66:
-			budnichniy();
-		break;
-		case 67:
-
-		break;
-		case 68:
-
-		break;
-		case 69:
-
-		break;
-		case 70:
-
-		break;
+			break;
+		}
 	}
 }
 
@@ -423,12 +306,15 @@ void chekRaspisanie(int _CRhour, int _CRminute){
 
 	if(rminute == 0){
 		if(raspisanie[0] == 1){
-			playMelodyToIndex(raspisanie[CRhour]);
+			if(raspisanie[CRhour] > 0){
+				playMelodyToIndex(raspisanie[CRhour]);
+			}
 		}
 		if(raspisanie[29] == 1){
 			CRx = CRhour + 1;
 			if(CRx > 24){CRx = 1;}
 			if(raspisanie[CRhour] > 0 && raspisanie[CRx] > 0){
+				delay(1000);
 				timeBellRound();
 			}
 		}
@@ -452,11 +338,31 @@ void chekRaspisanie(int _CRhour, int _CRminute){
 
 void chekPerezvonEXT(){
 	chekVremya();
+	if(flagManualPR == 0){
+		if(rdayOfWeek>5){
+			prazdnik = 1;
+		}else{
+			prazdnik = 0;
+		}
+	}
 	if(rminute == 0 && flag0m == 0){
 		flag0m  = 1;
  		flag15m = 0;
  		flag30m = 0;
  		flag45m = 0;
+ 		lcd.clear();
+		lcd.setCursor(6,1);
+		lcd.write(byte(1));
+		lcd.setCursor(8,1);
+		lcd.print(rhour);
+		lcd.print("H");
+		delay(1000);
+		lcd.clear();
+		if(rhour == 1){
+			flagManualPR = 0;
+			if(rdayOfWeek>5){prazdnik = 1;}else{prazdnik = 0;}
+		}
+
  		chekRaspisanie(rhour, rminute);
 
  		rminute = 61;
@@ -466,6 +372,14 @@ void chekPerezvonEXT(){
  		flag15m = 1;
  		flag30m = 0;
  		flag45m = 0;
+ 		lcd.clear();
+		lcd.setCursor(6,1);
+		lcd.write(byte(1));
+		lcd.setCursor(8,1);
+		lcd.print("15M");
+		delay(1000);
+		lcd.clear();
+
  		chekRaspisanie(rhour, rminute);
 
  		rminute = 61;
@@ -475,6 +389,14 @@ void chekPerezvonEXT(){
  		flag15m = 0;
  		flag30m = 1;
  		flag45m = 0;
+ 		lcd.clear();
+		lcd.setCursor(6,1);
+		lcd.write(byte(1));
+		lcd.setCursor(8,1);
+		lcd.print("30M");
+		delay(1000);
+		lcd.clear();
+
  		chekRaspisanie(rhour, rminute);
 
  		rminute = 61;
@@ -484,10 +406,29 @@ void chekPerezvonEXT(){
  		flag15m = 0;
  		flag30m = 0;
  		flag45m = 1;
+ 		lcd.clear();
+		lcd.setCursor(6,1);
+		lcd.write(byte(1));
+		lcd.setCursor(8,1);
+		lcd.print("45M");
+		delay(1000);
+		lcd.clear();
+
  		chekRaspisanie(rhour, rminute);
 
- 		rminute = 61;
-		timeToDisplay();
+ 		#if BUDNICNIY_ENABLE == 1
+ 		if(rhour == 8 && prazdnik == 0){
+ 			if(raspisanie[30] > 0){
+ 				playMelodyToIndex(raspisanie[31]);
+ 			}
+ 		}else{
+ 			rminute = 61;
+			timeToDisplay();
+ 		}
+ 		#else
+ 			rminute = 61;
+			timeToDisplay();
+ 		#endif
 	}
 }
 

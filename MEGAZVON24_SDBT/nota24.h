@@ -342,13 +342,15 @@ unsigned long findNotaDelayForKolokolNumber(int _kolokolNumber = 0){
 // по умолчанию: колокол 1, время звучания ноты 300мс, таймаут между нотами 3000мс
 // пример использования функции:[nota(7, 250, 2000);] 7 колокол, время ноты 250мс, таймаут до следующей ноты 2с
 
-int nota(int _kolokol = 1,
+int nota(unsigned int _kolokol = 1,
 unsigned long _timeOfBlowToTheBell = DEF_TIME_OF_BLOW_TO_THE_BELL,
 unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){
 
 	int kNumber = _kolokol;
 	int kName = remapReleNumberToName(_kolokol);
 	unsigned long thisTimeOfBlowToTheBell = _timeOfBlowToTheBell;
+		unsigned int thisDelayUntilNextNota = _delayUntilNextNota;
+
 
 	lcd.clear();
 	lcd.setCursor(3,0);
@@ -363,9 +365,36 @@ unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){
 	lcd.print(kName);
 
 	digitalWrite(kName, HHH);
-	delay(_timeOfBlowToTheBell);
+	delay(thisTimeOfBlowToTheBell);
 	digitalWrite(kName, LLL);
-	delay(_delayUntilNextNota);
+	delay(thisDelayUntilNextNota);
+	lcd.clear();
+}
+
+int notaM(unsigned int _kolokol = 1,
+unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){
+
+	int kNumber = _kolokol;
+	int kName = remapReleNumberToName(_kolokol);
+	unsigned long thisTimeOfBlowToTheBell = findNotaDelayForKolokolNumber(kNumber);
+	unsigned int thisDelayUntilNextNota = _delayUntilNextNota;
+
+	lcd.clear();
+	lcd.setCursor(3,0);
+	lcd.print("del ");
+	lcd.print(thisTimeOfBlowToTheBell);
+	lcd.print(" ms");
+	lcd.setCursor(2,1);
+	lcd.write(byte(0));
+	lcd.print(" ");
+	lcd.print(kNumber);
+	lcd.print("  PIN ");
+	lcd.print(kName);
+
+	digitalWrite(kName, HHH);
+	delay(thisTimeOfBlowToTheBell);
+	digitalWrite(kName, LLL);
+	delay(thisDelayUntilNextNota);
 	lcd.clear();
 }
 
