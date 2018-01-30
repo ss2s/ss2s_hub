@@ -27,16 +27,16 @@
 #define DEF_SPD_L_DEF PORTB &= B11111001          // digitalWrite(10,9,LOW)     // скорость 0
 
 // ЛЕВЫЕ
-#define DEF_FORWARD_DIR_LEFT_DEF PORTB = 1<<3     // digitalWrite(11,HIGH)       // направление вперед левых***
-#define DEF_BACKWARD_DIR_LEFT_DEF PORTB = 0<<3    // digitalWrite(11,LOW)        // направление назад левых
-#define DEF_SPD_H_LEFT_DEF PORTB = 1<<2           // digitalWrite(10,HIGH)       // скорость 255 левых
-#define DEF_SPD_L_LEFT_DEF PORTB = 0<<2           // digitalWrite(10,LOW)        // скорость 0 левых
+#define DEF_FORWARD_DIR_LEFT_DEF PORTB |= 1<<3     // digitalWrite(11,HIGH)       // направление вперед левых***
+#define DEF_BACKWARD_DIR_LEFT_DEF PORTB &= 0<<3    // digitalWrite(11,LOW)        // направление назад левых
+#define DEF_SPD_H_LEFT_DEF PORTB |= 1<<2           // digitalWrite(10,HIGH)       // скорость 255 левых
+#define DEF_SPD_L_LEFT_DEF PORTB &= 0<<2           // digitalWrite(10,LOW)        // скорость 0 левых
 
 // ПРАВЫЕ
 #define DEF_FORWARD_DIR_RIGHT_DEF PORTB |= B1 /*PORTB = 1<<0    //*/ // digitalWrite(8,HIGH)        // направление вперед правых
 #define DEF_BACKWARD_DIR_RIGHT_DEF PORTB &= B11111110 /*PORTB = 0<<0   //*/ // digitalWrite(8,LOW)         // направление назад правых
-#define DEF_SPD_H_RIGHT_DEF PORTB = 1<<1          // digitalWrite(9,HIGH)        // скорость 255 правых
-#define DEF_SPD_L_RIGHT_DEF PORTB = 0<<1          // digitalWrite(9,LOW)         // скорость 0 правых
+#define DEF_SPD_H_RIGHT_DEF PORTB |= 1<<1          // digitalWrite(9,HIGH)        // скорость 255 правых
+#define DEF_SPD_L_RIGHT_DEF PORTB &= 0<<1          // digitalWrite(9,LOW)         // скорость 0 правых
 
 // ULTRASONIK ДАТЧИК РАССТОЯНИЯ
 #define DEF_START_PIN_USTPO_CONFIG_DEF DDRD |= B10        // pinMode(1,OUTPUT)   // установить как выход
