@@ -56,8 +56,8 @@ void menu24();
 
 #include "nota24.h"             // ноты
 #include "melody24.h"           // файл с мелодиями
+#include "SDBT24ext.h"    // расписание
 #include "raspisanie24.h"       // расписание
-#include "raspisanie24ext.h"    // расписание
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -415,12 +415,12 @@ void bellForMenu(){
 				if(bfmVirtualPos == 1){
 					bfmCikl = 0;  // выход из меню удара в колокол
 				}else if(bfmVirtualPos == 2){
-					nota(bfmKolocol, bfmTimeOfBlow, DEF_DEL_UNT_NEXT_NOTA);  // играть выбранную ноту
+					enota(bfmKolocol, bfmTimeOfBlow, DEF_DEL_UNT_NEXT_NOTA);  // играть выбранную ноту
 				}else if(bfmVirtualPos == 3){
 					bfmTimeOfBlowMnojitel *= 10;
 					if(bfmTimeOfBlowMnojitel > 100){bfmTimeOfBlowMnojitel = 1;}
 				}else if(bfmVirtualPos == 4){
-					nota(bfmKolocol, bfmTimeOfBlow, DEF_DEL_UNT_NEXT_NOTA);  // играть выбранную ноту
+					enota(bfmKolocol, bfmTimeOfBlow, DEF_DEL_UNT_NEXT_NOTA);  // играть выбранную ноту
 				}
 				
 				delay(buttonDelay);
@@ -439,7 +439,7 @@ void bellForMenu(){
 					bfmTimeOfBlow -= bfmTimeOfBlowMnojitel;
 					if(bfmTimeOfBlow <= 0){bfmTimeOfBlow = 9999;}
 				}else if(bfmVirtualPos == 4){
-					nota(bfmKolocol, bfmTimeOfBlow, DEF_DEL_UNT_NEXT_NOTA);  // играть выбранную ноту
+					enota(bfmKolocol, bfmTimeOfBlow, DEF_DEL_UNT_NEXT_NOTA);  // играть выбранную ноту
 				}
 				delay(buttonDelay);
 			}else if(bfmKey == 4){  // u
@@ -453,7 +453,7 @@ void bellForMenu(){
 					bfmTimeOfBlow += bfmTimeOfBlowMnojitel;
 					if(bfmTimeOfBlow > 9999){bfmTimeOfBlow = 1;}
 				}else if(bfmVirtualPos == 4){
-					nota(bfmKolocol, bfmTimeOfBlow, DEF_DEL_UNT_NEXT_NOTA);  // играть выбранную ноту
+					enota(bfmKolocol, bfmTimeOfBlow, DEF_DEL_UNT_NEXT_NOTA);  // играть выбранную ноту
 				}
 				delay(buttonDelay);
 			}else if(bfmKey == 5){  // r

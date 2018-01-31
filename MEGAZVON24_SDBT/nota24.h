@@ -340,9 +340,9 @@ unsigned long findNotaDelayForKolokolNumber(int _kolokolNumber = 0){
 // 1 НАБОР НОТ
 // функция нота,принимает три параметра через запятую(номер колокола, время звучания ноты, время до вызова следующей ноты)
 // по умолчанию: колокол 1, время звучания ноты 300мс, таймаут между нотами 3000мс
-// пример использования функции:[nota(7, 250, 2000);] 7 колокол, время ноты 250мс, таймаут до следующей ноты 2с
+// пример использования функции:[enota(7, 250, 2000);] 7 колокол, время ноты 250мс, таймаут до следующей ноты 2с
 
-int nota(unsigned int _kolokol = 1,
+int enota(unsigned int _kolokol = 1,
 unsigned long _timeOfBlowToTheBell = DEF_TIME_OF_BLOW_TO_THE_BELL,
 unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){
 
@@ -371,8 +371,7 @@ unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){
 	lcd.clear();
 }
 
-int notaM(unsigned int _kolokol = 1,
-unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){
+int nota(unsigned int _kolokol = 1, unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){
 
 	int kNumber = _kolokol;
 	int kName = remapReleNumberToName(_kolokol);
@@ -406,76 +405,76 @@ unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){
 // функция нота по умолчанию,принимает один параметр (время до вызова следующей ноты)
 
 void nota1(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота1 
-	nota(1, timtOfBlowUnicNota_1, _delayUntilNextNota);}
+	enota(1, timtOfBlowUnicNota_1, _delayUntilNextNota);}
 
 void nota2(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота2 
-	nota(2, timtOfBlowUnicNota_2, _delayUntilNextNota);}
+	enota(2, timtOfBlowUnicNota_2, _delayUntilNextNota);}
 
 void nota3(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота3 
-	nota(3, timtOfBlowUnicNota_3, _delayUntilNextNota);}
+	enota(3, timtOfBlowUnicNota_3, _delayUntilNextNota);}
 
 void nota4(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота4 
-	nota(4, timtOfBlowUnicNota_4, _delayUntilNextNota);}
+	enota(4, timtOfBlowUnicNota_4, _delayUntilNextNota);}
 
 void nota5(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота5 
-	nota(5, timtOfBlowUnicNota_5, _delayUntilNextNota);}
+	enota(5, timtOfBlowUnicNota_5, _delayUntilNextNota);}
 
 void nota6(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота6 
-	nota(6, timtOfBlowUnicNota_6, _delayUntilNextNota);}
+	enota(6, timtOfBlowUnicNota_6, _delayUntilNextNota);}
 
 void nota7(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота7 
-	nota(7, timtOfBlowUnicNota_7, _delayUntilNextNota);}
+	enota(7, timtOfBlowUnicNota_7, _delayUntilNextNota);}
 
 void nota8(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота8 
-	nota(8, timtOfBlowUnicNota_8, _delayUntilNextNota);}
+	enota(8, timtOfBlowUnicNota_8, _delayUntilNextNota);}
 
 void nota9(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота9 
-	nota(9, timtOfBlowUnicNota_9, _delayUntilNextNota);}
+	enota(9, timtOfBlowUnicNota_9, _delayUntilNextNota);}
 
 void nota10(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота10 
-	nota(10, timtOfBlowUnicNota_10, _delayUntilNextNota);}
+	enota(10, timtOfBlowUnicNota_10, _delayUntilNextNota);}
 
 void nota11(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота11 
-	nota(11, timtOfBlowUnicNota_11, _delayUntilNextNota);}
+	enota(11, timtOfBlowUnicNota_11, _delayUntilNextNota);}
 
 void nota12(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота12 
-	nota(12, timtOfBlowUnicNota_12, _delayUntilNextNota);}
+	enota(12, timtOfBlowUnicNota_12, _delayUntilNextNota);}
 
 void nota13(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота13 
-	nota(13, timtOfBlowUnicNota_13, _delayUntilNextNota);}
+	enota(13, timtOfBlowUnicNota_13, _delayUntilNextNota);}
 
 void nota14(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота14 
-	nota(14, timtOfBlowUnicNota_14, _delayUntilNextNota);}
+	enota(14, timtOfBlowUnicNota_14, _delayUntilNextNota);}
 
 void nota15(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота15 
-	nota(15, timtOfBlowUnicNota_15, _delayUntilNextNota);}
+	enota(15, timtOfBlowUnicNota_15, _delayUntilNextNota);}
 
 void nota16(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота16 
-	nota(16, timtOfBlowUnicNota_16, _delayUntilNextNota);}
+	enota(16, timtOfBlowUnicNota_16, _delayUntilNextNota);}
 
 void nota17(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота17 
-	nota(17, timtOfBlowUnicNota_17, _delayUntilNextNota);}
+	enota(17, timtOfBlowUnicNota_17, _delayUntilNextNota);}
 
 void nota18(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота18 
-	nota(18, timtOfBlowUnicNota_18, _delayUntilNextNota);}
+	enota(18, timtOfBlowUnicNota_18, _delayUntilNextNota);}
 
 void nota19(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота19 
-	nota(19, timtOfBlowUnicNota_19, _delayUntilNextNota);}
+	enota(19, timtOfBlowUnicNota_19, _delayUntilNextNota);}
 
 void nota20(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота20 
-	nota(20, timtOfBlowUnicNota_20, _delayUntilNextNota);}
+	enota(20, timtOfBlowUnicNota_20, _delayUntilNextNota);}
 
 void nota21(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота21 
-	nota(21, timtOfBlowUnicNota_21, _delayUntilNextNota);}
+	enota(21, timtOfBlowUnicNota_21, _delayUntilNextNota);}
 
 void nota22(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота22 
-	nota(22, timtOfBlowUnicNota_22, _delayUntilNextNota);}
+	enota(22, timtOfBlowUnicNota_22, _delayUntilNextNota);}
 
 void nota23(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота23 
-	nota(23, timtOfBlowUnicNota_23, _delayUntilNextNota);}
+	enota(23, timtOfBlowUnicNota_23, _delayUntilNextNota);}
 
 void nota24(unsigned int _delayUntilNextNota = DEF_DEL_UNT_NEXT_NOTA){  // нота24 
-	nota(24, timtOfBlowUnicNota_24, _delayUntilNextNota);}
+	enota(24, timtOfBlowUnicNota_24, _delayUntilNextNota);}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
