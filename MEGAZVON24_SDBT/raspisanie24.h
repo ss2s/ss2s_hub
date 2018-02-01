@@ -11,12 +11,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 float g3231t;
 bool flagManualPR = 0;
+bool prazdnik = 1;
+
 bool flag0m = 0;
 bool flag15m = 0;
 bool flag30m = 0;
 bool flag45m = 0;
 bool fllag12h = 0;
-bool prazdnik = 1;
+
 int rsecond;
 int rminute = 61;  // Переменная для отслеживания изменения минут
 int rhour;         // переменная для хранения часов
@@ -131,17 +133,20 @@ void timeToDisplay(){
 		lcd.setCursor(15,1);
 		lcd.print(rdayOfWeek);
 		if(flagManualPR == 0){
-		if(rdayOfWeek>5){
-			prazdnik = 1;
+			if(rdayOfWeek>5){
+				prazdnik = 1;
 		}else{
 			prazdnik = 0;
 		}
 	}
 		
 	}
-	if(prazdnik == 1){
+	if(prazdnik == 1 && flagBT == 0){
 		lcd.setCursor(12,1);
 		lcd.write(byte(2));
+	}else if(flagBT == 1){
+		lcd.setCursor(12,1);
+		lcd.write(byte(6));
 	}
 }
 
@@ -202,7 +207,7 @@ void playMelodyToIndex(byte _index){
 	}else if(index > 70){
 		return;
 	}else if(index > 0 && index <= 40){
-		FmasMelodiaPlay(index);
+		FmasMelodiaPlayForFile(index);
 	}else if(index > 40 && index <= 70){
 		switch(index){
 			case 41:
