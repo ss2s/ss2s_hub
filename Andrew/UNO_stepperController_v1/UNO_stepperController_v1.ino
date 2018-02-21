@@ -57,6 +57,7 @@ unsigned int readFromMemory(int fAddr){
 	int rAddr = fAddr;
 	unsigned int rVal = EEPROM_uint_read(rAddr);
 	switch (rAddr) {
+
 	    case 1:
 	      stepVal = rVal;
 	      break;
@@ -96,54 +97,113 @@ void drawSetStepValForMenu(){
 
 void setStepValForMenu(){
 
-	bool ciklControl = 1;
-	byte ssvfmVirtualPos = 1;   // виртуальная позиция указателя меню
-	byte ssvfmRealPos = 1;      // реальная позиция указателя меню
-	byte ssvfmKey = 0;          // значение кнопок для обработки в цикле while
+	unsigned int buttonDelay = 400;  // задержка для меню
+	bool fCiklControl = 1;
+	byte fVirtualPos = 1;   // виртуальная позиция указателя меню
+	byte fRealPos = 1;      // реальная позиция указателя меню
+	byte fKey = 0;          // значение кнопок для обработки в цикле while
+	unsigned int fMnojitel = 1;  // множитель для мс. в меню
 
 	drawSetStepValForMenu();
-	lcd.setCursor(ssvfmRealPos,1);
+	lcd.setCursor(fRealPos,1);
 	lcd.write(byte(0));
 
-	while(ciklControl){
+	while(fCiklControl){
 
-		ssvfmKey = key();
-		if(ssvfmKey > 0){
+		fKey = key();
+		if(fKey > 0){
 
-			if(ssvfmKey == 1){  // s
+			delay(buttonDelay);
 
-			}
-			else if(ssvfmKey == 2){  // l
+			if(fKey == 1){  // s
 
+				if(fVirtualPos == 2){
+
+					fMnojitel *= 10;
+					if(fMnojitel > 10000){
+
+						fMnojitel = 1;
+					}
+				}
 			}
-			else if(ssvfmKey == 3){  // d
-				
+			else if(fKey == 2){  // l
+
+				fVirtualPos --;
+				if(fVirtualPos < 1){
+
+					fVirtualPos = 3;
+				}
 			}
-			else if(ssvfmKey == 4){  // u
-				
+			else if(fKey == 3){  // d
+
+				if(fVirtualPos == 1){
+
+					fCiklControl = 0;
+				}
+				else if(fVirtualPos == 2){
+
+					if(stepVal > 0){
+
+						stepVal -= fMnojitel;
+					}
+					tone(STEP_PIN, stepVal);
+				}
+				else if(fVirtualPos == 3){
+
+					saveToMemory(1, stepVal);
+					fCiklControl = 0;
+				}
 			}
-			else if(ssvfmKey == 5){  // r
-				
+			else if(fKey == 4){  // u
+
+				if(fVirtualPos == 1){
+
+					fCiklControl = 0;
+				}
+				else if(fVirtualPos == 2){
+
+					if(stepVal < 65535){
+
+						stepVal += fMnojitel;
+					}
+					tone(STEP_PIN, stepVal);
+				}
+				else if(fVirtualPos == 3){
+
+					saveToMemory(1, stepVal);
+					fCiklControl = 0;
+				}
 			}
-			switch (ssvfmVirtualPos){
+			else if(fKey == 5){  // r
+
+				fVirtualPos ++;
+				if(fVirtualPos > 3){
+
+					fVirtualPos = 1;
+				}
+			}
+			switch (fVirtualPos){
+
 			    case 1:
-			    ssvfmRealPos = 1;
+			    fRealPos = 1;
 			    break;
 			    case 2:
-			    ssvfmRealPos = 6;
+			    fRealPos = 6;
 			    break;
 			    case 3:
-			    ssvfmRealPos = 14;
+			    fRealPos = 14;
 			    break;
 			}
 
 			drawSetStepValForMenu();
-			lcd.setCursor(ssvfmRealPos,1);
+			lcd.setCursor(fRealPos,1);
 			lcd.write(byte(0));
+			if(fVirtualPos == 2){
+				lcd.print("+");
+				lcd.print(fMnojitel);
+			}
 		}
 	}
-
-	//lcd.setCursor(0,0);
 }
 
 void drawSetDirValForMenu(){
@@ -152,12 +212,101 @@ void drawSetDirValForMenu(){
 	lcd.setCursor(0,0);
 	lcd.print("DIR");
 	lcd.setCursor(6,0);
-	lcd.print(stepVal);
+	lcd.print(dirVal);
 	lcd.setCursor(13,0);
 	lcd.print("SET");
 }
 
-void setDirValForMenu(){}
+void setDirValForMenu(){
+
+	unsigned int buttonDelay = 400;  // задержка для меню
+	bool fCiklControl = 1;
+	byte fVirtualPos = 1;   // виртуальная позиция указателя меню
+	byte fRealPos = 1;      // реальная позиция указателя меню
+	byte fKey = 0;          // значение кнопок для обработки в цикле while
+
+	drawSetDirValForMenu();
+	lcd.setCursor(fRealPos,1);
+	lcd.write(byte(0));
+
+	while(fCiklControl){
+
+		fKey = key();
+		if(fKey > 0){
+
+			delay(buttonDelay);
+
+			if(fKey == 1){  // s
+			}
+			else if(fKey == 2){  // l
+
+				fVirtualPos --;
+				if(fVirtualPos < 1){
+
+					fVirtualPos = 3;
+				}
+			}
+			else if(fKey == 3){  // d
+
+				if(fVirtualPos == 1){
+
+					fCiklControl = 0;
+				}
+				else if(fVirtualPos == 2){
+
+					dirVal = 0;
+					digitalWrite(DIR_PIN, LOW);
+				}
+				else if(fVirtualPos == 3){
+
+					saveToMemory(2, dirVal);
+					fCiklControl = 0;
+				}
+			}
+			else if(fKey == 4){  // u
+
+				if(fVirtualPos == 1){
+
+					fCiklControl = 0;
+				}
+				else if(fVirtualPos == 2){
+
+					dirVal = 1;
+					digitalWrite(DIR_PIN, HIGH);
+				}
+				else if(fVirtualPos == 3){
+
+					saveToMemory(2, dirVal);
+					fCiklControl = 0;
+				}
+			}
+			else if(fKey == 5){  // r
+
+				fVirtualPos ++;
+				if(fVirtualPos > 3){
+
+					fVirtualPos = 1;
+				}
+			}
+			switch (fVirtualPos){
+
+			    case 1:
+			    fRealPos = 1;
+			    break;
+			    case 2:
+			    fRealPos = 6;
+			    break;
+			    case 3:
+			    fRealPos = 14;
+			    break;
+			}
+
+			drawSetDirValForMenu();
+			lcd.setCursor(fRealPos,1);
+			lcd.write(byte(0));
+		}
+	}
+}
 
 void stepperSetingMenu(){
 
@@ -175,6 +324,7 @@ void stepperSetingMenu(){
 	}
 	tone(STEP_PIN, stepVal);
 
+	lcd.clear();
 	lcd.print("  EXIT SETING");
 	delay(1000);
 	lcd.clear();
