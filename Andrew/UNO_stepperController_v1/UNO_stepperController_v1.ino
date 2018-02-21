@@ -1,0 +1,242 @@
+#include <LiquidCrystal.h>
+#include <EEPROM.h>
+
+#define STEP_PIN 11  // step
+#define DIR_PIN 12   // dir
+
+#define EEPROM_WRITE_KEY 12345  // если изменить то EEPROM перезапишется при перепрошивке
+
+unsigned int stepVal = 1000;  // скорость вращения в герцах (шагов в секунду)
+unsigned int dirVal =1;       // направление 1 или 0
+
+unsigned int EEPROMwriteKeyVal = 0;
+
+byte customCharMenuArrow0[8] = {
+	0b00100,
+	0b01110,
+	0b11111,
+	0b00000,
+	0b00000,
+	0b11111,
+	0b01110,
+	0b00100
+};
+
+// initialize the library with the numbers of the interface pins
+LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
+
+unsigned int EEPROM_uint_read(int fAddr){  // чтение из EEPROM 2 байта unsigned int
+
+	int rAddr = fAddr*2;
+	byte raw[2];
+  	for(byte i = 0; i < 2; i++) raw[i] = EEPROM.read(rAddr+i);
+  	unsigned int &data = (unsigned int&)raw;
+  	return data;
+}
+//*****************************************************************
+void EEPROM_uint_write(int fAddr, unsigned long data){  // запись в EEPROM 2 байта unsigned int
+
+	int rAddr = fAddr*2;
+  	byte raw[2];
+  	(unsigned int&)raw = data;
+  	for(byte i = 0; i < 2; i++) EEPROM.write(rAddr+i, raw[i]);
+}
+
+void saveToMemory(int fAddr, unsigned int fVal){
+
+	int rAddr = fAddr;
+	unsigned int rVal = fVal;
+	unsigned int readVal = EEPROM_uint_read(rAddr);
+	if(readVal != rVal){
+		EEPROM_uint_write(rAddr, rVal);
+	}
+}
+
+unsigned int readFromMemory(int fAddr){
+
+	int rAddr = fAddr;
+	unsigned int rVal = EEPROM_uint_read(rAddr);
+	switch (rAddr) {
+	    case 1:
+	      stepVal = rVal;
+	      break;
+	    case 2:
+	      dirVal = rVal;
+	      break;
+	    case 3:
+	      EEPROMwriteKeyVal = rVal;
+	      break;    
+	}
+
+	return rVal;
+}
+
+byte key(){  // 1-723, 2-482, 3-133, 4-310, 5-0;
+	int val = analogRead(A0);
+	byte keyVal = 0;
+	if(val < 67) {keyVal = 5;}             // right
+	else if(val < 221) {keyVal = 4;}       // up
+	else if(val < 396) {keyVal = 3;}       // down
+	else if(val < 602) {keyVal = 2;}       // left
+	else if(val < 873) {keyVal = 1;}       // select
+	else if(val <= 1023) {keyVal = 0;}     // no press
+	return keyVal;
+}
+
+void drawSetStepValForMenu(){
+
+	lcd.clear();
+	lcd.setCursor(0,0);
+	lcd.print("STEP");
+	lcd.setCursor(6,0);
+	lcd.print(stepVal);
+	lcd.setCursor(13,0);
+	lcd.print("SET");
+}
+
+void setStepValForMenu(){
+
+	bool ciklControl = 1;
+	byte ssvfmVirtualPos = 1;   // виртуальная позиция указателя меню
+	byte ssvfmRealPos = 1;      // реальная позиция указателя меню
+	byte ssvfmKey = 0;          // значение кнопок для обработки в цикле while
+
+	drawSetStepValForMenu();
+	lcd.setCursor(ssvfmRealPos,1);
+	lcd.write(byte(0));
+
+	while(ciklControl){
+
+		ssvfmKey = key();
+		if(ssvfmKey > 0){
+
+			if(ssvfmKey == 1){  // s
+
+			}
+			else if(ssvfmKey == 2){  // l
+
+			}
+			else if(ssvfmKey == 3){  // d
+				
+			}
+			else if(ssvfmKey == 4){  // u
+				
+			}
+			else if(ssvfmKey == 5){  // r
+				
+			}
+			switch (ssvfmVirtualPos){
+			    case 1:
+			    ssvfmRealPos = 1;
+			    break;
+			    case 2:
+			    ssvfmRealPos = 6;
+			    break;
+			    case 3:
+			    ssvfmRealPos = 14;
+			    break;
+			}
+
+			drawSetStepValForMenu();
+			lcd.setCursor(ssvfmRealPos,1);
+			lcd.write(byte(0));
+		}
+	}
+
+	//lcd.setCursor(0,0);
+}
+
+void drawSetDirValForMenu(){
+
+	lcd.clear();
+	lcd.setCursor(0,0);
+	lcd.print("DIR");
+	lcd.setCursor(6,0);
+	lcd.print(stepVal);
+	lcd.setCursor(13,0);
+	lcd.print("SET");
+}
+
+void setDirValForMenu(){}
+
+void stepperSetingMenu(){
+
+	lcd.clear();
+	lcd.print("     SETING");
+	delay(1000);
+
+	setStepValForMenu();
+	setDirValForMenu();
+
+	if(dirVal > 0){
+		digitalWrite(DIR_PIN, HIGH);
+	}else{
+		digitalWrite(DIR_PIN, LOW);
+	}
+	tone(STEP_PIN, stepVal);
+
+	lcd.print("  EXIT SETING");
+	delay(1000);
+	lcd.clear();
+	lcd.print("STEP  ");
+	lcd.print(stepVal);
+	lcd.setCursor(0,1);
+	lcd.print("DIR  ");
+	lcd.print(dirVal);
+}
+
+void buttonChekForLoop(){
+
+	byte val = key();
+	unsigned int buttonDelay = 200;  // задержка для меню
+	if(val > 0){
+		delay(buttonDelay);
+	}
+	if(val == 1){  // select
+		stepperSetingMenu();
+	}
+}
+
+void setup() {
+
+	if(readFromMemory(3) != EEPROM_WRITE_KEY){
+		saveToMemory(1, stepVal);
+		saveToMemory(2, dirVal);
+		saveToMemory(3, EEPROM_WRITE_KEY);
+	}else{
+		stepVal = readFromMemory(1);
+		dirVal = readFromMemory(2);
+	}
+
+	pinMode(STEP_PIN, OUTPUT);
+	pinMode(DIR_PIN, OUTPUT);
+
+	if(dirVal > 0){
+		digitalWrite(DIR_PIN, HIGH);
+	}else{
+		digitalWrite(DIR_PIN, LOW);
+	}
+	// digitalWrite(DIR_PIN, dirVal);
+
+	tone(STEP_PIN, stepVal);
+
+	lcd.createChar(0, customCharMenuArrow0);
+
+	lcd.begin(16, 2);
+    lcd.clear();
+    lcd.clear();
+	lcd.print("STEP DIR CONTROL");
+	delay(500);
+	lcd.clear();
+	lcd.print("STEP  ");
+	lcd.print(stepVal);
+	lcd.setCursor(0,1);
+	lcd.print("DIR  ");
+	lcd.print(dirVal);
+}
+
+void loop() {
+
+	buttonChekForLoop();
+	delay(50);
+}
