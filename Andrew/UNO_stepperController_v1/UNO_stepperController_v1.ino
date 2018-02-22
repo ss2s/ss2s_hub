@@ -6,7 +6,7 @@
 
 #define EEPROM_WRITE_KEY 12345  // если изменить то EEPROM перезапишется при перепрошивке
 
-unsigned int stepVal = 1000;  // скорость вращения в герцах (шагов в секунду)
+unsigned int stepVal = 500;  // скорость вращения в герцах (шагов в секунду)
 unsigned int dirVal =1;       // направление 1 или 0
 
 unsigned int EEPROMwriteKeyVal = 0;
