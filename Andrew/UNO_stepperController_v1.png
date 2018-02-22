@@ -144,12 +144,7 @@ void setStepValForMenu(){
 
 					if(stepVal > 0){
 
-						if((stepVal - fMnojitel) < stepVal){
-
-							stepVal -= fMnojitel;
-						}else{
-							stepVal = 0;
-						}
+						stepVal -= fMnojitel;
 					}
 					tone(STEP_PIN, stepVal);
 				}
@@ -169,13 +164,7 @@ void setStepValForMenu(){
 
 					if(stepVal < 65535){
 
-						if((stepVal + fMnojitel) > stepVal){
-
-							stepVal += fMnojitel;
-						}else{
-
-							stepVal = 65535;
-						}
+						stepVal += fMnojitel;
 					}
 					tone(STEP_PIN, stepVal);
 				}
