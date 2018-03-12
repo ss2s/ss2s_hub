@@ -8,13 +8,19 @@ void setup()
 {
 	// initialize the LCD
 	lcd.begin();
+	// Turn on the blacklight
+	//lcd.backlight();
 
-	// Turn on the blacklight and print a message.
-	lcd.backlight();
-  lcd.clear();
-	lcd.print(" Test text 12345");
-  lcd.setCursor(0, 1);
-  lcd.print(" Test text 56789");
+	// print a message.
+	lcd.clear();
+	lcd.print("      GROW     ");
+  	lcd.setCursor(0, 1);
+  	lcd.print("     HACKER    ");
+  	delay(3000);
+ 	lcd.clear();
+	lcd.print("Test text 12345");
+  	lcd.setCursor(0, 1);
+  	lcd.print("Test text 56789");
 }
 
 void loop()
