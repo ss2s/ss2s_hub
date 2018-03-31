@@ -1,4 +1,3 @@
-
 // Начало функции обработки кириллических символов при выводе на монитор серийного порта
 String utf8rus(String source){     // Функция для конвертации русских символов из двубайтовой кодировки в однобайтовую
 
@@ -36,33 +35,16 @@ String utf8rus(String source){     // Функция для конвертаци
 }
 // Конец функции обработки кириллических симоволов
 
-void setup(){
-
-    Serial.begin(115200);	
+int ascii_cod(char x)
+{
+int a;
+a = x;
+return a;
 }
 
-void loop(){
-
-    char simvol;
-    int simvolRes;
-
-    if(Serial.available()){
-
-        simvol =  Serial.read();
-
-        if (isDigit(simvol)){
-            Serial.print(simvol);
-            Serial.print(" is digit ");
-            simvolRes = simvol - '0';
-            if(simvolRes >= 5){
-                Serial.print(' >= 5');
-            }else{  
-                Serial.print(' < 5');
-            }
-        }
-        else{
-            Serial.print(simvol);
-            Serial.println(" is simbol");
-        }
-    }
+int ascii_cod2(char x)
+{
+(int)x;
+return x;
 }
+

@@ -140,8 +140,8 @@ byte menuHorizontalPos = 0;
 //char week[8][10] = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
 byte second, minute = 61, hour, dayOfWeek, dayOfMonth, month, year;
 
-float TEMP = 0; // температура
-float HMDT = 0; // влажность
+byte TEMP = 0; // температура
+byte HMDT = 0; // влажность
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -157,9 +157,10 @@ byte vremyaVikluchenieSveta2[2] = {18,0};  // 2 время выключения 
 
 
 // АВТОПОЛИВ
+byte vremyaViklucheniaNasosa[2] = {25,61}; // во столько выключится насос часов, минут (служебная переменная)
+
 byte polivaRejim = 1;                      // 3 от датчика влажности почвы : 2 по времени : 1 циклический : 0 отключено
 byte vremyaRabotiNasosa[2] = {0,1};        // часов, минут работы насоса полива
-byte vremyaViklucheniaNasosa[2] = {25,61}; // во столько выключится насос часов, минут (служебная переменная)
 // в режиме 0 циклический
 byte mejduPolivami[2] = {0,15};            // часов, минут между поливами
 // в режиме 1 по заданому времени
@@ -175,19 +176,19 @@ byte datchikPolivaValAnalogSet = 50;       // точка сработки дат
 
 // ТЕМПЕРАТУРА
 byte tempRejim = 1;                        // 3 настраиваемый : 2 нагрев : 1 охлаждение : 0 отключено
-float temperaturaUderjania = 23;           // температура которая будет поддерживатся
-float temperaturaVkluchenia = 25;          // температура включения реле температуры
-float temperaturaVikluchenia = 22;         // температура выключения реле температуры
-float gisterezisTemperaturi = 2;           // гистерезис температуры
+byte temperaturaUderjania = 23;           // температура которая будет поддерживатся
+byte temperaturaVkluchenia = 25;          // температура включения реле температуры
+byte temperaturaVikluchenia = 22;         // температура выключения реле температуры
+byte gisterezisTemperaturi = 2;           // гистерезис температуры
 
 
 
 // ВЛАЖНОСТЬ
 byte vlajnostRejim = 2;                    // 3 настраиваемый : 2 увлажнение : 1 сушка : 0 отключено
-float vlajnostUderjania = 23;              // влажность которая будет поддерживатся
-float vlajnostVkluchenia = 50;             // влажность включения реле влажности
-float vlajnostVikluchenia = 60;            // влажность выключения реле влажности
-float gisterezisVlajnosti = 10;            // гистерезис влажности
+byte vlajnostUderjania = 23;              // влажность которая будет поддерживатся
+byte vlajnostVkluchenia = 50;             // влажность включения реле влажности
+byte vlajnostVikluchenia = 60;            // влажность выключения реле влажности
+byte gisterezisVlajnosti = 10;            // гистерезис влажности
 
 
 
@@ -216,9 +217,9 @@ byte yarkostDispleya = 255;                // яркость екрана 0 - 25
 // ПЕРЕМЕННЫЕ ЕНКОДЕРА
 
 // распиновка
-int pinA = IN_ENKODER_CLK_PIN;          //Пин прерывания сигнальной линии енкодера
-int pinButton = IN_ENKODER_BUTTON_PIN;  //Пин прерывания нажатия кнопки
-int pinB = IN_ENKODER_DT_PIN;           //другой пин енкодера
+byte pinA = IN_ENKODER_CLK_PIN;          //Пин прерывания сигнальной линии енкодера
+byte pinButton = IN_ENKODER_BUTTON_PIN;  //Пин прерывания нажатия кнопки
+byte pinB = IN_ENKODER_DT_PIN;           //другой пин енкодера
 
 long timeButtonPressed = 1000;    // Долгое удержание кнопки после 1 секунд. настройка поведения ниже ↓
 #define LONG_PRESS_CONTINUES 1    // 1 будет выполнятся одно событие, 0 будут повторятся события пока нажата кнопка
@@ -258,8 +259,8 @@ volatile bool longPressReleased = false;     // Переменная для фи
 
 void A(){
 
-  int pinAValue = digitalRead(pinA);        // Получаем состояние пинов A и B
-  int pinBValue = digitalRead(pinB);
+  bool pinAValue = digitalRead(pinA);        // Получаем состояние пинов A и B
+  bool pinBValue = digitalRead(pinB);
 
   cli();                                    // Запрещаем обработку прерываний, чтобы не отвлекаться
   if (!pinAValue &&  pinBValue) state = 1;  // Если при спаде линии А на линии B единица, то вращение в одну сторону
@@ -277,7 +278,7 @@ void A(){
 void Button(){
   
   if (millis() - timeButtonDown < 50) return;
-  int pinButValue = digitalRead(pinButton);   // Получаем состояние пина кнопки
+  bool pinButValue = digitalRead(pinButton);   // Получаем состояние пина кнопки
 
   cli();                                      // Запрещаем обработку прерываний, чтобы не отвлекаться
   timeButtonDown = millis();                  // Запоминаем время нажатия/отжатия
@@ -373,10 +374,10 @@ void getDateDs1307(byte *second,
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   
 ///// температура DS3231 ..
-float get3231Temp(){
+byte get3231Temp(){
 
   	byte tMSB, tLSB; 
-  	float temp3231;
+  	byte temp3231;
 
   	Wire.beginTransmission(0x68);
   	Wire.write(0x11);
@@ -399,7 +400,7 @@ float get3231Temp(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void getDhtData(float *TE, float *HU){
+void getDhtData(byte *TE, byte *HU){
 	
   	static Dht11 sensor(IN_DHT_DATA_PIN);
 
@@ -852,12 +853,13 @@ void setup() {
 
 void loop() {
 
-	displayMain();    // osnovnoy displey
+	//displayMain();    // osnovnoy displey
 
 	//chekMenuLoop(1);  // proverka vhoda v menu s enkodera (raz)
+
 	extMenuLoop();
 
-	chekParam();      // chek param
+	//chekParam();      // chek param
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

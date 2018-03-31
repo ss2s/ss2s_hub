@@ -115,3 +115,73 @@ void loop(){
   
   enkoderChek();
 }
+
+
+
+
+// struct str
+// {
+//   byte s1;
+//   byte s2;
+//   byte s3;
+//   byte s4;
+//   byte s5;
+//   byte s6;
+//   byte s7;
+//   byte s8;
+//   byte s9;
+//   byte s10;
+// };
+
+// str myStr;
+
+// byte s1;
+// byte s2;
+// byte s3;
+// byte s4;
+// byte s5;
+// byte s6;
+// byte s7;
+// byte s8;
+// byte s9;
+// byte s10;
+
+// byte s[10];
+
+// void setup(){
+//   //myStr = {1,1,1,1,1,1,1,1,1,1};
+
+//   s1 = 1;
+//   s2 = 1;
+//   s3 = 1;
+//   s4 = 1;
+//   s5 = 1;
+//   s6 = 1;
+//   s7 = 1;
+//   s8 = 1;
+//   s9 = 1;
+//   s10 = 1;
+
+//   // s[0] = 1;
+//   // s[1] = 1;
+//   // s[2] = 1;
+//   // s[3] = 1;
+//   // s[4] = 1;
+//   // s[5] = 1;
+//   // s[6] = 1;
+//   // s[7] = 1;
+//   // s[8] = 1;
+//   // s[9] = 1;
+// }
+// void loop(){}
+
+
+
+
+
+
+
+
+
+
+
