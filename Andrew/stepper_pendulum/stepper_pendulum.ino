@@ -8,12 +8,13 @@
 // РАСПИНОВКА Arduino
 #define STEP_PIN 11   // step драйвера
 #define DIR_PIN 12    // dir драйвера
-#define LIMIT_PIN 10  // концевик
+#define LIMIT_PIN 13  // концевик
 
 // эта опция нужна, для внесения изменений в EEPROM при перепрошивке
 // если изменить число то EEPROM перезапишется при перепрошивке
 #define EEPROM_WRITE_KEY 123  // любое трехзначное число
 
+// настройка параметров
 
 String deviceName = "STEPPER PENDULUM";  // название прибора не больше 16 символв с пробелами
 
@@ -21,11 +22,13 @@ unsigned int sectorVal = 104;            // сектор работы маятн
 
 unsigned int stepDivider = 32;           // деление шага на драйвере 1-2-4-8-16-32. без делителя 1
 
-float degresInStep = 1.8;                // градусов в одном шаге
+float degresInStep = 1.8;                // градусов в одном шаге(характеристики двигателя)
 
 bool dirVal = 1;                         // направление вращения при старте 1 или 0
 
-bool limitSwitchSet = 0;                 // режим работы концевого выключателя 1 или 0
+bool limitSwitchSet = 0;                 // режим работы концевого выключателя 1 или 0 (сработка на флажок или на отверстие)
+
+bool limitSwitchEnable = 1;              // разрешить использовать концевик 1 : запретить 0
 
 unsigned int degresPerSecond = 69;       // скорость, градусов в секунду
 
@@ -56,8 +59,6 @@ byte customCharMenuArrow0[8] = {
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
 
-unsigned int fluctuationsVal = 40;       // колебаний в минуту
-
 long int stepPerSector = (sectorVal / degresInStep) * stepDivider;  // шагов в секторе
 unsigned long stepLowDelay = ((1000000/((1/(degresInStep/stepDivider))*degresPerSecond))-stepHighDelay);       // микросекунд между шагами
 
@@ -72,7 +73,7 @@ void stepRuner(){
 		digitalWrite(STEP_PIN, LOW);
 		delayMicroseconds(stepLowDelay);
 
-		if(digitalRead(LIMIT_PIN) == limitSwitchSet){
+		if((digitalRead(LIMIT_PIN) == limitSwitchSet) && limitSwitchEnable){
 
 			break;
 		}
@@ -323,7 +324,9 @@ void setup() {
     lcd.clear();
 	lcd.print(deviceName);
 
-	stepRuner();
+	for(int i=0; i<2; i++){
+		stepRuner();
+	}
 
 	lcd.clear();
 	lcd.print("SPEED   ");
