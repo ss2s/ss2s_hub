@@ -4,10 +4,10 @@
 #define STEP_PIN 11  // step
 #define DIR_PIN 12   // dir
 
-#define EEPROM_WRITE_KEY 12345  // если изменить то EEPROM перезапишется при перепрошивке
+#define EEPROM_WRITE_KEY 12345  // если изменить то EEPROM перезапишется при перепрошивке(эта опция нужна, для внесения изменений при перепрошивке)
 
 unsigned int stepVal = 500;  // скорость вращения в герцах (шагов в секунду)
-unsigned int dirVal =1;       // направление 1 или 0
+unsigned int dirVal =1;       // направление вращения 1 или 0
 
 unsigned int EEPROMwriteKeyVal = 0;
 
@@ -34,7 +34,7 @@ unsigned int EEPROM_uint_read(int fAddr){  // чтение из EEPROM 2 бай�
   	return data;
 }
 //*****************************************************************
-void EEPROM_uint_write(int fAddr, unsigned long data){  // запись в EEPROM 2 байта unsigned int
+void EEPROM_uint_write(int fAddr, unsigned int data){  // запись в EEPROM 2 байта unsigned int
 
 	int rAddr = fAddr*2;
   	byte raw[2];

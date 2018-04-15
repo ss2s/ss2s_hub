@@ -51,8 +51,7 @@ void winAUTO(){  // автоматический режим AUTO
   } // или
   else if(TEMP <= CLOSE_TEMP){ // если темп.закр <= текущей температуры
     winCLS(); // закрыть окно
-  }
-  
+  } 
 }
 
 void winMANUAL(){  // ручной режим MANUAL

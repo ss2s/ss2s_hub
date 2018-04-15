@@ -18,7 +18,6 @@
 #include "Dht11.h"
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-#include <avr/wdt.h>
 
 // res.h
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -429,7 +428,6 @@ void getDhtData(byte *TE, byte *HU){
         break;
 
     	default:
-        wdt_reset();
         lcd.clear(); // очистить дисплей
         lcd.setCursor(0,0);
         lcd.println("Unknown error"); 
@@ -469,7 +467,6 @@ void getDhtDataByte(void){
         break;
 
     	default:
-        wdt_reset();
         lcd.clear(); // очистить дисплей
         lcd.setCursor(0,0);
         lcd.println("Unknown error"); 
@@ -511,11 +508,11 @@ void chekMenuLoop(unsigned int count = 1){
 		// chek enkoder
 		//delay(200);                                 // задержка 200 мс
 		enkoderChek();                              // проверка переменных енкодера
-	 		if(horizontalStep > 0){
+	 	if(horizontalStep > 0){
 
-	 			cli();
-	 			i = count;
-	 			menuLoop();
+	 		cli();
+	 		i = count;
+	 		menuLoop();
 	 	}
 	}
 

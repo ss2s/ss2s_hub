@@ -161,7 +161,7 @@ void loop(){
 //   s8 = 1;
 //   s9 = 1;
 //   s10 = 1;
-
+    
 //   // s[0] = 1;
 //   // s[1] = 1;
 //   // s[2] = 1;
@@ -174,14 +174,70 @@ void loop(){
 //   // s[9] = 1;
 // }
 // void loop(){}
+// void loop(){}
+// void loop(){}
+    
+lcd.print(print);
+Serial.print();
+
+
+Serial.print("");
+Serial.print("");
+Serial.print("");
+
+
+Serial.println("слово слово слово");
+Serial.print("слово слово слово");
+
+Serial.print(test test);
+
+Serial.print(test);
+
+Serial.print(test);
+
+Serial.print("test");
+
+
+Serial.print(h);
+
+Serial.print(val);
+
+
+Serial.println(val val);
+
+Serial.println(fr);
+Serial.println("dfdg");
 
 
 
+Serial.print(forvardDir);
+Serial.println();
+Serial.print(fg);
+Serial.print();
+
+
+Serial.println();
+Serial.println(sd);
 
 
 
+Serial.print();
+Serial.print();
+Serial.println();
+
+Serial.print("test text");
+
+Serial.print();
+
+lcd.print("hklnyfbgjdvnbtfhm");
 
 
+lcd.print("hhklujhhjmhj");
 
+void setup(){
 
+}
 
+void loop(){
+  Serial.println("delay");
+}
