@@ -16,28 +16,31 @@
 
 // настройка параметров
 
-String deviceName = "STEPPER PENDULUM";  // название прибора не больше 16 символв с пробелами
-
 unsigned int sectorVal = 104;            // сектор работы маятника в градусах
 
 unsigned int stepDivider = 32;           // деление шага на драйвере 1-2-4-8-16-32. без делителя 1
 
 float degresInStep = 1.8;                // градусов в одном шаге(характеристики двигателя)
 
-bool dirVal = 1;                         // направление вращения при старте 1 или 0
+bool dirValSet = 1;                      // направление вращения при старте 1 или 0
 
-bool limitSwitchSet = 0;                 // режим работы концевого выключателя 1 или 0 (сработка на флажок или на отверстие)
+bool limitSwitchSet = 1;                 // режим работы концевого выключателя 1 или 0 (сработка на флажок или на отверстие)
 
 bool limitSwitchEnable = 1;              // разрешить использовать концевик 1 : запретить 0
 
-unsigned int degresPerSecond = 69;       // скорость, градусов в секунду
+unsigned int degresPerSecond = 70;       // скорость, градусов в секунду
 
-unsigned int menuDelay = 200;            // задержка для меню мс
+unsigned int maxSpeed = 1000;             // максимальная скорость, градусов в секунду
+
+unsigned int menuDelay = 400;            // задержка для меню мс
 
 unsigned int openMenuDelay = 1000;       // задержка открытия меню мс
 
 
-unsigned long stepHighDelay = 500;       // микросекунд будет высокий уровень при шаге (шум/мощность)
+unsigned long stepHighDelay = 1;        // микросекунд будет высокий уровень при шаге (шум/мощность)
+
+
+String deviceName = "STEPPER PENDULUM";  // название прибора не больше 16 символв с пробелами
 
 //=====================================================================================================
 // КОНЕЦ НАСТРОЕК
@@ -59,6 +62,7 @@ byte customCharMenuArrow0[8] = {
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
 
+bool dirVal = dirValSet;
 long int stepPerSector = (sectorVal / degresInStep) * stepDivider;  // шагов в секторе
 unsigned long stepLowDelay = ((1000000/((1/(degresInStep/stepDivider))*degresPerSecond))-stepHighDelay);       // микросекунд между шагами
 
@@ -73,7 +77,7 @@ void stepRuner(){
 		digitalWrite(STEP_PIN, LOW);
 		delayMicroseconds(stepLowDelay);
 
-		if((digitalRead(LIMIT_PIN) == limitSwitchSet) && limitSwitchEnable){
+		if((digitalRead(LIMIT_PIN) == limitSwitchSet) && limitSwitchEnable && (dirVal == dirValSet)){
 
 			break;
 		}
@@ -115,19 +119,7 @@ void saveToMemory(int fAddr, unsigned int fVal){
 	}
 }
 //*****************************************************************
-unsigned int readFromMemory(int fAddr){
 
-	int rAddr = fAddr;
-	unsigned int rVal = EEPROM_uint_read(rAddr);
-	switch (rAddr) {
-
-	    case 1:
-	      degresPerSecond = rVal;
-	      break;    
-	}
-	return rVal;
-}
-//*****************************************************************
 
 byte key(){  // 1-723, 2-482, 3-133, 4-310, 5-0;
 
@@ -179,7 +171,7 @@ void setSpeedValForMenu(){
 				if(fVirtualPos == 2){
 
 					fMnojitel *= 10;
-					if(fMnojitel > 10000){
+					if(fMnojitel > 100){
 
 						fMnojitel = 1;
 					}
@@ -226,14 +218,17 @@ void setSpeedValForMenu(){
 				}
 				else if(fVirtualPos == 2){
 
-					if(degresPerSecond < 65535){
+					if(degresPerSecond < maxSpeed){
 
 						if((degresPerSecond + fMnojitel) > degresPerSecond){
 
 							degresPerSecond += fMnojitel;
+							if(degresPerSecond > maxSpeed){
+								degresPerSecond = maxSpeed;
+							}
 						}else{
 
-							degresPerSecond = 65535;
+							degresPerSecond = maxSpeed;
 						}
 					}
 					stepLowDelay = ((1000000/((1/(degresInStep/stepDivider))*degresPerSecond))-stepHighDelay); //-- здесь внести изменения в скорость
@@ -307,15 +302,24 @@ void buttonChekForLoop(){
 
 void setup() {
 
-	if(readFromMemory(2) != EEPROM_WRITE_KEY){
+	if(EEPROM_uint_read(2) != EEPROM_WRITE_KEY){
 		saveToMemory(1, degresPerSecond);
 		saveToMemory(2, EEPROM_WRITE_KEY);
 	}else{
-		degresPerSecond = readFromMemory(1);
+		degresPerSecond = EEPROM_uint_read(1);;
 	}
+
+	if(maxSpeed > 1000)maxSpeed=1000;
+
+	stepLowDelay = ((1000000/((1/(degresInStep/stepDivider))*degresPerSecond))-stepHighDelay); //-- здесь внести изменения в скорость
 
 	pinMode(STEP_PIN, OUTPUT);
 	pinMode(DIR_PIN, OUTPUT);
+	if(limitSwitchSet){
+		pinMode(LIMIT_PIN, INPUT_PULLUP);
+	}else{
+		pinMode(LIMIT_PIN, INPUT);
+	}
 
 	lcd.createChar(0, customCharMenuArrow0);
 
@@ -324,9 +328,10 @@ void setup() {
     lcd.clear();
 	lcd.print(deviceName);
 
-	for(int i=0; i<2; i++){
-		stepRuner();
-	}
+	// for(int i=0; i<2; i++){
+	// 	stepRuner();
+	// }
+	stepRuner();
 
 	lcd.clear();
 	lcd.print("SPEED   ");
