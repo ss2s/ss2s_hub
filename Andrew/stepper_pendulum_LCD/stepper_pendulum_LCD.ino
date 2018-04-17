@@ -14,33 +14,29 @@
 // если изменить число то EEPROM перезапишется при перепрошивке
 #define EEPROM_WRITE_KEY 123  // любое трехзначное число
 
-// настройка параметров
-
-unsigned int sectorVal = 104;            // сектор работы маятника в градусах
-
+// настройка параметров двигателя
+float degresInStep = 1.8;                // градусов в одном шаге(характеристики двигателя) 1.8 = 200 шагов на оборот
 unsigned int stepDivider = 32;           // деление шага на драйвере 1-2-4-8-16-32. без делителя 1
 
-float degresInStep = 1.8;                // градусов в одном шаге(характеристики двигателя)
-
+// настройка параметров маятника
+unsigned int sectorVal = 104;            // сектор работы маятника в градусах
 bool dirValSet = 1;                      // направление вращения при старте 1 или 0
+unsigned int degresPerSecond = 70;       // скорость, градусов в секунду от 0 до maxSpeed
+unsigned int maxSpeed = 1000;            // максимальная скорость, градусов в секунду
 
-bool limitSwitchSet = 1;                 // режим работы концевого выключателя 1 или 0 (сработка на флажок или на отверстие)
-
+// настройка концевого выключателя
+bool limitSwitchSet = 1;                 // режим работы концевого выключателя (сработка на флажок 1 : на отверстие 0)
+bool limitSwitchType = 0;                // тип концевого выключателя. 0 аналоговый : 1 цифровой
 bool limitSwitchEnable = 1;              // разрешить использовать концевик 1 : запретить 0
 
-unsigned int degresPerSecond = 70;       // скорость, градусов в секунду
-
-unsigned int maxSpeed = 1000;             // максимальная скорость, градусов в секунду
 
 unsigned int menuDelay = 400;            // задержка для меню мс
-
 unsigned int openMenuDelay = 1000;       // задержка открытия меню мс
 
 
-unsigned long stepHighDelay = 1;        // микросекунд будет высокий уровень при шаге (шум/мощность)
+String deviceName = "STEPPER PENDULUM";  // название прибора (при включении) не больше 16 символв с пробелами
 
-
-String deviceName = "STEPPER PENDULUM";  // название прибора не больше 16 символв с пробелами
+unsigned long stepHighDelay = 1;         // микросекунд будет высокий уровень при шаге (шум/мощность)
 
 //=====================================================================================================
 // КОНЕЦ НАСТРОЕК
@@ -315,7 +311,7 @@ void setup() {
 
 	pinMode(STEP_PIN, OUTPUT);
 	pinMode(DIR_PIN, OUTPUT);
-	if(limitSwitchSet){
+	if(!limitSwitchType){
 		pinMode(LIMIT_PIN, INPUT_PULLUP);
 	}else{
 		pinMode(LIMIT_PIN, INPUT);
