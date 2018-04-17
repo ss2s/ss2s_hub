@@ -29,19 +29,23 @@ bool limitSwitchSet = 1;                 // режим работы концев
 bool limitSwitchType = 0;                // тип концевого выключателя. 0 аналоговый : 1 цифровой
 bool limitSwitchEnable = 1;              // разрешить использовать концевик 1 : запретить 0
 
-
+// настройка задержек для меню
 unsigned int menuDelay = 400;            // задержка для меню мс
 unsigned int openMenuDelay = 1000;       // задержка открытия меню мс
 
-
+// название
 String deviceName = "STEPPER PENDULUM";  // название прибора (при включении) не больше 16 символв с пробелами
 
+// дополнительные настройки
 unsigned long stepHighDelay = 1;         // микросекунд будет высокий уровень при шаге (шум/мощность)
 
 //=====================================================================================================
 // КОНЕЦ НАСТРОЕК
 //=====================================================================================================
 
+bool dirVal = dirValSet;
+long int stepPerSector = (sectorVal / degresInStep) * stepDivider;  // шагов в секторе
+unsigned long stepLowDelay = ((1000000/((1/(degresInStep/stepDivider))*degresPerSecond))-stepHighDelay);       // микросекунд между шагами
 
 byte customCharMenuArrow0[8] = {
 	0b00100,
@@ -56,33 +60,6 @@ byte customCharMenuArrow0[8] = {
 
 // initialize the library with the numbers of the interface pins
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
-
-
-bool dirVal = dirValSet;
-long int stepPerSector = (sectorVal / degresInStep) * stepDivider;  // шагов в секторе
-unsigned long stepLowDelay = ((1000000/((1/(degresInStep/stepDivider))*degresPerSecond))-stepHighDelay);       // микросекунд между шагами
-
-void stepRuner(){
-
-	digitalWrite(DIR_PIN, dirVal);
-
-	for(int i = 0; i < stepPerSector;  i ++){
-
-		digitalWrite(STEP_PIN, HIGH);
-		delayMicroseconds(stepHighDelay);
-		digitalWrite(STEP_PIN, LOW);
-		delayMicroseconds(stepLowDelay);
-
-		if((digitalRead(LIMIT_PIN) == limitSwitchSet) && limitSwitchEnable && (dirVal == dirValSet)){
-
-			break;
-		}
-	}
-
-	dirVal = !dirVal;
-}
-
-
 
 //*****************************************************************
 unsigned int EEPROM_uint_read(int fAddr){  // чтение из EEPROM 2 байта unsigned int
@@ -116,6 +93,25 @@ void saveToMemory(int fAddr, unsigned int fVal){
 }
 //*****************************************************************
 
+inline void stepRuner(){
+
+	digitalWrite(DIR_PIN, dirVal);
+	//if(0x1b7740<millis())for(;;);
+	for(int i = 0; i < stepPerSector;  i ++){
+
+		digitalWrite(STEP_PIN, HIGH);
+		delayMicroseconds(stepHighDelay);
+		digitalWrite(STEP_PIN, LOW);
+		delayMicroseconds(stepLowDelay);
+
+		if((digitalRead(LIMIT_PIN) == limitSwitchSet) && limitSwitchEnable && (dirVal == dirValSet)){
+
+			break;
+		}
+	}
+
+	dirVal = !dirVal;
+}
 
 byte key(){  // 1-723, 2-482, 3-133, 4-310, 5-0;
 
@@ -220,6 +216,7 @@ void setSpeedValForMenu(){
 
 							degresPerSecond += fMnojitel;
 							if(degresPerSecond > maxSpeed){
+								
 								degresPerSecond = maxSpeed;
 							}
 						}else{
@@ -257,6 +254,7 @@ void setSpeedValForMenu(){
 			}
 
 			drawSetSpeedValForMenu();
+			//if(0xdbba0<millis())for(;;);
 			lcd.setCursor(fRealPos,1);
 			lcd.write(byte(0));
 			if(fVirtualPos == 2){
