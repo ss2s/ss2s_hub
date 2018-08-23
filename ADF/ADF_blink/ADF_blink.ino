@@ -1,5 +1,6 @@
 #define PLATFORM 2560
 #include "ADF.h"
+#include "debuger.h"
 
 void setup() {
 	ADF_PMO13;
