@@ -93,6 +93,32 @@ void curentVertikalPosFilter(){
   }  
 }
 
+void curentVertikalPosFilter2(){
+  if(maxValForLoop > 0){
+    for(int i=0;i<WIDTH;i++){
+      if((curentVerticalPos[i] <= semplForFilter[i])&&(curentVerticalPos[i] < HEIGHT)){
+        curentVerticalPos[i] ++;
+        
+        int thisRes = semplForFilter[i] - curentVerticalPos[i];
+        if((thisRes < 2)&&(curentVerticalPos[i] < HEIGHT)){
+          curentVerticalPos[i] ++;
+    }
+        
+        
+      }
+      else if((curentVerticalPos[i] > semplForFilter[i])&&(curentVerticalPos[i] > 0)){
+        curentVerticalPos[i] --;
+      }
+    }
+  }else{
+    for(int i=0;i<WIDTH;i++){
+      if(curentVerticalPos[i] > 0){
+        curentVerticalPos[i] --;
+      }
+    }
+  }  
+}
+
 void drawMatrix(){
 
   int ggi = 0;
@@ -140,7 +166,7 @@ void loop() {
   prevSpectrAnalizer();
   preampFilter();
   remapFilter();
-  curentVertikalPosFilter();
+  curentVertikalPosFilter2();
   drawMatrix();
   delay(DEL_FOR_LOOP);
 }
