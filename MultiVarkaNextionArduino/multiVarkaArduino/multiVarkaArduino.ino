@@ -56,6 +56,26 @@ OneWire  ds(TERMO1_PIN);
 #include <SoftwareSerial.h>
 SoftwareSerial SoftSerial(10, 11); // RX, TX
 
+#include <EEPROM.h>
+void eeSet(){
+	byte eeState = EEPROM.read(0);
+	if(eeState != 1){
+		EEPROM.write(0,1);	
+		EEPROM.write(1,peregrevTempT1);	
+		EEPROM.write(2,gisterzisTempT1);	
+	}
+	else if(eeState == 1){
+		peregrevTempT1 = EEPROM.read(1);
+		gisterzisTempT1 = EEPROM.read(2);
+	}
+}
+void eeSetForSet(){
+	byte eePeregrev = EEPROM.read(1);
+	byte eeGisterezis = EEPROM.read(1);
+	if(peregrevTempT1 != eePeregrev){EEPROM.write(1,peregrevTempT1);}
+	if(gisterzisTempT1 != eeGisterezis){EEPROM.write(2,gisterzisTempT1);}
+}
+
 // main temp value
 byte tempT1 = 0;  // текущая температура термометра 1 ds18b20
 byte tempT2 = 0;  // текущая температура термометра 2 ntc 10 kOm
@@ -330,7 +350,10 @@ void dopSet(){
 	    curbut = nextionReciever();
 
 	    if(curbut == 0xFF){}
-		else if(curbut == 8){return;}
+		else if(curbut == 8){
+			eeSetForSet();
+			return;
+		}
 
 		else if(curbut == 14){
 			if(peregrevTempT1 > 0){
@@ -738,6 +761,8 @@ void setup() {
 	Serial.begin(9600);
 	SoftSerial.begin(9600);
 	T0 = 25 + 273.15;  //Температура T0 из даташита, преобразуем из цельсиев в кельвины
+
+	eeSet();
 
 	delay(100);
 }
