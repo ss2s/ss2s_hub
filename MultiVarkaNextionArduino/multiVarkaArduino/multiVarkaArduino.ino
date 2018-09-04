@@ -435,7 +435,7 @@ bool Jarka(){
 	byte startTemp = tempT2;
 	while(tempT2 < setTempJarki){
 		chekTemp();
-		if(tempT1 < setTempJarki){
+		if(tempT1 < setTempJarki + peregrevTempT1 - gisterzisTempT1){
 			digitalWrite(RELE_NAGREVA_PIN, MY_HIGH);
 		}
 		else if(tempT1 >= (setTempJarki + peregrevTempT1)){
@@ -473,7 +473,7 @@ bool Jarka(){
 			prevTempT2 = 0;
 			nextionSenderPIC(2, 5);
 			if(fitPausRet == 0){return 0;}
-			else{digitalWrite(RELE_DUSHIROVANIA_PIN, MY_HIGH);
+			else{digitalWrite(RELE_NAGREVA_PIN, MY_HIGH);
 				if(enableDimState){digitalWrite(RELE_DIM_PIN, MY_HIGH);}
 				if(enableKonvekciaJState){digitalWrite(RELE_KONVEKCIA_PIN, MY_HIGH);}
 			}
@@ -487,7 +487,68 @@ bool Jarka(){
 	nextionSenderPIC(2, 4);
 	return 1;
 }
+
 bool Varka(){
+	byte curbut = 0xFF;  // !
+	byte prevTempT1 = 0;
+	byte prevTempT2 = 0;
+	if(enableParState){digitalWrite(RELE_PAR_PIN, MY_HIGH);}
+	if(enableKonvekciaVState){digitalWrite(RELE_KONVEKCIA_PIN, MY_HIGH);}
+	chekTemp();
+	//byte startTemp = (tempT1 + tempT2) / 2;
+	byte startTemp = tempT2;
+	while(tempT2 < setTempVarki){
+		chekTemp();
+		if(tempT1 < setTempVarki + peregrevTempT1 - gisterzisTempT1){
+			digitalWrite(RELE_NAGREVA_PIN, MY_HIGH);
+		}
+		else if(tempT1 >= (setTempVarki + peregrevTempT1)){
+			digitalWrite(RELE_NAGREVA_PIN, MY_LOW);
+		}
+
+		if((tempT1 != prevTempT1) || (tempT2 != prevTempT2)){
+			nextionSenderNUM(4, tempT1);
+			nextionSenderNUM(5, tempT2);
+			prevTempT1 = tempT1;
+			prevTempT2 = tempT2;
+
+			int barVal = tempT2;
+			barVal = map(barVal, startTemp, setTempVarki, 0, 100);
+			if(barVal < 0){barVal = 0;}
+			nextionSenderBAR(1, barVal); // ...
+		}
+
+		//curbut = 0xFF;  // !
+		curbut = nextionReciever();
+		if(curbut == 0xFF){}
+		else if(curbut == 10){  // stop
+			digitalWrite(RELE_NAGREVA_PIN, MY_LOW);
+			digitalWrite(RELE_PAR_PIN, MY_LOW);
+			digitalWrite(RELE_KONVEKCIA_PIN, MY_LOW);
+			return 0;
+		}
+		else if(curbut == 9){  // pause
+			digitalWrite(RELE_NAGREVA_PIN, MY_LOW);
+			digitalWrite(RELE_PAR_PIN, MY_LOW);
+			digitalWrite(RELE_KONVEKCIA_PIN, MY_LOW);
+			bool fitPausRet = fitPaus();
+			startTemp = tempT2;
+			prevTempT1 = 0;
+			prevTempT2 = 0;
+			nextionSenderPIC(3, 7);
+			if(fitPausRet == 0){return 0;}
+			else{digitalWrite(RELE_NAGREVA_PIN, MY_HIGH);
+				if(enableDimState){digitalWrite(RELE_PAR_PIN, MY_HIGH);}
+				if(enableKonvekciaJState){digitalWrite(RELE_KONVEKCIA_PIN, MY_HIGH);}
+			}
+		}
+
+	    delay(500);
+	}
+	digitalWrite(RELE_NAGREVA_PIN, MY_LOW);
+	digitalWrite(RELE_PAR_PIN, MY_LOW);
+	digitalWrite(RELE_KONVEKCIA_PIN, MY_LOW);
+	nextionSenderPIC(3, 6);
 	return 1;
 }
 
@@ -535,7 +596,6 @@ bool Dushirovanie(){
 	nextionSenderPIC(4, 8);
 	return 1;
 }
-
 
 void Gotovka(){
 	gotovkaStartDraw();
