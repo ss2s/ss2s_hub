@@ -34,8 +34,8 @@ bool enableParState = 1;
 bool enableKonvekciaJState = 1;
 bool enableKonvekciaVState = 1;
 // directDef
-#define MY_HIGH 1
-#define MY_LOW 0
+#define MY_HIGH 0
+#define MY_LOW 1
 // КОНЕЦ НАСТРОЕК //////////////////////////////////////////////////////////////////
 
 byte curentOperationIndex = 0;
@@ -260,20 +260,27 @@ void gotovkaStartDraw(){
 		nextionSenderPIC(5, 1);
 		nextionSenderPIC(13, 25);
 	}
+
 	if(enableJarkaState && setTempJarki){
 		nextionSenderPIC(2, 4);
 		nextionSenderNUM(0, setTempJarki);
+		if(enableDimState){}
+		if(enableKonvekciaJState){}
 	}else{
 		nextionSenderPIC(2, 0);
 		nextionSenderPIC(6, 1);
 	}
+
 	if(enableVarkaState && setTempVarki){
 		nextionSenderPIC(3, 6);
 		nextionSenderNUM(3, setTempVarki);
+		if(enableParState){}
+		if(enableKonvekciaVState){}
 	}else{
 		nextionSenderPIC(3, 0);
 		nextionSenderPIC(7, 1);
 	}
+
 	if(enableDushirovanieState && setTimerDushirovania){
 		nextionSenderPIC(4, 8);
 		nextionSenderTIME(1, setTimerDushirovaniaH60, setTimerDushirovaniaM60);
@@ -315,6 +322,43 @@ void gotovkaStartDraw(){
 	}
 }
 
+void dopSet(){
+	nextionSenderNUM(0,peregrevTempT1);
+	nextionSenderNUM(1,gisterzisTempT1);
+	byte curbut = 0xFF;  // !
+	while(1){
+	    curbut = nextionReciever();
+
+	    if(curbut == 0xFF){}
+		else if(curbut == 8){return;}
+
+		else if(curbut == 14){
+			if(peregrevTempT1 > 0){
+				peregrevTempT1 -= 1;
+				nextionSenderNUM(0,peregrevTempT1);
+			}
+		}
+		else if(curbut == 13){
+			if(peregrevTempT1 < 30){
+				peregrevTempT1 += 1;
+				nextionSenderNUM(0,peregrevTempT1);
+			}
+		}
+		else if(curbut == 15){
+			if(gisterzisTempT1 > 0){
+				gisterzisTempT1 -= 1;
+				nextionSenderNUM(1,gisterzisTempT1);
+			}
+		}
+		else if(curbut == 16){
+			if(gisterzisTempT1 < 15){
+				gisterzisTempT1 += 1;
+				nextionSenderNUM(1,gisterzisTempT1);
+			}
+		}
+	}
+}
+
 void ReceptSetingChekBut(){
 	byte curbut = 0xFF;  // !
 	while(1){
@@ -352,6 +396,13 @@ void ReceptSetingChekBut(){
 			nextionSenderTXT("page page0");
 			ReceptSetingDraw();
 		}
+
+		else if(curbut == 44){
+			nextionSenderTXT("page page5");
+			dopSet();
+			nextionSenderTXT("page page0");
+			ReceptSetingDraw();
+		}
 		
 		if(curbut != 0xFF){ReceptSetingDraw();}
 	}
@@ -379,8 +430,8 @@ bool fitPaus(){
 
 
 bool Sushka(){
-	byte curbut = 0xFF;  // !
 	nextionSenderPIC(1, 3);
+	byte curbut = 0xFF;  // !
 	unsigned long internalTimer = setTimerSushki;
 	startTimeUpdate();
 	unsigned long resInternalTimer = internalTimer - minuteTime;
@@ -425,6 +476,7 @@ bool Sushka(){
 	return 1;
 }
 bool Jarka(){
+	nextionSenderPIC(2, 5);
 	byte curbut = 0xFF;  // !
 	byte prevTempT1 = 0;
 	byte prevTempT2 = 0;
@@ -435,7 +487,7 @@ bool Jarka(){
 	byte startTemp = tempT2;
 	while(tempT2 < setTempJarki){
 		chekTemp();
-		if(tempT1 < setTempJarki + peregrevTempT1 - gisterzisTempT1){
+		if(tempT1 <= setTempJarki + peregrevTempT1 - gisterzisTempT1){
 			digitalWrite(RELE_NAGREVA_PIN, MY_HIGH);
 		}
 		else if(tempT1 >= (setTempJarki + peregrevTempT1)){
@@ -481,6 +533,8 @@ bool Jarka(){
 
 	    delay(500);
 	}
+	nextionSenderNUM(1, tempT1);
+	nextionSenderNUM(2, tempT2);
 	digitalWrite(RELE_NAGREVA_PIN, MY_LOW);
 	digitalWrite(RELE_DIM_PIN, MY_LOW);
 	digitalWrite(RELE_KONVEKCIA_PIN, MY_LOW);
@@ -489,6 +543,7 @@ bool Jarka(){
 }
 
 bool Varka(){
+	nextionSenderPIC(3, 7);
 	byte curbut = 0xFF;  // !
 	byte prevTempT1 = 0;
 	byte prevTempT2 = 0;
@@ -499,7 +554,7 @@ bool Varka(){
 	byte startTemp = tempT2;
 	while(tempT2 < setTempVarki){
 		chekTemp();
-		if(tempT1 < setTempVarki + peregrevTempT1 - gisterzisTempT1){
+		if(tempT1 <= setTempVarki + peregrevTempT1 - gisterzisTempT1){
 			digitalWrite(RELE_NAGREVA_PIN, MY_HIGH);
 		}
 		else if(tempT1 >= (setTempVarki + peregrevTempT1)){
@@ -515,7 +570,7 @@ bool Varka(){
 			int barVal = tempT2;
 			barVal = map(barVal, startTemp, setTempVarki, 0, 100);
 			if(barVal < 0){barVal = 0;}
-			nextionSenderBAR(1, barVal); // ...
+			nextionSenderBAR(2, barVal); // ...
 		}
 
 		//curbut = 0xFF;  // !
@@ -545,6 +600,8 @@ bool Varka(){
 
 	    delay(500);
 	}
+	nextionSenderNUM(4, tempT1);
+	nextionSenderNUM(5, tempT2);
 	digitalWrite(RELE_NAGREVA_PIN, MY_LOW);
 	digitalWrite(RELE_PAR_PIN, MY_LOW);
 	digitalWrite(RELE_KONVEKCIA_PIN, MY_LOW);
@@ -553,8 +610,8 @@ bool Varka(){
 }
 
 bool Dushirovanie(){
-	byte curbut = 0xFF;  // !
 	nextionSenderPIC(4, 9);
+	byte curbut = 0xFF;  // !
 	unsigned long internalTimer = setTimerDushirovania;
 	startTimeUpdate();
 	unsigned long resInternalTimer = internalTimer - minuteTime;
