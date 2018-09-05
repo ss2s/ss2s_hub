@@ -233,7 +233,6 @@ void nextionSenderTIME(int fTT, int fHourHour, int fMinuteMinute){
 	Serial.print(fTT);
 	Serial.print(".txt=\"");
 	if(fHourHour < 10){Serial.print("0");}
-	
 	Serial.print(fHourHour);
 	Serial.print(":");
 	if(fMinuteMinute < 10){Serial.print("0");}
