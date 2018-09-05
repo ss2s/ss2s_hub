@@ -22,9 +22,11 @@ byte setTempJarki = 60;                   // установленная темп
 byte setTempVarki = 70;                   // установленная температура варки
 unsigned long setTimerDushirovania = 30;  // время работы душирования 30м
 ////////////////////////////////////////////////////////////////////////////////////
-byte peregrevTempT1 = 2;      // температура перегрева для Т1
-byte gisterzisTempT1 = 2;     // гистерезис для Т1
-// main state flags
+byte peregrevTempT1 = 2;        // температура перегрева для Т1
+byte gisterzisTempT1 = 2;       // гистерезис для Т1
+// калибровка Т1 в градусах. если датчик удален от тЭна укажите разницу показаний
+byte podstroykaUdaleniaT1 = 0;  // поставьте больше 0 если датчик Т1 далеко от тэна
+// main state flags ФЛАГИ РЕЖИМОВ И ЭТАПОВ
 bool enableSushkaState = 1;
 bool enableJarkaState = 1;
 bool enableVarkaState = 1;
@@ -46,32 +48,35 @@ unsigned long setTimerDushirovaniaH60 = setTimerDushirovania / 60;
 unsigned long setTimerDushirovaniaM60 = setTimerDushirovania - (setTimerDushirovaniaH60 * 60);
 
 byte serialReadMasiv[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-//           0x65, страница, компонент, команда, 0xFF, 0xFF, 0xFF
-//byte cmdSushka[] = {0x65, 0x0, 0x1, 0x1, 0xFF, 0xFF, 0xFF};
-//byte cmdSushka2[7] = {101, 0, 1, 1, 255, 255, 255};
+//       0x65, страница, компонент, команда, 0xFF, 0xFF, 0xFF
+//byte cmd[] = {0x65, 0x0, 0x1, 0x1, 0xFF, 0xFF, 0xFF};
+//byte cmd[] = {101, 0, 1, 1, 255, 255, 255};
 
 #include <OneWire.h>
 OneWire  ds(TERMO1_PIN);
 
-#include <SoftwareSerial.h>
-SoftwareSerial SoftSerial(10, 11); // RX, TX
+// #include <SoftwareSerial.h>
+// SoftwareSerial SoftSerial(10, 11); // RX, TX
 
 #include <EEPROM.h>
 void eeSet(){
-	byte eeState = EEPROM.read(0);
-	if(eeState != 1){
-		EEPROM.write(0,1);	
-		EEPROM.write(1,peregrevTempT1);	
+	byte eeState0 = EEPROM.read(0);
+	byte eeState4 = EEPROM.read(4);
+	if((eeState0 != peregrevTempT1) || (eeState4 != gisterzisTempT1)){
+		EEPROM.write(0,peregrevTempT1);	
+		EEPROM.write(1,peregrevTempT1);
+
 		EEPROM.write(2,gisterzisTempT1);	
+		EEPROM.write(4,gisterzisTempT1);	
 	}
-	else if(eeState == 1){
+	else if((eeState0 == peregrevTempT1) && (eeState4 == gisterzisTempT1)){
 		peregrevTempT1 = EEPROM.read(1);
 		gisterzisTempT1 = EEPROM.read(2);
 	}
 }
 void eeSetForSet(){
 	byte eePeregrev = EEPROM.read(1);
-	byte eeGisterezis = EEPROM.read(1);
+	byte eeGisterezis = EEPROM.read(2);
 	if(peregrevTempT1 != eePeregrev){EEPROM.write(1,peregrevTempT1);}
 	if(gisterzisTempT1 != eeGisterezis){EEPROM.write(2,gisterzisTempT1);}
 }
@@ -161,6 +166,7 @@ float updateTemp2_NTC10K(){  // sys
 
 void chekTemp(){  // main
 	tempT1 = updateTemp1_DS18B20();
+	tempT1 = tempT1 + podstroykaUdaleniaT1;
 	tempT2 = updateTemp2_NTC10K();
 
 	// SoftSerial.print("T1 ");
@@ -177,16 +183,16 @@ byte nextionReciever(){
 	while(Serial.available()){
 		delay(10);
 	    serialReadMasiv[i] = Serial.read();
-	    SoftSerial.print(serialReadMasiv[i]);
-	    SoftSerial.print("   ");
+	    // SoftSerial.print(serialReadMasiv[i]);
+	    // SoftSerial.print("   ");
 	    i++;
 	    if(i >=7){
 	    	break;
 	    }
 	}
-	if(serialReadMasiv[2] != 0xFF){
-		SoftSerial.println("");
-	}
+	// if(serialReadMasiv[2] != 0xFF){
+	// 	SoftSerial.println("");
+	// }
 
 	return serialReadMasiv[2];
 }
@@ -226,8 +232,12 @@ void nextionSenderTIME(int fTT, int fHourHour, int fMinuteMinute){
 	Serial.print("t");
 	Serial.print(fTT);
 	Serial.print(".txt=\"");
+	if(fHourHour < 10){Serial.print("0");}
+	
 	Serial.print(fHourHour);
 	Serial.print(":");
+	if(fMinuteMinute < 10){Serial.print("0");}
+	
 	Serial.print(fMinuteMinute);
 	Serial.print("\"");
 	nextionSenderEnd();
@@ -740,6 +750,14 @@ void Gotovka(){
 	}
 }
 
+void checkDsError(){
+	chekTemp();
+	if(((tempT1 - podstroykaUdaleniaT1) == 254) || ((tempT1 - podstroykaUdaleniaT1) == 255)){
+		nextionSenderTXT("page page4");
+		while(1){}
+	}
+}
+
 void setup() {
 
 	pinMode(RELE_SUSHKI_PIN, OUTPUT);
@@ -759,11 +777,11 @@ void setup() {
 	digitalWrite(RELE_BEEPER_PIN, MY_LOW);
 
 	Serial.begin(9600);
-	SoftSerial.begin(9600);
+	// SoftSerial.begin(9600);
 	T0 = 25 + 273.15;  //Температура T0 из даташита, преобразуем из цельсиев в кельвины
 
 	eeSet();
-
+	checkDsError();
 	delay(100);
 }
 
