@@ -14,7 +14,6 @@
 #define RELE_KONVEKCIA_PIN 8
 
 #define RELE_BEEPER_PIN 13
-////////////////////////////////////////////////////////////////////////////////////
 
 // НАСТРОЙКИ ПО УМОЛЧАНИЮ //////////////////////////////////////////////////////////
 unsigned long setTimerSushki = 60;        // время работы сушки 60м
@@ -35,9 +34,14 @@ bool enableDimState = 1;
 bool enableParState = 1;
 bool enableKonvekciaJState = 1;
 bool enableKonvekciaVState = 1;
-// directDef
+// directDef ///////////////////////////////////////////////////////////////////////
 #define MY_HIGH 0
 #define MY_LOW 1
+// настройка предельных значений для меню //////////////////////////////////////////
+#define MAX_TEMP 95
+#define MIN_TEMP 20
+#define MAX_TIME 1200
+
 // КОНЕЦ НАСТРОЕК //////////////////////////////////////////////////////////////////
 
 byte curentOperationIndex = 0;
@@ -436,7 +440,21 @@ void ReceptSetingChekBut(){
 			ReceptSetingDraw();
 		}
 		
+		if(setTimerSushki > (MAX_TIME + 100)){setTimerSushki = 0;}
+		else if(setTimerSushki > MAX_TIME){setTimerSushki = MAX_TIME;}
+
+		if(setTimerDushirovania > (MAX_TIME + 100)){setTimerDushirovania = 0;}
+		else if(setTimerDushirovania > MAX_TIME){setTimerDushirovania = MAX_TIME;}
+
+		if(setTempJarki > MAX_TEMP){setTempJarki = MAX_TEMP;}
+		else if(setTempJarki < MIN_TEMP){setTempJarki = MIN_TEMP;}
+
+		if(setTempVarki > MAX_TEMP){setTempVarki = MAX_TEMP;}
+		else if(setTempVarki < MIN_TEMP){setTempVarki = MIN_TEMP;}
+
+
 		if(curbut != 0xFF){ReceptSetingDraw();}
+
 	}
 }
 
@@ -497,9 +515,9 @@ bool Sushka(){
 			bool fitPausRet = fitPaus();
 			prevResInternalTimer = 0;
 			startTimeUpdate();
-			nextionSenderPIC(1, 3);
 			if(fitPausRet == 0){return 0;}
 			else{digitalWrite(RELE_SUSHKI_PIN, MY_HIGH);}
+			nextionSenderPIC(1, 3);
 		}
 		delay(500);	
 	}
@@ -555,12 +573,12 @@ bool Jarka(){
 			startTemp = tempT2;
 			prevTempT1 = 0;
 			prevTempT2 = 0;
-			nextionSenderPIC(2, 5);
 			if(fitPausRet == 0){return 0;}
 			else{digitalWrite(RELE_NAGREVA_PIN, MY_HIGH);
 				if(enableDimState){digitalWrite(RELE_DIM_PIN, MY_HIGH);}
 				if(enableKonvekciaJState){digitalWrite(RELE_KONVEKCIA_PIN, MY_HIGH);}
 			}
+			nextionSenderPIC(2, 5);
 		}
 
 	    delay(500);
@@ -622,12 +640,12 @@ bool Varka(){
 			startTemp = tempT2;
 			prevTempT1 = 0;
 			prevTempT2 = 0;
-			nextionSenderPIC(3, 7);
 			if(fitPausRet == 0){return 0;}
 			else{digitalWrite(RELE_NAGREVA_PIN, MY_HIGH);
 				if(enableDimState){digitalWrite(RELE_PAR_PIN, MY_HIGH);}
 				if(enableKonvekciaJState){digitalWrite(RELE_KONVEKCIA_PIN, MY_HIGH);}
 			}
+			nextionSenderPIC(3, 7);
 		}
 
 	    delay(500);
@@ -675,9 +693,9 @@ bool Dushirovanie(){
 			bool fitPausRet = fitPaus();
 			prevResInternalTimer = 0;
 			startTimeUpdate();
-			nextionSenderPIC(4, 9);
 			if(fitPausRet == 0){return 0;}
 			else{digitalWrite(RELE_DUSHIROVANIA_PIN, MY_HIGH);}
+			nextionSenderPIC(4, 9);
 		}
 		delay(500);
 	}
