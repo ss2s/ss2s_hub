@@ -1,4 +1,7 @@
-// РАСПИНОВКА: ///////////////////////////////////////////////////////////////////////////////////////////
+// Контроль горения. Контроллер горения твердотопливного котла
+// 4 кнопки: растопка, переключить электро термостат, т2 +1гр, т2 -1гр.
+
+// РАСПИНОВКА: /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // термопара t1 выхлопные газы
 #define T1_VIHLOP_TERMOPARA_SENSOR_SO_PIN 2   // термопара SO
@@ -29,7 +32,7 @@
 #define L1_GREEN_PIN 17
 //#define L1_BLUE_PIN 0
 
-// НАСТРОЙКИ: ////////////////////////////////////////////////////////////////////////////////////////////
+// НАСТРОЙКИ: //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // установленная температура MAX
 int t2TeplonositelSetMaxTemp = 60;                 // желаемая температура теплоносителя
@@ -60,7 +63,10 @@ bool termostatEnable = 1;                     // разрешение испол
 #define SIGNAL_PS 1000   // пауза между сигналами
 #define SIGNAL_TON 4000  // тон сигнала в герцах
 
-// КОНЕЦ НАСТРОЕК ////////////////////////////////////////////////////////////////////////////////////////
+#define AVARIYNIY_TERMOSTAT 1  // 1 при аварии первого типа включится электрокотол. 0 при аварии не вкл котел
+#define OJIDANIE_TERMOSTATA_AVARII 6000  // задержка до вкл термостата при аварии в миллисекундах
+
+// КОНЕЦ НАСТРОЕК //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -169,6 +175,7 @@ void myBeeper(int beep){
 	    }
 
 	    delay(SIGNAL_DL);
+	    if(beep >= 4){delay(SIGNAL_DL);}
 
 	    if(BEEPER_TIP > 0){
 	    	digitalWrite(Q1_SIGNAL_BIPER_PIN, LOW);
@@ -290,32 +297,49 @@ void lcdDrawSensorVal(){  // функция вывода показаний да
 }
 
 bool avariaALARM(byte tip){
+
+	myBeeper(4);
+
 	myservo.write(servoAngle0);
 	lcd.clear();
 	lcd.print("    AVARIA ");
 	lcd.print(tip);
-	delay(60000);
+	delay(OJIDANIE_TERMOSTATA_AVARII);
+	if(AVARIYNIY_TERMOSTAT > 0){
+		termostatElectroKotla();
+		lcd.setCursor(0,0);
+		lcd.print("                ");
+		lcd.setCursor(0,0);
+		lcd.print("    AVARIA ");
+		lcd.print(tip);
+		myBeeper(4);
+		delay(10);
+	}
 	while(1){}
 }
 
 bool avariaALARM2(byte tip){
+	myBeeper(5);
 	myservo.write(servoAngle0);
 	digitalWrite(R1_KOTEL_RELE_PIN, LOW);
 	lcd.clear();
 	lcd.print("  AVARIA 2 ");
 	lcd.print(tip);
 	delay(1000);
-	while(1){}
+	while(1){
+		myBeeper(5);
+		delay(10000);
+	}
 }
 
 bool rastopkaPechi(){
+
+	myBeeper(1);
 
 	digitalWrite(R1_KOTEL_RELE_PIN, LOW);
 
 	digitalWrite(L1_GREEN_PIN, HIGH);
 	digitalWrite(L1_RED_PIN, LOW);
-
-	myBeeper(1);
 
 	bool ledState = 0;
 	byte safeCounter = 0;
@@ -420,6 +444,8 @@ bool rastopkaPechi(){
 }
 
 bool osnovnoyCiklGoreniaPechi(){
+
+	myBeeper(2);
 
 	digitalWrite(L1_GREEN_PIN, HIGH);
 	digitalWrite(L1_RED_PIN, LOW);
@@ -532,6 +558,8 @@ bool osnovnoyCiklGoreniaPechi(){
 
 bool zatuhahiePechi(){
 
+	myBeeper(3);
+
 	bool ledState = 0;
 	myservo.write(servoAngle1);
 	servoStatePlus1 = 1;
@@ -547,6 +575,7 @@ bool zatuhahiePechi(){
 }
 
 bool termostatElectroKotla(){
+
 	lcdDrawSensorVal();
 
 	if(termostatEnable && (t2TeplonositelCurentTemp <=(t2TeplonositelSetMaxTemp - gisterezisT2)) && p1CurentPressure < p1SetMaxPressure){
@@ -708,8 +737,6 @@ void setup(){
 	servoAngle1 = servoAngle4 / 4;
 	servoAngle3 = servoAngle1 * 3;
 
-	//T0_NTC = 25 + 273.15;  //Температура T0 из даташита, преобразуем из цельсиев в кельвины
-
 	lcd.begin(); // иниализация дисплея LCD 16/2
 	lcd.clear(); // очистить дисплей
 	lcd.backlight(); // включение подсветки
@@ -738,8 +765,5 @@ void setup(){
 
 void loop(){
 	glavniyCikl();
-
-	// lcdDrawSensorVal();
-	// zaderjkaSecY(2);
 
 }
