@@ -1,5 +1,28 @@
-// Контроль горения. Контроллер горения твердотопливного котла
-// 4 кнопки: растопка, переключить электро термостат, т2 +1гр, т2 -1гр.
+// Контроль горения. Контроллер горения твердотопливного котла сервозаслонкой + термостат электрокотла
+// 4 кнопки: "растопка", "ВКЛ. ВЫКЛ. электро термостат", "т2 +1градус", "т2 -1градус". 
+
+// КОДЫ ОШИБОК АВАРИИ:
+
+// AVARIA 1           превышение температуры t1
+// AVARIA 201         0.8 t1
+
+// AVARIA 2           превышение температуры peregrevT2 (если термостат в аварии 2 типа активен. настройка переходов аварии на строках 333-337)
+// AVARIA 202         превышение температуры t2
+
+// AVARIA 3           превышение температуры t3
+// AVARIA 203         0.8 t3
+
+// AVARIA 4           превышение температуры t1
+// AVARIA 204         0.8 t4
+
+// AVARIA 5           превышение давления P1 (если термостат в аварии 2 типа активен)
+// AVARIA 205         0.8 P1
+
+// AVARIA 2 1         превышение давления P1 (может быть вызвано проседанием напряжения)
+// AVARIA 2 201       0.8 P1   
+
+// AVARIA 2 2         превышение температуры peregrevT2
+// AVARIA 2 202       превышение температуры t2
 
 // РАСПИНОВКА: /////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -30,7 +53,6 @@
 // светодиоды
 #define L1_RED_PIN 1
 #define L1_GREEN_PIN 17
-//#define L1_BLUE_PIN 0
 
 // НАСТРОЙКИ: //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -55,15 +77,16 @@ int t2TeplonositelSetMaxTemp = 60;                 // желаемая темп�
 bool termostatEnable = 1;                     // разрешение использовать электро котел
 
 // предельные углы серво: servoAngle0 - закрыто, servoAngle4 - открыто.
-#define servoAngle0 0    // угол закрытого серво
-#define servoAngle4 180  // угол полностью открытого серво
+#define servoAngle0 10    // угол закрытого серво
+#define servoAngle4 170  // угол полностью открытого серво
 
 #define BEEPER_TIP 0     // тип бипера пищалки, 1 активный. 0 пасивный
 #define SIGNAL_DL 1000   // длительность сигнала
 #define SIGNAL_PS 1000   // пауза между сигналами
 #define SIGNAL_TON 4000  // тон сигнала в герцах
 
-#define AVARIYNIY_TERMOSTAT 1  // 1 при аварии первого типа включится электрокотол. 0 при аварии не вкл котел
+#define AVARIYNIY_TERMOSTAT 1  // 1 при аварии ПЕРВОГО типа включится электрокотол. 0 при аварии не вкл котел
+#define AVARIYNIY_TERMOSTAT_AV2 0  // 1 при аварии ВТОРОГО типа включится электрокотол. 0 при аварии не вкл котел
 #define OJIDANIE_TERMOSTATA_AVARII 6000  // задержка до вкл термостата при аварии в миллисекундах
 
 // КОНЕЦ НАСТРОЕК //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -182,6 +205,7 @@ void myBeeper(int beep){
 	    }
 	    else{
 	    	noTone(Q1_SIGNAL_BIPER_PIN);
+	    	digitalWrite(Q1_SIGNAL_BIPER_PIN, HIGH);
 	    }
 
 	    delay(SIGNAL_PS);
@@ -298,37 +322,67 @@ void lcdDrawSensorVal(){  // функция вывода показаний да
 
 bool avariaALARM(byte tip){
 
-	myBeeper(4);
+	int avariaVal = 0;
+	if(tip == 1 || tip == 201){avariaVal = t1VihlopTermoparaCurentTemp;}
+	else if(tip == 2 || tip == 202){avariaVal = t2TeplonositelCurentTemp;}
+	else if(tip == 3 || tip == 203){avariaVal = t3SafeDownTermoparaCurentTemp;}
+	else if(tip == 4 || tip == 204){avariaVal = t4SafeUpTermoparaCurentTemp;}
+	else if(tip == 5 || tip == 205){avariaVal = p1CurentPressure;}
 
 	myservo.write(servoAngle0);
+	servoStatePlus1 = 0;
 	lcd.clear();
-	lcd.print("    AVARIA ");
+	lcd.print("AVARIA ");
 	lcd.print(tip);
+	lcd.print(" ");
+	lcd.print(avariaVal);
+
+	myBeeper(4);
+
 	delay(OJIDANIE_TERMOSTATA_AVARII);
-	if(AVARIYNIY_TERMOSTAT > 0){
-		termostatElectroKotla();
-		lcd.setCursor(0,0);
-		lcd.print("                ");
-		lcd.setCursor(0,0);
-		lcd.print("    AVARIA ");
-		lcd.print(tip);
-		myBeeper(4);
-		delay(10);
+	while(1){
+		
+		if(AVARIYNIY_TERMOSTAT > 0){
+			termostatElectroKotla();
+			lcd.setCursor(0,0);
+			lcd.print("                ");
+			lcd.setCursor(0,0);
+			lcd.print("AVARIA ");
+			lcd.print(tip);
+			lcd.print(" ");
+			lcd.print(avariaVal);
+
+			myBeeper(4);
+
+			delay(10000);
+		}
 	}
-	while(1){}
 }
 
 bool avariaALARM2(byte tip){
-	myBeeper(5);
+	int avariaVal = 0;
+	if(tip == 1 || tip == 201){avariaVal = p1CurentPressure;}
+	else if(tip == 2 || tip == 202){avariaVal = t2TeplonositelCurentTemp;}
 	myservo.write(servoAngle0);
+	servoStatePlus1 = 0;
 	digitalWrite(R1_KOTEL_RELE_PIN, LOW);
 	lcd.clear();
 	lcd.print("  AVARIA 2 ");
 	lcd.print(tip);
-	delay(1000);
+	lcd.setCursor(0,1);
+	lcd.print("     ");
+	lcd.print(avariaVal);
+	myBeeper(5);
+	if(AVARIYNIY_TERMOSTAT_AV2 > 0){
+		if(tip == 0){}
+		else if(tip == 1){avariaALARM(5);}
+		else if(tip == 201){avariaALARM(205);}
+		else if(tip == 2 ){avariaALARM(2);}
+		else if(tip == 202 ){avariaALARM(202);}
+	}
 	while(1){
-		myBeeper(5);
 		delay(10000);
+		myBeeper(5);
 	}
 }
 
@@ -576,7 +630,8 @@ bool zatuhahiePechi(){
 
 bool termostatElectroKotla(){
 
-	lcdDrawSensorVal();
+	t2TeplonositelCheckTemp();
+	p1CheckPressure();
 
 	if(termostatEnable && (t2TeplonositelCurentTemp <=(t2TeplonositelSetMaxTemp - gisterezisT2)) && p1CurentPressure < p1SetMaxPressure){
 		digitalWrite(R1_KOTEL_RELE_PIN, HIGH);
@@ -584,6 +639,8 @@ bool termostatElectroKotla(){
 	else if(!termostatEnable || (t2TeplonositelCurentTemp > (t2TeplonositelSetMaxTemp + gisterezisT2)) || p1CurentPressure >= p1SetMaxPressure){
 		digitalWrite(R1_KOTEL_RELE_PIN, LOW);
 	}
+
+	lcdDrawSensorVal();
 }
 
 void glavniyCikl(){
@@ -730,12 +787,18 @@ bool zaderjkaSecG(int zdr){
 void setup(){
 
 	pinMode(Q1_SIGNAL_BIPER_PIN, OUTPUT);
+	if(BEEPER_TIP == 0){digitalWrite(Q1_SIGNAL_BIPER_PIN, HIGH);}
+	else{digitalWrite(Q1_SIGNAL_BIPER_PIN, LOW);}
+
 	pinMode(R1_KOTEL_RELE_PIN, OUTPUT);
+	digitalWrite(R1_KOTEL_RELE_PIN, LOW);
 
 	// промежуточные углы серво
-	servoAngle2 = servoAngle4 / 2;
-	servoAngle1 = servoAngle4 / 4;
-	servoAngle3 = servoAngle1 * 3;
+	if(servoAngle0 < servoAngle4){
+		servoAngle2 = servoAngle4 / 2;
+		servoAngle1 = servoAngle4 / 4;
+		servoAngle3 = servoAngle1 * 3;
+	}
 
 	lcd.begin(); // иниализация дисплея LCD 16/2
 	lcd.clear(); // очистить дисплей
@@ -759,11 +822,11 @@ void setup(){
   	lcd.createChar(4, customCharT4);
 
 	pinMode(L1_RED_PIN, OUTPUT);
+	digitalWrite(L1_RED_PIN, LOW);
 	pinMode(L1_GREEN_PIN, OUTPUT);
-	//pinMode(L1_BLUE_PIN, OUTPUT);
+	digitalWrite(L1_GREEN_PIN, LOW);
 }
 
 void loop(){
 	glavniyCikl();
-
 }
