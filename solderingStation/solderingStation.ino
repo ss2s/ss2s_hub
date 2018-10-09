@@ -12,6 +12,8 @@
 #define N2_NIZ_NAGREV_PIN 9
 // пищалка
 #define Q1_BUZER_PIN 10
+// вентилятор
+#define V1_VENTILATOR 13
 // кнопки
 #define B1_PROFIL_PIN 15  // A1
 #define B2_START_PIN 14   // A0
@@ -20,6 +22,11 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// BEEPER
+#define SIGNAL_DL 1000   // длительность сигнала
+#define SIGNAL_PS 1000   // пауза между сигналами
+#define SIGNAL_TON 4000  // тон сигнала в герцах
+// START SET
 double t1VerhSetTemp = 165;
 double t2NizSetTemp = 170;
 float t1VerhSetSpeed = 0.5;
@@ -32,7 +39,10 @@ byte profilNumber = 0;
 
 byte animCiklNumber = 0;
 
-unsigned long animationSpeed = 67;
+#define VERH_OTVAL_RAZ 15
+#define NIZ_OTVAL_RAZ 25
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "LiquidCrystal_I2C.h"
 LiquidCrystal_I2C lcd(0x3F, 20, 4); // установка адреса 0x3F и разрешения 20/4
@@ -133,6 +143,43 @@ MAX6675 thermocouple2(T2_NIZ_TERMOPARA_SENSOR_SCK_PIN, T2_NIZ_TERMOPARA_SENSOR_C
 		0b00000
 	};
 
+void myBeeperS(int beep = 1){
+	for(int i=0; i<beep; i++){
+	    
+	    tone(Q1_BUZER_PIN, SIGNAL_TON);
+
+	    delay(SIGNAL_DL);
+	    
+	    noTone(Q1_BUZER_PIN);
+	    digitalWrite(Q1_BUZER_PIN, HIGH);
+
+	    delay(SIGNAL_PS);
+	}
+}
+
+void myBeeperL(int beep = 1){
+	for(int i=0; i<beep; i++){
+	    
+	    tone(Q1_BUZER_PIN, SIGNAL_TON);
+
+	    delay(SIGNAL_DL);
+	    delay(SIGNAL_DL);
+	    delay(SIGNAL_DL);
+	    
+	    noTone(Q1_BUZER_PIN);
+	    digitalWrite(Q1_BUZER_PIN, HIGH);
+
+	    delay(SIGNAL_PS);
+	}
+}
+
+void myBeeperAvaria(){
+	while(1){
+		myBeeperS(3);
+		delay(SIGNAL_PS * 3);
+	}
+}
+
 // time value
 unsigned long secondVal = 0;
 unsigned long millVal = 0;
@@ -149,7 +196,7 @@ void timeSecUpdate(){
 	lcd.setCursor(5,2);
 	lcd.print(secondVal);
 	// lcd.print(mill1000Val);
-	lcd.print(" ");
+	lcd.print("  ");
 }
 void startTimeSecLine(){
  	secondVal = 0;
@@ -194,7 +241,7 @@ bool mil500F(){
 	return 0;
 }
 
-bool PIDnagrevatel(float tVerhSpeed, float tVerhSet, float tNizSpeed, float tNizSet){
+bool PIDnagrevatel(float tVerhSpeed, float tVerhSet, float tNizSpeed, float tNizSet, unsigned long tPausSet = 0){
 
 	t1VerhSetTemp = tVerhSet;
 	t2NizSetTemp = tNizSet;
@@ -202,6 +249,9 @@ bool PIDnagrevatel(float tVerhSpeed, float tVerhSet, float tNizSpeed, float tNiz
 
 	bool flagCheckTemp = 1;
 	bool flagAnimatioF = 1;
+
+	byte otvalVerh1 = 0;
+	byte otvalNiz2 = 0;
 
 	CheckTemp();
 	double prevT1VerhCurrentTemp = t1VerhCurrentTemp;
@@ -224,6 +274,49 @@ bool PIDnagrevatel(float tVerhSpeed, float tVerhSet, float tNizSpeed, float tNiz
 			else{
 				digitalWrite(N1_VERH_NAGREV_PIN, LOW);
 			}
+			if(t2NizCurrentTemp < t2NizSetTemp && ((t2NizCurrentTemp - prevT2NizCurrentTemp) < tNizSpeed)){
+				digitalWrite(N2_NIZ_NAGREV_PIN, HIGH);
+			}
+			else{
+				digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
+			}
+
+			if(tVerhSet > 0 && ((t1VerhCurrentTemp - prevT1VerhCurrentTemp) <= 0.25)){
+				otvalVerh1 ++;
+				if(otvalVerh1 >= VERH_OTVAL_RAZ){
+					digitalWrite(N1_VERH_NAGREV_PIN, LOW);
+					digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
+					lcd.clear();
+					lcd.setCursor(0,1);
+					lcd.print("       t1 err");
+					lcd.setCursor(0,2);
+					lcd.print("         UP");
+					myBeeperAvaria();
+				}
+			}
+			if(tNizSet > 0 && ((t2NizCurrentTemp - prevT2NizCurrentTemp) <= 0.25)){
+				otvalNiz2 ++;
+				if(otvalNiz2 >= NIZ_OTVAL_RAZ){
+					digitalWrite(N1_VERH_NAGREV_PIN, LOW);
+					digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
+					lcd.clear();
+					lcd.setCursor(0,1);
+					lcd.print("       t2 err");
+					lcd.setCursor(0,2);
+					lcd.print("        DOWN");
+					myBeeperAvaria();
+				}
+			}
+			if(t1VerhCurrentTemp >= prevT1VerhCurrentTemp){
+				if(tVerhSet > 0 && ((t1VerhCurrentTemp - prevT1VerhCurrentTemp) >= 0.5)){
+					otvalVerh1 = 0;
+				}
+			}
+			if(t2NizCurrentTemp >= prevT2NizCurrentTemp){
+				if(tNizSet > 0 && ((t2NizCurrentTemp - prevT2NizCurrentTemp) >= 0.5)){
+					otvalNiz2 = 0;
+				}
+			}
 
 
 			flagCheckTemp = 0;
@@ -232,11 +325,56 @@ bool PIDnagrevatel(float tVerhSpeed, float tVerhSet, float tNizSpeed, float tNiz
 
 		if(secondVal != prevSecondVal){
 			CheckTemp();
+
+			if(t1VerhCurrentTemp < t1VerhSetTemp && ((t1VerhCurrentTemp - prevT1VerhCurrentTemp) < tVerhSpeed)){
+				digitalWrite(N1_VERH_NAGREV_PIN, HIGH);
+			}
+			else{
+				digitalWrite(N1_VERH_NAGREV_PIN, LOW);
+			}
+
 			if(t2NizCurrentTemp < t2NizSetTemp && ((t2NizCurrentTemp - prevT2NizCurrentTemp) < tNizSpeed)){
 				digitalWrite(N2_NIZ_NAGREV_PIN, HIGH);
 			}
 			else{
 				digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
+			}
+
+			if(tVerhSet > 0 && ((t1VerhCurrentTemp - prevT1VerhCurrentTemp) <= 0.25)){
+				otvalVerh1 ++;
+				if(otvalVerh1 >= VERH_OTVAL_RAZ){
+					digitalWrite(N1_VERH_NAGREV_PIN, LOW);
+					digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
+					lcd.clear();
+					lcd.setCursor(0,1);
+					lcd.print("       t1 err");
+					lcd.setCursor(0,2);
+					lcd.print("         UP");
+					myBeeperAvaria();
+				}
+			}
+			if(tNizSet > 0 && ((t2NizCurrentTemp - prevT2NizCurrentTemp) <= 0.25)){
+				otvalNiz2 ++;
+				if(otvalNiz2 >= NIZ_OTVAL_RAZ){
+					digitalWrite(N1_VERH_NAGREV_PIN, LOW);
+					digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
+					lcd.clear();
+					lcd.setCursor(0,1);
+					lcd.print("       t2 err");
+					lcd.setCursor(0,2);
+					lcd.print("        DOWN");
+					myBeeperAvaria();
+				}
+			}
+			if(t1VerhCurrentTemp >= prevT1VerhCurrentTemp){
+				if(tVerhSet > 0 && ((t1VerhCurrentTemp - prevT1VerhCurrentTemp) >= 0.5)){
+					otvalVerh1 = 0;
+				}
+			}
+			if(t2NizCurrentTemp >= prevT2NizCurrentTemp){
+				if(tNizSet > 0 && ((t2NizCurrentTemp - prevT2NizCurrentTemp) >= 0.5)){
+					otvalNiz2 = 0;
+				}
 			}
 
 			prevSecondVal = secondVal;
@@ -259,6 +397,10 @@ bool PIDnagrevatel(float tVerhSpeed, float tVerhSet, float tNizSpeed, float tNiz
 			double paus_t2NizSetTemp = t2NizCurrentTemp;
 			startMill100 = millis();
 
+			lcd.setCursor(9,3);
+	        lcd.print("P");
+	        delay(1000);
+
 			while(1){
 				if(mil500F()){
 					CheckTemp();
@@ -277,16 +419,50 @@ bool PIDnagrevatel(float tVerhSpeed, float tVerhSet, float tNizSpeed, float tNiz
 			    	digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
 			    }
 
-			    if(!digitalRead(B4_PAUSE_PIN)){break;}
+			    if(!digitalRead(B4_PAUSE_PIN)){
+			    	lcd.setCursor(9,3);
+	        		lcd.print(" ");
+	        		delay(1000);
+			    	break;
+			    }
 
 			    if(!digitalRead(B3_STOP_PIN)){
 					digitalWrite(N1_VERH_NAGREV_PIN, LOW);
 					digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
 					return 1;
-		}
+				}
 			}
 		}
-		if(t1VerhCurrentTemp == t1VerhSetTemp && t2NizCurrentTemp == t2NizSetTemp){
+		if(t1VerhCurrentTemp >= t1VerhSetTemp && t2NizCurrentTemp >= t2NizSetTemp){
+
+			unsigned long secForEndPid = secondVal;
+			while(1){
+				if(mil500F()){
+					timeSecUpdate();
+					CheckTemp();
+					animationF(tVerhSet,tNizSet);
+				
+					if(t1VerhCurrentTemp < t1VerhSetTemp){
+				    	digitalWrite(N1_VERH_NAGREV_PIN, HIGH);
+				    }
+				    else{
+				    	digitalWrite(N1_VERH_NAGREV_PIN, LOW);
+				    }
+				    if(t2NizCurrentTemp < t2NizSetTemp){
+				    	digitalWrite(N2_NIZ_NAGREV_PIN, HIGH);
+				    }
+				    else{
+				    	digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
+				    }
+				}
+				if(secondVal - secForEndPid > tPausSet){break;}
+				if(!digitalRead(B3_STOP_PIN)){
+					digitalWrite(N1_VERH_NAGREV_PIN, LOW);
+					digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
+					return 1;
+				}
+				if(!digitalRead(B4_PAUSE_PIN)){break;}
+			}
 			return 0;
 		}
 	}
@@ -294,37 +470,225 @@ bool PIDnagrevatel(float tVerhSpeed, float tVerhSet, float tNizSpeed, float tNiz
 
 void profil_0(){
 	startTimeSecLine();
+
+	t1VerhSetTemp = 0; t2NizSetTemp = 140;
+	if(!PIDnagrevatel(0,0,1.0,140)){
+		myBeeperS();
+		while(!PIDnagrevatel(0,0,1.0,140)){
+		}
+	}
+
 	animationF(0,0);
+	digitalWrite(V1_VENTILATOR, HIGH);
+	unsigned long startVentTimer = millis();
+	unsigned long currentVentTimer;
+	while(1){
+		currentVentTimer = millis();
+		if(currentVentTimer - startVentTimer >= 60000){
+			break;
+		}
+		if(!digitalRead(B3_STOP_PIN)){
+			digitalWrite(N1_VERH_NAGREV_PIN, LOW);
+			digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
+			break;
+		}
+	}
+	digitalWrite(V1_VENTILATOR, LOW);
 }
+
 void profil_1(){
 	startTimeSecLine();
+
+	t1VerhSetTemp = 0; t2NizSetTemp = 160;
+	if(PIDnagrevatel(0,0,1.0,160)){animationF(0,0);return;}
+	t1VerhSetTemp = 187; t2NizSetTemp = 160;
+	if(PIDnagrevatel(0.75,187,1.0,160,10)){animationF(0,0);return;}
+	
+	
+	myBeeperL();
+
 	animationF(0,0);
+	digitalWrite(V1_VENTILATOR, HIGH);
+	unsigned long startVentTimer = millis();
+	unsigned long currentVentTimer;
+	while(1){
+		currentVentTimer = millis();
+		if(currentVentTimer - startVentTimer >= 60000){
+			break;
+		}
+		if(!digitalRead(B3_STOP_PIN)){
+			digitalWrite(N1_VERH_NAGREV_PIN, LOW);
+			digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
+			break;
+		}
+	}
+	digitalWrite(V1_VENTILATOR, LOW);
 }
+
 void profil_2(){
 	startTimeSecLine();
+
+	t1VerhSetTemp = 0; t2NizSetTemp = 160;
+	if(PIDnagrevatel(0,0,1.0,160)){animationF(0,0);return;}
+	t1VerhSetTemp = 187; t2NizSetTemp = 160;
+	if(PIDnagrevatel(0.75,187,1.0,160)){animationF(0,0);return;}
+	myBeeperS();
+	t1VerhSetTemp = 232; t2NizSetTemp = 160;
+	if(PIDnagrevatel(0.5,232,1.0,160,10)){animationF(0,0);return;}
+	myBeeperL();
+
 	animationF(0,0);
+	digitalWrite(V1_VENTILATOR, HIGH);
+	unsigned long startVentTimer = millis();
+	unsigned long currentVentTimer;
+	while(1){
+		currentVentTimer = millis();
+		if(currentVentTimer - startVentTimer >= 60000){
+			break;
+		}
+		if(!digitalRead(B3_STOP_PIN)){
+			digitalWrite(N1_VERH_NAGREV_PIN, LOW);
+			digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
+			break;
+		}
+	}
+	digitalWrite(V1_VENTILATOR, LOW);
 }
 void profil_3(){
 	startTimeSecLine();
-	lcd.clear(); // очистить дисплей
-	delay(5000);
+
+	t1VerhSetTemp = 0; t2NizSetTemp = 120;
+	if(PIDnagrevatel(0,0,0.75,120)){animationF(0,0);return;}
+	t1VerhSetTemp = 187; t2NizSetTemp = 187;
+	if(PIDnagrevatel(0.5,187,0.5,187,10)){animationF(0,0);return;}
+	myBeeperL();
+
 	animationF(0,0);
+	digitalWrite(V1_VENTILATOR, HIGH);
+	unsigned long startVentTimer = millis();
+	unsigned long currentVentTimer;
+	while(1){
+		currentVentTimer = millis();
+		if(currentVentTimer - startVentTimer >= 60000){
+			break;
+		}
+		if(!digitalRead(B3_STOP_PIN)){
+			digitalWrite(N1_VERH_NAGREV_PIN, LOW);
+			digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
+			break;
+		}
+	}
+	digitalWrite(V1_VENTILATOR, LOW);
 }
 void profil_4(){
 	startTimeSecLine();
+
+	t1VerhSetTemp = 0; t2NizSetTemp = 150;
+	if(PIDnagrevatel(0,0,0.75,150)){animationF(0,0);return;}
+	while(t2NizCurrentTemp > 120){CheckTemp();}
+	t1VerhSetTemp = 187; t2NizSetTemp = 187;
+	if(PIDnagrevatel(0.5,187,0.5,187,10)){animationF(0,0);return;}
+	myBeeperL();
+
 	animationF(0,0);
+	digitalWrite(V1_VENTILATOR, HIGH);
+	unsigned long startVentTimer = millis();
+	unsigned long currentVentTimer;
+	while(1){
+		currentVentTimer = millis();
+		if(currentVentTimer - startVentTimer >= 60000){
+			break;
+		}
+		if(!digitalRead(B3_STOP_PIN)){
+			digitalWrite(N1_VERH_NAGREV_PIN, LOW);
+			digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
+			break;
+		}
+	}
+	digitalWrite(V1_VENTILATOR, LOW);
 }
 void profil_5(){
 	startTimeSecLine();
+
+	t1VerhSetTemp = 0; t2NizSetTemp = 150;
+	if(PIDnagrevatel(0,0,0.75,150)){animationF(0,0);return;}
+	while(t2NizCurrentTemp > 120){CheckTemp();}
+	t1VerhSetTemp = 0; t2NizSetTemp = 130;
+	if(PIDnagrevatel(0,0,0.5,130)){animationF(0,0);return;}
+	t1VerhSetTemp = 187; t2NizSetTemp = 187;
+	if(PIDnagrevatel(0.5,187,0.5,187,10)){animationF(0,0);return;}
+	myBeeperL();
+
 	animationF(0,0);
+	digitalWrite(V1_VENTILATOR, HIGH);
+	unsigned long startVentTimer = millis();
+	unsigned long currentVentTimer;
+	while(1){
+		currentVentTimer = millis();
+		if(currentVentTimer - startVentTimer >= 60000){
+			break;
+		}
+		if(!digitalRead(B3_STOP_PIN)){
+			digitalWrite(N1_VERH_NAGREV_PIN, LOW);
+			digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
+			break;
+		}
+	}
+	digitalWrite(V1_VENTILATOR, LOW);
 }
 void profil_6(){
 	startTimeSecLine();
+
+	t1VerhSetTemp = 0; t2NizSetTemp = 160;
+	if(PIDnagrevatel(0,0,0.5,160)){animationF(0,0);return;}
+	t1VerhSetTemp = 200; t2NizSetTemp = 200;
+	if(PIDnagrevatel(0.5,200,0.5,200)){animationF(0,0);return;}
+	t1VerhSetTemp = 232; t2NizSetTemp = 200;
+	if(PIDnagrevatel(0.5,232,0.5,200,10)){animationF(0,0);return;}
+	myBeeperL();
+
 	animationF(0,0);
+	digitalWrite(V1_VENTILATOR, HIGH);
+	unsigned long startVentTimer = millis();
+	unsigned long currentVentTimer;
+	while(1){
+		currentVentTimer = millis();
+		if(currentVentTimer - startVentTimer >= 60000){
+			break;
+		}
+		if(!digitalRead(B3_STOP_PIN)){
+			digitalWrite(N1_VERH_NAGREV_PIN, LOW);
+			digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
+			break;
+		}
+	}
+	digitalWrite(V1_VENTILATOR, LOW);
 }
 void profil_7(){
 	startTimeSecLine();
+
+	t1VerhSetTemp = 0; t2NizSetTemp = 150;
+	if(PIDnagrevatel(0,0,0.75,150)){animationF(0,0);return;}
+	t1VerhSetTemp = 0; t2NizSetTemp = 220;
+	if(PIDnagrevatel(0,0,0.5,220,15)){animationF(0,0);return;}
+	myBeeperL();
+
 	animationF(0,0);
+	digitalWrite(V1_VENTILATOR, HIGH);
+	unsigned long startVentTimer = millis();
+	unsigned long currentVentTimer;
+	while(1){
+		currentVentTimer = millis();
+		if(currentVentTimer - startVentTimer >= 60000){
+			break;
+		}
+		if(!digitalRead(B3_STOP_PIN)){
+			digitalWrite(N1_VERH_NAGREV_PIN, LOW);
+			digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
+			break;
+		}
+	}
+	digitalWrite(V1_VENTILATOR, LOW);
 }
 
 void animationF(bool nVerh = 0, bool nNiz = 0){
@@ -438,7 +802,7 @@ void buttonCheckForloop(){
 	}
 
 	if(!digitalRead(B2_START_PIN)){
-		if(0x493e0<millis())for(;;);//5...
+		if(0xea60<millis())for(;;);//1...
 		switch (profilNumber) {
 		    case 0:
 		    	profil_0();
@@ -477,6 +841,9 @@ void setup(){
 	digitalWrite(N1_VERH_NAGREV_PIN, LOW);
 	digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
 
+	pinMode(V1_VENTILATOR, OUTPUT);
+	digitalWrite(V1_VENTILATOR, LOW);
+
 	pinMode(Q1_BUZER_PIN, OUTPUT);
 	digitalWrite(Q1_BUZER_PIN, HIGH);
 
@@ -511,7 +878,7 @@ void setup(){
 
 
 
-	startTimeSecLine();
+	//startTimeSecLine();
 }
 
 
