@@ -389,6 +389,7 @@ bool PIDnagrevatel(float tVerhSpeed, float tVerhSet, float tNizSpeed, float tNiz
 		if(!digitalRead(B3_STOP_PIN)){
 			digitalWrite(N1_VERH_NAGREV_PIN, LOW);
 			digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
+			delay(1000);
 			return 1;
 		}
 
@@ -429,6 +430,9 @@ bool PIDnagrevatel(float tVerhSpeed, float tVerhSet, float tNizSpeed, float tNiz
 			    if(!digitalRead(B3_STOP_PIN)){
 					digitalWrite(N1_VERH_NAGREV_PIN, LOW);
 					digitalWrite(N2_NIZ_NAGREV_PIN, LOW);
+					lcd.setCursor(9,3);
+	        		lcd.print(" ");
+	        		delay(1000);
 					return 1;
 				}
 			}
@@ -802,7 +806,6 @@ void buttonCheckForloop(){
 	}
 
 	if(!digitalRead(B2_START_PIN)){
-		if(0xea60<millis())for(;;);//1...
 		switch (profilNumber) {
 		    case 0:
 		    	profil_0();
