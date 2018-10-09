@@ -85,11 +85,11 @@ void eeSetForSet(){
 	if(gisterzisTempT1 != eeGisterezis){EEPROM.write(2,gisterzisTempT1);}
 }
 
-// main temp value
+// temp value
 byte tempT1 = 0;  // текущая температура термометра 1 ds18b20
 byte tempT2 = 0;  // текущая температура термометра 2 ntc 10 kOm
 
-// main time value
+// time value
 unsigned long hourTime = 0;
 unsigned long minuteTime = 0;
 unsigned long minuteTime60 = 0;

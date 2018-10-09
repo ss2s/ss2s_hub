@@ -6,7 +6,7 @@
 // AVARIA 1           превышение температуры t1
 // AVARIA 201         0.8 t1
 
-// AVARIA 2           превышение температуры peregrevT2 (если термостат в аварии 2 типа активен. настройка переходов аварии на строках 333-337)
+// AVARIA 2           превышение температуры peregrevT2 (если термостат в аварии 2 типа активен. настройка переходов аварии на строках 330-335)
 // AVARIA 202         превышение температуры t2
 
 // AVARIA 3           превышение температуры t3
@@ -31,7 +31,7 @@
 #define T1_VIHLOP_TERMOPARA_SENSOR_CS_PIN 3   // термопара CS
 #define T1_VIHLOP_TERMOPARA_SENSOR_SCK_PIN 4  // термопара SCK
 // теплоноситель t2
-#define T2_TEPLONOSITEL_SENSOR_PIN A0  // термометр теплоносителя
+#define T2_TEPLONOSITEL_SENSOR_PIN A0  // термометр теплоносителя 14
 // термозащита низ t3 термопара t3 термометр защиты трубы низ
 #define T3_SAFE_DOWN_TERMOPARA_SENSOR_SO_PIN 5
 #define T3_SAFE_DOWN_TERMOPARA_SENSOR_CS_PIN 6
@@ -41,7 +41,7 @@
 #define T4_SAFE_UP_TERMOPARA_SENSOR_CS_PIN 9
 #define T4_SAFE_UP_TERMOPARA_SENSOR_SCK_PIN 10
 // датчик давления
-#define P1_PRESSURE_SENSOR_PIN A1       // датчик давления
+#define P1_PRESSURE_SENSOR_PIN A1       // датчик давления 15
 // Бипер
 #define Q1_SIGNAL_BIPER_PIN 11          // сигнальный бипер
 // Заслонка
@@ -49,10 +49,10 @@
 // Котел
 #define R1_KOTEL_RELE_PIN 13            // реле для подключения электро котла
 // кнопки
-#define B1_BUTTONS_PIN A2               // кнопки управления
+#define B1_BUTTONS_PIN A2               // кнопки управления 16
 // светодиоды
 #define L1_RED_PIN 1
-#define L1_GREEN_PIN 17
+#define L1_GREEN_PIN 17                 // A3
 
 // НАСТРОЙКИ: //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -88,6 +88,8 @@ bool termostatEnable = 1;                     // разрешение испол
 #define AVARIYNIY_TERMOSTAT 1  // 1 при аварии ПЕРВОГО типа включится электрокотол. 0 при аварии не вкл котел
 #define AVARIYNIY_TERMOSTAT_AV2 0  // 1 при аварии ВТОРОГО типа включится электрокотол. 0 при аварии не вкл котел
 #define OJIDANIE_TERMOSTATA_AVARII 6000  // задержка до вкл термостата при аварии в миллисекундах
+
+#define VREMYA_ZATUHANIA_S 600  // время затухания в секундах. до перехода в режим термостат и закрытия заслонки
 
 // КОНЕЦ НАСТРОЕК //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -133,7 +135,7 @@ byte servoAngle3 = servoAngle1 * 3;
 int servoStatePlus1 = 2;
 
 // пользовательские символы:
-byte customCharGradus0[8] = {  // колокольчик для дисплея
+byte customCharGradus0[8] = {  // gradus
 	0b01100,
 	0b10010,
 	0b10010,
@@ -322,6 +324,9 @@ void lcdDrawSensorVal(){  // функция вывода показаний да
 
 bool avariaALARM(byte tip){
 
+	digitalWrite(L1_GREEN_PIN, LOW);
+	digitalWrite(L1_RED_PIN, HIGH);
+
 	int avariaVal = 0;
 	if(tip == 1 || tip == 201){avariaVal = t1VihlopTermoparaCurentTemp;}
 	else if(tip == 2 || tip == 202){avariaVal = t2TeplonositelCurentTemp;}
@@ -354,12 +359,23 @@ bool avariaALARM(byte tip){
 
 			myBeeper(4);
 
-			delay(10000);
+			delay(2000);
+			digitalWrite(L1_RED_PIN, HIGH);
+			delay(2000);
+			digitalWrite(L1_RED_PIN, LOW);
+			delay(2000);
+			digitalWrite(L1_RED_PIN, HIGH);
+			delay(2000);
+			digitalWrite(L1_RED_PIN, LOW);
+			delay(2000);
+			digitalWrite(L1_RED_PIN, HIGH);
 		}
 	}
 }
 
 bool avariaALARM2(byte tip){
+	digitalWrite(L1_GREEN_PIN, LOW);
+	digitalWrite(L1_RED_PIN, HIGH);
 	int avariaVal = 0;
 	if(tip == 1 || tip == 201){avariaVal = p1CurentPressure;}
 	else if(tip == 2 || tip == 202){avariaVal = t2TeplonositelCurentTemp;}
@@ -552,7 +568,7 @@ bool osnovnoyCiklGoreniaPechi(){
 				servoStatePlus1 ++;
 			}
 			safeCounter2 ++;
-			if(safeCounter2 >= 6){
+			if(safeCounter2 >= 3){  // ускорение открытия серво
 			    safeCounter2 = 0;
 			}
 		}
@@ -618,13 +634,14 @@ bool zatuhahiePechi(){
 	myservo.write(servoAngle1);
 	servoStatePlus1 = 1;
 
-	for(int i=0; i<600; i++){  // 10 minut
+	for(int i=0; i<VREMYA_ZATUHANIA_S; i++){  // 10 minut
 		digitalWrite(L1_GREEN_PIN, ledState);
 		digitalWrite(L1_RED_PIN, ledState);
 		ledState = !ledState;
 	    termostatElectroKotla();
 	    if(zaderjkaSecY(1)){return 1;}
 	}
+
 	return 0;
 }
 
@@ -795,9 +812,13 @@ void setup(){
 
 	// промежуточные углы серво
 	if(servoAngle0 < servoAngle4){
-		servoAngle2 = servoAngle4 / 2;
 		servoAngle1 = servoAngle4 / 4;
-		servoAngle3 = servoAngle1 * 3;
+		servoAngle2 = servoAngle4 / 2;
+		servoAngle3 = servoAngle4 / 4 * 3;
+	}else{
+		servoAngle1 = servoAngle0 / 4 * 3;
+		servoAngle2 = servoAngle0 / 2;
+		servoAngle3 = servoAngle0 / 4;
 	}
 
 	lcd.begin(); // иниализация дисплея LCD 16/2
