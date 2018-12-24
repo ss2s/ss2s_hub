@@ -38,7 +38,7 @@
 
 //  111	      128  //  125 kHz по умолчанию  112 мкс
 
-//  БЫСТРЫЙ analogRead(); в 4 раза быстрее стандартного. стандартный 125 kHz 9600 сумплов, бистрый 500 kHz 37000 семплов
+//  БЫСТРЫЙ analogRead(); в 4 раза быстрее стандартного. стандартный 125 kHz 9600 семплов, бистрый 500 kHz 37000 семплов
 static inline uint16_t analogReadFast(byte analog_pin) {
 	ADMUX = _BV(REFS0) | analog_pin;
 	ADCSRA = _BV(ADSC) | _BV(ADEN) | _BV(ADPS2) | _BV(ADPS0);	//500 kHz
