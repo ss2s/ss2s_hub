@@ -5,13 +5,15 @@
 
 #define PORT_ADS 0  // порт ADS1115 куда подключается датчик, от 0 до 3
 
-char srData; // переменная для хранения считывания управляющего байта символа
+//static char outstr[15];  // масив для строки с точкой
+int16_t adc0, maxADC = 0;
+float maxTemp = 0;
+
+char serResiveData; // переменная для хранения считывания управляющего байта символа
 
 Adafruit_ADS1115 ads;  /* Use this for the 16-bit version */
 float multiplierADS = 0.1875F; /* ADS1115  @ +/- 6.144V gain (16-bit results) */
 
-// resive and convert termocouple values and find MAX val
-// transmite temp to serial_1
 void setup(){
 	Serial.begin(250000);
 	delay(10);
@@ -22,8 +24,24 @@ void setup(){
 
 void loop(){
 	while(1){
+		// resive and convert termocouple values and find MAX val
+		adc0 = ads.readADC_SingleEnded(PORT_ADS);
+		if(maxADC < adc0){maxADC = adc0;}
+
 		if (Serial.available() > 0){
-		    
+		    serResiveData = Serial.read(); // управляющий байт (символ's') определяющий старт отправки температуры
+		    if (serResiveData == 's'){
+		    	maxTemp = ((maxADC * multiplierADS / 1000) - 1.25) / 0.005;
+
+				// transmite temp to serial_1
+				maxTemp = int(maxTemp * 10);
+		    	Serial.print('t');
+		    	Serial.println(maxTemp);
+				// dtostrf(maxTemp, 7, 1, outstr);
+				// Serial.println(outstr);
+		    	
+		    	maxADC = 0;
+		    }
 		}
 	}
 }
