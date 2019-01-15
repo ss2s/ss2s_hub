@@ -21,9 +21,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // НАСТРОЙКИ:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define SET_CLOK_FOR_PROG 0  // если 1 то установка часов будет при записи программы. если 0 то нет
-#define SDCHEK 1  // 1 ЕСЛИ ФЛЕШКИ НЕТ ТО НЕ СТАРТОВАТЬ. 0 СТАРТОВАТЬ В ЛЮБОМ СЛУЧАЕ
-#define DEFMaxFileToSD 1000  // макс количество файлов на флешке
+#define SET_CLOK_FOR_PROG 0      // если 1 то установка часов будет при записи программы. если 0 то нет
+#define SDCHEK 1                 // 1 ЕСЛИ ФЛЕШКИ НЕТ ТО НЕ СТАРТОВАТЬ. 0 СТАРТОВАТЬ В ЛЮБОМ СЛУЧАЕ
+#define DEFMaxFileToSD 1000      // макс количество файлов на флешке. макс 65535
+#define EEPROM_WRITE_KEY 123     // код перезаписи EEPROM < 255. если изменить то EEPROM перезапишется из оперативки
+#define EEPROM_WRITE_K_ADDR 200  // адрес кода перезаписи EEPROM . 200 <= x < 500
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -47,14 +49,16 @@ int treckingDay;          // переменная для отслеживани�
 float val_O2 = 0;
 float val_T1 = 0;
 float val_T2 = 0;
-float val_Press = 0;
+float val_Press_inh = 0;  // мин
+float val_Press_exh = 0;  // макс
 float val_CO2 = 0;
 float val_CO = 0;
 // МАКС значения сенсоров за минуту
-float maxVal_O2 = 0;
+float minVal_O2 = 0;
 float maxVal_T1 = 0;
 float maxVal_T2 = 0;
-float maxVal_Press = 0;
+float maxVal_Press_inh = 0;  // мин
+float maxVal_Press_exh = 0;  // макс
 float maxVal_CO2 = 0;
 float maxVal_CO = 0;
 // уровень заряда батареи в %
@@ -97,7 +101,7 @@ File dataFile;                  // переменная для работы с �
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// EEPROM read write calibration F
+// EEPROM read write calibration F res
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // чтение из EEPROM 4 байта float
 float EEPROM_float_read(int addr){  
@@ -110,18 +114,67 @@ float EEPROM_float_read(int addr){
 // запись в EEPROM 4 байта float
 void EEPROM_float_write(int addr, float data){
 	addr *= 4;
+	if (EEPROM_float_read(addr) == data){return;}  // если сохраняемое неотличается от сохраненного, не сохранять
 	byte raw[4];
 	(float&)raw = data;
 	for(byte i = 0; i < 4; i++) EEPROM.write(addr+i, raw[i]);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // запись/чтение калибровочных значений из/в EEPROM
-void eePackWrite(){ // запись значений калибровки в EEPROM
-
+void eeSingleWriteOfRam(byte addrName){ // калибровка и запись значений калибровки в EEPROM
+	for(int i=0; i<4; i++){	
+		switch (addrName){
+		    case 0:
+			EEPROM_float_write(0+i, calibr_T1_Mas[i]);
+		    break;
+		    case 1:
+			EEPROM_float_write(4+i, calibr_T2_Mas[i]);
+		    break;
+		    case 2:
+			EEPROM_float_write(8+i, calibr_CO2_Mas[i]);
+		    break;
+		    case 3:
+			EEPROM_float_write(12+i, calibr_O2_Mas[i]);
+		    break;
+		    case 4:
+			EEPROM_float_write(16+i, calibr_CO_Mas[i]);
+		    break;
+		    case 5:
+			EEPROM_float_write(20+i, calibr_Press_Mas[i]);
+		    break;
+		}
+	}
 }
-void eePackRead(){ // чтение значений калибровки из EEPROM
 
+void eePackWrite(){ // запись всех значений калибровки в EEPROM (ОДНОРАЗОВАЯ ФУНКЦИЯ ДЛЯ ЗАПИСИ EEPROM ПРИ 1 ПРОШИВКЕ)
+	if(EEPROM.read(EEPROM_WRITE_K_ADDR) == EEPROM_WRITE_KEY){return;}  // если код совпадает то не перезаписывать
+	for(int i=0; i<4; i++){
+	    EEPROM_float_write(0+i, calibr_T1_Mas[i]);
+	    EEPROM_float_write(4+i, calibr_T2_Mas[i]);
+	    EEPROM_float_write(8+i, calibr_CO2_Mas[i]);
+	    EEPROM_float_write(12+i, calibr_O2_Mas[i]);
+	    EEPROM_float_write(16+i, calibr_CO_Mas[i]);
+	    EEPROM_float_write(20+i, calibr_Press_Mas[i]);
+	}
+	EEPROM.write(EEPROM_WRITE_K_ADDR, EEPROM_WRITE_KEY);
 }
+void eePackRead(){ // чтение всех значений калибровки из EEPROM
+	for(int i=0; i<4; i++){
+	    calibr_T1_Mas[i] = EEPROM_float_read(0+i);
+	    calibr_T2_Mas[i] = EEPROM_float_read(4+i);
+	    calibr_CO2_Mas[i] = EEPROM_float_read(8+i);
+	    calibr_O2_Mas[i] = EEPROM_float_read(12+i);
+	    calibr_CO_Mas[i] = EEPROM_float_read(16+i);
+	    calibr_Press_Mas[i] = EEPROM_float_read(20+i);
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// CALIBRATION FUNCTION
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -152,7 +205,7 @@ void dataSetToFileSTRT(){
 		globalFileIndex ++;
 	}
 
-	dataString += "N 	DATE: 	TIME: 	O2% 	Temp 1 	Temp 2 	Pres kPa 	CO2% 	O2%";
+	dataString += "N 	DATE: 	TIME: 	O2% 	Temp 1 	Temp 2 	Pres inh kPa 	Pres exh kPa 	CO2% 	O2%";
 	dataString += "\n";
 
 	dataFile = SD.open(indexToNameFileSD(globalFileIndex), FILE_WRITE);
@@ -165,7 +218,7 @@ void dataSetToFileSTRT(){
 
 }
 
-// ФУНКЦИЯ ЗАПИСИ ИНФОРМАЦИИ ИЗ ОПЕРАТИВНОЙ ПАМЯТИ В ФАЙЛ НА ФЛЭШКЕ КАЖДУЮ МИНУТУ
+// ФУНКЦИЯ ЗАПИСИ ИНФОРМАЦИИ В ФАЙЛ НА ФЛЭШКЕ КАЖДУЮ МИНУТУ
 void dataSetToFileWHL(){
 	String dataString = "";
  	NppStr ++;
@@ -183,13 +236,15 @@ void dataSetToFileWHL(){
 	dataString += String(realHour); dataString += ":";
 	dataString += String(realMinute);
 	dataString += " 	";
-	dataString += String(maxVal_O2);
+	dataString += String(minVal_O2);
 	dataString += " 	";
 	dataString += String(maxVal_T1);
 	dataString += " 	";
 	dataString += String(maxVal_T2);
 	dataString += " 	";
-	dataString += String(maxVal_Press);
+	dataString += String(maxVal_Press_inh);
+	dataString += " 	";
+	dataString += String(maxVal_Press_exh);
 	dataString += " 	";
 	dataString += String(maxVal_CO2);
 	dataString += " 	";
@@ -203,7 +258,7 @@ void dataSetToFileWHL(){
  	 	Serial1.println(indexToNameFileSD(globalFileIndex));
  	}
 
- 	if(recordFlag == 0){dataFile.close();}
+ 	//if(recordFlag == 0){dataFile.close();}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -229,7 +284,8 @@ inline void poolTermoparaSlow2(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос датчика ДАВЛЕНИЯ через сериал2
 inline void poolPressure(){
-	val_Press = 1;
+	val_Press_inh = 1;
+	val_Press_exh = 1;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос датчика CO2
@@ -270,7 +326,8 @@ void calibrationAllSensors(){
 	val_CO = flap(val_CO, calibr_CO_Mas[0], calibr_CO_Mas[1], calibr_CO_Mas[2], calibr_CO_Mas[3]);
 	val_T1 = flap(val_T1, calibr_T1_Mas[0], calibr_T1_Mas[1], calibr_T1_Mas[2], calibr_T1_Mas[3]);
 	val_T2 = flap(val_T2, calibr_T2_Mas[0], calibr_T2_Mas[1], calibr_T2_Mas[2], calibr_T2_Mas[3]);
-	val_Press = flap(val_Press, calibr_Press_Mas[0], calibr_Press_Mas[1], calibr_Press_Mas[2], calibr_Press_Mas[3]);
+	val_Press_inh = flap(val_Press_inh, calibr_Press_Mas[0], calibr_Press_Mas[1], calibr_Press_Mas[2], calibr_Press_Mas[3]);
+	val_Press_exh = flap(val_Press_exh, calibr_Press_Mas[0], calibr_Press_Mas[1], calibr_Press_Mas[2], calibr_Press_Mas[3]);
 	val_CO2 = flap(val_CO2, calibr_CO2_Mas[0], calibr_CO2_Mas[1], calibr_CO2_Mas[2], calibr_CO2_Mas[3]);
 	val_O2 = flap(val_O2, calibr_O2_Mas[0], calibr_O2_Mas[1], calibr_O2_Mas[2], calibr_O2_Mas[3]);
 }
@@ -290,7 +347,7 @@ void finalPoolAndCalibrationAllSensors(){
 void chekVremya(){
 	DateTime = clock.getDateTime();  // Считываем c часов текущие значения даты и времени в сущность DateTime
 	realSecond = int(DateTime.second);
-	realMinute = int(DateTime.minute);  //  Меняем значение в переменной отслеживания минут на текущее
+	realMinute = int(DateTime.minute);
 	realHour = int(DateTime.hour);
 	realDay = int(DateTime.day);
 	realMonth = int(DateTime.month);
@@ -309,21 +366,32 @@ void finalCheckChangeSecondOrMinuteAndPerformAction(){
 		finalPoolAndCalibrationAllSensors();
 
 		// записываем макс значения за секунду в макс значения за минуту
-		if(maxVal_O2 < val_O2 && recordFlag){maxVal_O2 = val_O2;}
+		if(minVal_O2 > val_O2 && recordFlag){minVal_O2 = val_O2;}
 		if(maxVal_T1 < val_T1 && recordFlag){maxVal_T1 = val_T1;}
 		if(maxVal_T2 < val_T2 && recordFlag){maxVal_T2 = val_T2;}
-		if(maxVal_Press < val_Press && recordFlag){maxVal_Press = val_Press;}
+		if(maxVal_Press_inh > val_Press_inh && recordFlag){maxVal_Press_inh = val_Press_inh;}
+		if(maxVal_Press_exh < val_Press_exh && recordFlag){maxVal_Press_exh = val_Press_exh;}
 		if(maxVal_CO2 < val_CO2 && recordFlag){maxVal_CO2 = val_CO2;}
 		if(maxVal_CO < val_CO && recordFlag){maxVal_CO = val_CO;}
 
 		// управление диодом и бузером
+		if(recordFlag == 0){ // BLUE
+		}
+		else if(recordFlag && val_CO2 >= 3 || val_CO >= 170 || val_O2 < 17){ // RED, SIGNAL
+		}
+		else if(recordFlag && val_CO2 < 3 && val_CO < 170 && val_O2 < 21){ // YELOW
+		}
+		else if(recordFlag && val_CO2 < 3 && val_CO < 170 && val_O2 >= 21){ // GREEN
+		}
+
 		// отправляем значения за секунду по радио
 
 		// сбрасываем макс значения за секунду
 		val_O2 = 0;
 		val_T1 = 0;
 		val_T2 = 0;
-		val_Press = 0;
+		val_Press_inh = 0;
+		val_Press_exh = 0;
 		val_CO2 = 0;
 		val_CO = 0;
 
@@ -335,10 +403,11 @@ void finalCheckChangeSecondOrMinuteAndPerformAction(){
 	    	dataSetToFileWHL();
 
 	    	// сбрасываем макс значение за минуту
-	    	maxVal_O2 = 0;
+	    	minVal_O2 = 0;
 			maxVal_T1 = 0;
 			maxVal_T2 = 0;
-			maxVal_Press = 0;
+			maxVal_Press_inh = 0;
+			maxVal_Press_exh = 0;
 			maxVal_CO2 = 0;
 			maxVal_CO = 0;
 
@@ -360,10 +429,12 @@ bool buttonChangeREC(){
 				recordFlag = 1;
 				delay(500);
 				dataSetToFileSTRT();
+				Serial.println("start REC");
 			}
 			else{
 				recordFlag = 0;
 				dataFile.close();
+				Serial.println("stop REC");
 				delay(500);
 			}
 		}
@@ -384,6 +455,8 @@ void setup(){
 	Serial2.begin(250000);
 	delay(100);
 
+	eePackWrite();
+	eePackRead();
 
 	// ЧАСЫ: init
 	Wire.begin();
