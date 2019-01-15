@@ -23,6 +23,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define SET_CLOK_FOR_PROG 0  // если 1 то установка часов будет при записи программы. если 0 то нет
 #define SDCHEK 1  // 1 ЕСЛИ ФЛЕШКИ НЕТ ТО НЕ СТАРТОВАТЬ. 0 СТАРТОВАТЬ В ЛЮБОМ СЛУЧАЕ
+#define DEFMaxFileToSD 1000  // макс количество файлов на флешке
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -42,7 +43,7 @@ int treckingSecond = 61;  // Переменная для отслеживани�
 int treckingMinute = 61;  // Переменная для отслеживания изменения минут
 int treckingHour = 25;    // переменная для отслеживания изменения часов
 int treckingDay;          // переменная для отслеживания изменения дня
-// значения сенсоров
+// значения сенсоров за секунду
 float val_O2 = 0;
 float val_T1 = 0;
 float val_T2 = 0;
@@ -56,17 +57,22 @@ float maxVal_T2 = 0;
 float maxVal_Press = 0;
 float maxVal_CO2 = 0;
 float maxVal_CO = 0;
-// уровень заряда батареи
+// уровень заряда батареи в %
 byte val_BatteryLevel_TX = 50;
-// калибровка всех датчиков. значения
+// калибровка всех датчиков. значения: inMin, outMin, inMax, outMax
 float calibr_T1_Mas[] = {0, 1, 0, 10};
 float calibr_T2_Mas[] = {0, 1, 0, 10};
 float calibr_CO2_Mas[] = {0, 1, 0, 10};
 float calibr_O2_Mas[] = {0, 1, 0, 10};
 float calibr_CO_Mas[] = {0, 1, 0, 10};
 float calibr_Press_Mas[] = {0, 1, 0, 10};
+
 // флаг записи на флешку. если 1 то запись идет если 0 то нет
 bool recordFlag = 0;
+// номер файла для записи, подбирается автоматически
+unsigned int globalFileIndex = 1;
+// номер строки в файле по порядку
+unsigned long NppStr = 0;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -123,10 +129,6 @@ void eePackRead(){ // чтение значений калибровки из EE
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // microSD write F. функция записи на микро СД
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define DEFMaxFileToSD 1000
-unsigned int globalFileIndex = 1;
-unsigned long Npp = 0;
-
 // ФУНКЦИЯ СОЗДАНИЯ НАЗВАНИЯ ФАЙЛА ПО ИНДЕКСУ
 String indexToNameFileSD(unsigned int _index){
 	unsigned int index = _index;
@@ -140,7 +142,7 @@ String indexToNameFileSD(unsigned int _index){
 // ФУНКЦИЯ ЗАПИСИ ИНФОРМАЦИИ В ФАЙЛ НА ФЛЭШКЕ ПРИ СТАРТЕ
 void dataSetToFileSTRT(){
 	String dataString = "";
- 	Npp = 0;
+ 	NppStr = 0;
 
 	if(globalFileIndex > DEFMaxFileToSD){
 		return;
@@ -150,7 +152,7 @@ void dataSetToFileSTRT(){
 		globalFileIndex ++;
 	}
 
-	dataString += "N 	DATE: 	TIME: 	O2% 	Temp 1 	Temp 2 	Pres kPa 	CO2% 	O2% 	BAT%";
+	dataString += "N 	DATE: 	TIME: 	O2% 	Temp 1 	Temp 2 	Pres kPa 	CO2% 	O2%";
 	dataString += "\n";
 
 	dataFile = SD.open(indexToNameFileSD(globalFileIndex), FILE_WRITE);
@@ -166,13 +168,13 @@ void dataSetToFileSTRT(){
 // ФУНКЦИЯ ЗАПИСИ ИНФОРМАЦИИ ИЗ ОПЕРАТИВНОЙ ПАМЯТИ В ФАЙЛ НА ФЛЭШКЕ КАЖДУЮ МИНУТУ
 void dataSetToFileWHL(){
 	String dataString = "";
- 	Npp ++;
+ 	NppStr ++;
 
 	if(globalFileIndex > DEFMaxFileToSD){
 		return;
 	}
 
-	dataString += String(Npp);
+	dataString += String(NppStr);
 	dataString += " 	";
 	dataString += String(realYear); dataString += ".";
 	dataString += String(realMonth); dataString += ".";
@@ -193,8 +195,6 @@ void dataSetToFileWHL(){
 	dataString += " 	";
 	dataString += String(maxVal_CO);
 	dataString += " 	";
-	dataString += String(val_BatteryLevel_TX);
-	dataString += "\n";
 
  	if (dataFile){
  	 	dataFile.println(dataString);
