@@ -29,13 +29,13 @@ void loop(){
 		if(maxADC < adc0){maxADC = adc0;}
 
 		if (Serial.available() > 0){
-		    serResiveData = Serial.read(); // управляющий байт (символ's') определяющий старт отправки температуры
-		    if (serResiveData == 's'){
-		    	maxTemp = ((maxADC * multiplierADS / 1000) - 1.25) / 0.005;
+		    serResiveData = Serial.read(); // управляющий байт (символ't') определяющий старт отправки температуры
+		    if (serResiveData == 't'){
+		    	maxTemp = ((maxADC * multiplierADS / 1000.0) - 1.25) / 0.005;
 
 				// transmite temp to serial_1
-				maxTemp = int(maxTemp * 10);
-		    	Serial.print('t');
+				// maxTemp = int(maxTemp * 10);
+		    	Serial.print('m');
 		    	Serial.println(maxTemp);
 				// dtostrf(maxTemp, 7, 1, outstr);
 				// Serial.println(outstr);

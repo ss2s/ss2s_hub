@@ -1,25 +1,22 @@
+
 // MEGA 2560
+// #    pragma message "SS2S MEGA 2560"  // SS2S
 
 #include "Arduino.h"            // Arduino lib
 #include <SPI.h>                // SPI lib
-#include <SD.h>                 // Micro SD lib
-#include <Wire.h>               // библиотека I2C
-#include "DS3231.h"             // библиотека часов
-
-#include "nRF24L01.h"           // NRF lib
-#include "RF24.h"               // NRF lib
-
+#include <Wire.h>               // I2C lib
 #include <EEPROM.h>             // EEPROM lib
 
+#include "Adafruit_ADS1015.h"   // ads1115 ADC 16 BIT lib
+#include "max6675.h"            // T2 termopara lib
+#include "DS3231.h"             // ds3231 clock lib
+#include <SD.h>                 // Micro SD lib
+#include "nRF24L01.h"           // NRF radio config
+#include "RF24.h"               // NRF radio lib
+#include "FastLED.h"            // WS2812B svetodiod lib 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// РАСПИНОВКА:
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define CHIPSELEKT 49  // пин чип селект для флэшки: SPI 50 MISO 51 MOSI 52 SCK 49 CHIPSELEKT
-#define START_STOP_BUTTON_PIN 30  // кнопка включения выключения записи. замыкать на землю
 
-RF24 radio(9,53);  // nrf init
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // НАСТРОЙКИ:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -28,6 +25,35 @@ RF24 radio(9,53);  // nrf init
 #define DEFMaxFileToSD 1000      // макс количество файлов на флешке. макс 65535
 #define EEPROM_WRITE_KEY 123     // код перезаписи EEPROM < 255. если изменить то EEPROM перезапишется из оперативки
 #define EEPROM_WRITE_K_ADDR 200  // адрес кода перезаписи EEPROM . 200 <= x < 500
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+#define BEEPER_FREQ 5000  // частота аварийной пищалки в Герцах
+#define BEEPER_DURATION 1000  // длительность сигнала аварийной пищалки в миллисекундах, не больше 1000
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// РАСПИНОВКА Arduino:
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#define CHIPSELEKT 53  // пин чип селект для флэшки: SPI 50 MISO 51 MOSI 52 SCK 49 CHIPSELEKT
+#define START_STOP_BUTTON_PIN 30  // кнопка включения выключения записи. замыкать на землю
+# define BEEPER_PIN 4  // пин аварийной пищалки
+
+// термопара t2
+#define T2_TERMOPARA_SO_PIN 5
+#define T2_TERMOPARA_CS_PIN 6
+#define T2_TERMOPARA_SCK_PIN 7
+#define LED_DATA_PIN 8 // led pin
+
+RF24 radio(48,49);  // nrf init CE, CSN  nrf init:
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// РАСПИНОВКА ads1115:
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#define PORT_0_O2_ADS1 0   // порт ADS1115 куда подключается датчик O2
+#define PORT_1_CO2_ADS1 1  // порт ADS1115 куда подключается датчик CO2
+#define PORT_2_CO_ADS1 2   // порт ADS1115 куда подключается датчик CO
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -48,6 +74,8 @@ int treckingMinute = 61;  // Переменная для отслеживани�
 int treckingHour = 25;    // переменная для отслеживания изменения часов
 int treckingDay;          // переменная для отслеживания изменения дня
 // значения сенсоров за секунду
+int16_t adc0_O2, adc1_CO2, adc2_CO;
+float multiplierADS = 0.1875F; // ADS1115 6.144V gain (16-Bit results). делитель для перевода показаний АЦП в вольты
 float val_O2 = 0;
 float val_T1 = 0;
 float val_T2 = 0;
@@ -59,19 +87,19 @@ float val_CO = 0;
 float minVal_O2 = 0;
 float maxVal_T1 = 0;
 float maxVal_T2 = 0;
-float maxVal_Press_inh = 0;  // мин
+float minVal_Press_inh = 0;  // мин
 float maxVal_Press_exh = 0;  // макс
 float maxVal_CO2 = 0;
 float maxVal_CO = 0;
 // уровень заряда батареи в %
 byte val_BatteryLevel_TX = 50;
 // калибровка всех датчиков. значения: inMin, outMin, inMax, outMax
-float calibr_T1_Mas[] = {0, 1, 0, 10};
-float calibr_T2_Mas[] = {0, 1, 0, 10};
-float calibr_CO2_Mas[] = {0, 1, 0, 10};
-float calibr_O2_Mas[] = {0, 1, 0, 10};
-float calibr_CO_Mas[] = {0, 1, 0, 10};
-float calibr_Press_Mas[] = {0, 1, 0, 10};
+float calibr_O2_Mas[] = {0, 1000, 0, 1000};
+float calibr_T1_Mas[] = {0, 1000, 0, 1000};
+float calibr_T2_Mas[] = {0, 1000, 0, 1000};
+float calibr_CO2_Mas[] = {0, 1000, 0, 1000};
+float calibr_CO_Mas[] = {0, 1000, 0, 1000};
+float calibr_Press_Mas[] = {0, 1000, 0, 1000};
 
 // флаг записи на флешку. если 1 то запись идет если 0 то нет
 bool recordFlag = 0;
@@ -79,6 +107,9 @@ bool recordFlag = 0;
 unsigned int globalFileIndex = 1;
 // номер строки в файле по порядку
 unsigned long NppStr = 0;
+
+// BEEP flag для реализации посекундной пищалки = 1
+bool beepFlag = 1;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -86,14 +117,20 @@ unsigned long NppStr = 0;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // dataTypes and init:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// clock dataType
+// T2 termopara init:
+MAX6675 thermocouple2(T2_TERMOPARA_SCK_PIN, T2_TERMOPARA_CS_PIN, T2_TERMOPARA_SO_PIN);
+// nrf init:
+byte addressNRF[][6] = {"1Node", "2Node", "3Node", "4Node", "5Node", "6Node"}; //возможные номера труб
+// ads 1115 init:
+Adafruit_ADS1115 ads;         /* Use this for the 16-bit version */
+// clock init:
 DS3231 clock;                // Связываем объект clock с библиотекой DS3231
+// clock dataType
 RTCDateTime DateTime;        // Определяем переменную DateTime, как описанную структурой RTCDateTime
 // microSD  dataType
-File dataFile;                  // переменная для работы с флэшкой
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// nrf init:
-byte address[][6] = {"1Node", "2Node", "3Node", "4Node", "5Node", "6Node"}; //возможные номера труб
+File dataFile;               // переменная для работы с флэшкой
+// Define the Array of leds, LED dataType 1 светодиод
+CRGB iLed[1];
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -101,20 +138,21 @@ byte address[][6] = {"1Node", "2Node", "3Node", "4Node", "5Node", "6Node"}; //в
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // NRF rx and tx F
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void radioSetup(){
-	radio.begin(); //активировать модуль
-	radio.setAutoAck(1);         //режим подтверждения приёма, 1 вкл 0 выкл
-	radio.setRetries(0,15);     //(время между попыткой достучаться, число попыток)
-	radio.enableAckPayload();    //разрешить отсылку данных в ответ на входящий сигнал
-	radio.setPayloadSize(32);     //размер пакета, в байтах
-	radio.openReadingPipe(1,address[0]);      //хотим слушать трубу 0
-	radio.setChannel(0x60);  //выбираем канал (в котором нет шумов!)
-	radio.setPALevel (RF24_PA_MAX); //уровень мощности передатчика. На выбор RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX
-	radio.setDataRate (RF24_250KBPS); //скорость обмена. На выбор RF24_2MBPS, RF24_1MBPS, RF24_250KBPS
-	//должна быть одинакова на приёмнике и передатчике!
-	//при самой низкой скорости имеем самую высокую чувствительность и дальность!!
-	radio.powerUp(); //начать работу
-	radio.startListening();  //начинаем слушать эфир, мы приёмный модуль//
+void radioNrfSetup(){
+	radio.begin();                           // активировать модуль
+	radio.setAutoAck(1);                     // режим подтверждения приёма, 1 вкл 0 выкл
+	radio.setRetries(0,15);                  // (время между попыткой достучаться, число попыток)
+	radio.enableAckPayload();                // разрешить отсылку данных в ответ на входящий сигнал
+	radio.setPayloadSize(32);                // размер пакета, в байтах
+	radio.openWritingPipe(addressNRF[1]);    // передаем по трубе 1
+	radio.openReadingPipe(1,addressNRF[0]);  // хотим слушать трубу 0
+	radio.setChannel(0x60);                  // выбираем канал (в котором нет шумов!)
+	radio.setPALevel (RF24_PA_MAX); // уровень мощности передатчика RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX
+	radio.setDataRate (RF24_250KBPS);        // скорость обмена. На выбор RF24_2MBPS, RF24_1MBPS, RF24_250KBPS
+	                                         // при самой низкой скорости самуf высокуf чувствительность и дальность!!
+	radio.powerUp();                         // начать работу
+	radio.startListening();                  // начинаем слушать эфир, приёмный модуль
+	// radio.stopListening();                // First, stop listening so we can talk.
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -262,7 +300,7 @@ void dataSetToFileWHL(){
 	dataString += " 	";
 	dataString += String(maxVal_T2);
 	dataString += " 	";
-	dataString += String(maxVal_Press_inh);
+	dataString += String(minVal_Press_inh);
 	dataString += " 	";
 	dataString += String(maxVal_Press_exh);
 	dataString += " 	";
@@ -285,35 +323,69 @@ void dataSetToFileWHL(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ОПРОС ВСЕХ ДАТЧИКОВ И КАЛИБРОВКА
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// float Map
+float flap(float fX, float fY = 0, float fZ = 1000, float fA = 0, float fB = 1000){
+	return (fA*fX-fB*fX+fB*fY-fA*fZ)/(fY-fZ);
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос датчика O2
 inline void poolO2(){
-	val_O2 = 1;
+	// resive and convert O2 values
+	adc0_O2 = ads.readADC_SingleEnded(PORT_0_O2_ADS1);
+	val_O2 = adc0_O2 * multiplierADS / 1000.0;  // Volt
+	val_O2 = flap(val_O2, 0, 1.6, 0, 100);  // %
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос быстрой ТЕРМОПАРЫ1 через сериал1
 inline void poolTermoparaFast1(){
-	val_T1 = 1;
+	Serial1.println('t');
+	while(!Serial1.available()){}
+	char s_d = Serial1.read();
+	if(s_d == 'm'){
+		val_T1 = Serial1.parseFloat();
+	}else{
+		val_T1 = 0;
+	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос медленной ТЕРМОПАРЫ2
 inline void poolTermoparaSlow2(){
-	val_T2 = 1;
+	val_T2 = thermocouple2.readCelsius();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос датчика ДАВЛЕНИЯ через сериал2
 inline void poolPressure(){
-	val_Press_inh = 1;
-	val_Press_exh = 1;
+	Serial2.println('p');
+	while(!Serial2.available()){}
+	char s_d = Serial2.read();
+	if(s_d == 'i'){
+		val_Press_inh = Serial2.parseFloat();
+	}else{
+		val_Press_inh = 0;
+	}
+	while(s_d != 'e'){
+	}
+	s_d = Serial2.read();
+	if(s_d == 'e'){
+		val_Press_exh = Serial2.parseFloat();
+	}else{
+		val_Press_exh = 0;
+	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос датчика CO2
 inline void poolCO2(){
-	val_CO2 = 1;
+	// resive and convert CO2 values
+	adc1_CO2 = ads.readADC_SingleEnded(PORT_1_CO2_ADS1);
+	val_CO2 = adc1_CO2 * multiplierADS / 1000.0;  // Volt & %
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос датчика CO
 inline void poolCO(){
-	val_CO = 1;
+	// resive and convert CO values
+	adc2_CO = ads.readADC_SingleEnded(PORT_0_O2_ADS1);
+	val_CO = adc2_CO * multiplierADS / 1000.0;  // Volt
+	val_CO = flap(val_CO, 0, 3, 0, 2000);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос уровня заряда батареи
@@ -334,10 +406,6 @@ void poolAllSensors(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // калибровка всех датчиков
 
-// float Map
-float flap(float fX, float fY = 0, float fZ = 1, float fA = 0, float fB = 1){
-	return (fA*fX-fB*fX+fB*fY-fA*fZ)/(fY-fZ);
-}
 
 // калибровка всех сенсоров
 void calibrationAllSensors(){
@@ -387,19 +455,33 @@ void finalCheckChangeSecondOrMinuteAndPerformAction(){
 		if(minVal_O2 > val_O2 && recordFlag){minVal_O2 = val_O2;}
 		if(maxVal_T1 < val_T1 && recordFlag){maxVal_T1 = val_T1;}
 		if(maxVal_T2 < val_T2 && recordFlag){maxVal_T2 = val_T2;}
-		if(maxVal_Press_inh > val_Press_inh && recordFlag){maxVal_Press_inh = val_Press_inh;}
+		if(minVal_Press_inh > val_Press_inh && recordFlag){minVal_Press_inh = val_Press_inh;}
 		if(maxVal_Press_exh < val_Press_exh && recordFlag){maxVal_Press_exh = val_Press_exh;}
 		if(maxVal_CO2 < val_CO2 && recordFlag){maxVal_CO2 = val_CO2;}
 		if(maxVal_CO < val_CO && recordFlag){maxVal_CO = val_CO;}
 
 		// управление диодом и бузером
 		if(recordFlag == 0){ // BLUE
+			iLed[0] = CRGB::Blue;
+			FastLED.show();
 		}
-		else if(recordFlag && val_CO2 >= 3 || val_CO >= 170 || val_O2 < 17){ // RED, SIGNAL
+		else if(recordFlag && (val_CO2 >= 5 || val_CO >= 170 || val_O2 < 17)){ // RED, SIGNAL
+			iLed[0] = CRGB::Red;
+			FastLED.show();
+			if(beepFlag == 1){
+				tone(BEEPER_PIN, BEEPER_FREQ, BEEPER_DURATION);
+			}else{
+				noTone(BEEPER_PIN);
+			}
+			beepFlag = !beepFlag;
 		}
-		else if(recordFlag && val_CO2 < 3 && val_CO < 170 && val_O2 < 21){ // YELOW
+		else if(recordFlag && (val_CO2 >= 3 || val_CO >= 26 || val_O2 < 21)){ // YELOW
+			iLed[0] = CRGB(255, 255, 0);
+			FastLED.show();
 		}
-		else if(recordFlag && val_CO2 < 3 && val_CO < 170 && val_O2 >= 21){ // GREEN
+		else if(recordFlag && (val_CO2 < 3 && val_CO < 26 && val_O2 >= 21)){ // GREEN
+			iLed[0] = CRGB::Green;
+			FastLED.show();
 		}
 
 		// отправляем значения за секунду по радио
@@ -424,7 +506,7 @@ void finalCheckChangeSecondOrMinuteAndPerformAction(){
 	    	minVal_O2 = 0;
 			maxVal_T1 = 0;
 			maxVal_T2 = 0;
-			maxVal_Press_inh = 0;
+			minVal_Press_inh = 0;
 			maxVal_Press_exh = 0;
 			maxVal_CO2 = 0;
 			maxVal_CO = 0;
@@ -467,14 +549,18 @@ void setup(){
 
 	pinMode(START_STOP_BUTTON_PIN, INPUT_PULLUP);
 
-	// Serial init
-	Serial.begin(250000);
-	Serial1.begin(250000);
-	Serial2.begin(250000);
+	// serial init
+	Serial.begin(250000);    // serial
+	Serial1.begin(250000);   // T1 sensor
+	Serial2.begin(250000);   // Pressure sensor
 	delay(100);
 
-	eePackWrite();
-	eePackRead();
+	FastLED.addLeds<WS2812B, LED_DATA_PIN, RGB>(iLed, 1); // 1 светодиод WS2812B
+
+	radioNrfSetup();  // NRF setup
+
+	eePackWrite();  // 1st EEPROM write all calibration val
+	eePackRead();   // EEPROM read all calibration val
 
 	// ЧАСЫ: init
 	Wire.begin();
@@ -505,6 +591,10 @@ void setup(){
   	}else{
 		Serial.print(" microSD init ok");
   	}
+
+  	// ads setup
+  	ads.setGain(GAIN_TWOTHIRDS);  // 2/3x gain +/- 6.144V  1 bit = 3mV      0.1875mV (default)
+	ads.begin();
 }
 
 
