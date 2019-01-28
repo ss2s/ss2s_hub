@@ -36,7 +36,7 @@ void loop(){
 				// transmite temp to serial_1
 				// maxTemp = int(maxTemp * 10);
 		    	Serial.print('m');
-		    	Serial.println(maxTemp);
+		    	Serial.println(maxTemp, 1);  // передача температуры через serial, 1 знак после запятой
 				// dtostrf(maxTemp, 7, 1, outstr);
 				// Serial.println(outstr);
 		    	
