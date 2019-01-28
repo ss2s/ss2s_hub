@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // НАСТРОЙКИ:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#define BAT_LVL_READ_TYPE 0      // тип считывателя уровня батареи: 0-аналоговый,  1-цифровой
 #define SET_CLOK_FOR_PROG 0      // если 1 то установка часов будет при записи программы. если 0 то нет
 #define SDCHEK 1                 // 1 ЕСЛИ ФЛЕШКИ НЕТ ТО НЕ СТАРТОВАТЬ. 0 СТАРТОВАТЬ В ЛЮБОМ СЛУЧАЕ
 #define DEFMaxFileToSD 1000      // макс количество файлов на флешке. макс 65535
@@ -30,9 +31,21 @@
 
 #define BEEPER_FREQ 5000  // частота аварийной пищалки в Герцах
 #define BEEPER_DURATION 1000  // длительность сигнала аварийной пищалки в миллисекундах, не больше 1000
+
+// разрешение опроса датчиков 1:0   опр:не опр
+#define S_O2_ENABLE 1
+#define S_T1_ENABLE 1
+#define S_T2_ENABLE 1
+#define S_PR_ENABLE 1
+#define S_CO2_ENABLE 1
+#define S_CO_ENABLE 1
+#define S_BAT_ENABLE 1
+// значение для возврата если сенсор запрещен
+#define SENS_DISABLEREAD_VAL 7305
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // РАСПИНОВКА Arduino:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#define BAT_LEVEL_ANALOG_PIN A0  // пин подключения аналогового сигнала с батареи, если это предусмотрено в настр. выше
 #define CHIPSELEKT 49  // пин чип селект для флэшки: SPI 50 MISO 51 MOSI 52 SCK 49 CHIPSELEKT
 #define START_STOP_BUTTON_PIN 30  // кнопка включения выключения записи. замыкать на землю
 #define BEEPER_PIN 4  // пин аварийной пищалки
@@ -78,13 +91,13 @@ int16_t adc0_O2, adc1_CO2, adc2_CO;  // ads ADC read val
 float multiplierADS = 0.1875F; // ADS1115 6.144V gain (16-Bit results). делитель для перевода показаний АЦП в вольты
 // значения сенсоров за секунду структура для хранения значений и передачи по радио
 typedef struct transmiteStructure{
-	float val_T1 = 0;
-	float val_T2 = 0;
-	float val_CCO2 = 0;
-	float val_O2 = 0;
-	short val_CO = 0;
-	float val_Press_inh = 0;  // мин
-	float val_Press_exh = 0;  // макс
+	float val_T1 = SENS_DISABLEREAD_VAL;
+	float val_T2 = SENS_DISABLEREAD_VAL;
+	float val_CCO2 = SENS_DISABLEREAD_VAL;
+	float val_O2 = SENS_DISABLEREAD_VAL;
+	short val_CO = SENS_DISABLEREAD_VAL;
+	float val_Press_inh = SENS_DISABLEREAD_VAL;  // мин
+	float val_Press_exh = SENS_DISABLEREAD_VAL;  // макс
 	short minuteTest = 0;  // X>=<60  общее количество минут что идет тест
 	byte val_BatteryLevel_TX = 50;  // уровень заряда батареи в %
 	byte signalLevel = 0;                      // щетчик для контроля качества сигнала
@@ -282,11 +295,16 @@ void dataSetToFileSTRT(){
 	dataFile = SD.open(indexToNameFileSD(globalFileIndex), FILE_WRITE);
  	if(dataFile){
  	 	dataFile.println(dataString);
+ 	 	Serial.println();
+ 	 	Serial.println(" START RECORDING TO SD");
+ 	 	Serial.println();
  	}else{
- 	 	Serial1.print("error SD write ");
+ 	 	Serial1.print("error START SD write ");
  	 	Serial1.println(indexToNameFileSD(globalFileIndex));
  	}
+ 	chekVremya();
 
+	txStVal.minuteTest = 0;
 }
 
 // ФУНКЦИЯ ЗАПИСИ ИНФОРМАЦИИ В ФАЙЛ НА ФЛЭШКЕ КАЖДУЮ МИНУТУ
@@ -300,12 +318,9 @@ void dataSetToFileWHL(){
 
 	dataString += String(NppStr);
 	dataString += " 	";
-	dataString += String(realYear); dataString += ".";
-	dataString += String(realMonth); dataString += ".";
-	dataString += String(realDay);
+	dataString += String(realYear); dataString += ".";dataString += String(realMonth); dataString += ".";dataString += String(realDay);
 	dataString += " 	";
-	dataString += String(realHour); dataString += ":";
-	dataString += String(realMinute);
+	dataString += String(realHour); dataString += ":";dataString += String(realMinute);
 	dataString += " 	";
 	dataString += String(minVal_O2);
 	dataString += " 	";
@@ -324,10 +339,15 @@ void dataSetToFileWHL(){
 
  	if (dataFile){
  	 	dataFile.println(dataString);
+ 	 	Serial.println();
+ 	 	Serial.println(" WRITE DATA TO SD ON WHL");
+ 	 	Serial.println();
  	}else{
- 	 	Serial1.print("error SD write ");
+ 	 	Serial1.print("error WHL SD write ");
  	 	Serial1.println(indexToNameFileSD(globalFileIndex));
  	}
+
+ 	txStVal.minuteTest ++;  // +1 minute test
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -351,13 +371,18 @@ inline void poolO2(){  // 0 - 100 (0.1) 0v - 1.6v
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос быстрой ТЕРМОПАРЫ1 через сериал1
 inline void poolTermoparaFast1(){  // -250 - 750 (0.1)
+	unsigned long t1StrtErrTime = millis();
 	Serial1.println('t');
-	while(!Serial1.available()){}
-	char s_d = Serial1.read();
-	if(s_d == 'm'){
-		txStVal.val_T1 = Serial1.parseFloat();
-	}else{
-		txStVal.val_T1 = 0;
+	char s_d = 'r';
+	while(s_d != 'm'){
+		s_d = Serial1.read();
+		if(s_d == 'm'){
+			txStVal.val_T1 = Serial1.parseFloat();
+		}
+		if(millis() - t1StrtErrTime > 100){
+			Serial.println(" get T1 serial timeaut ERROR");
+			break;
+		}
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -368,21 +393,28 @@ inline void poolTermoparaSlow2(){  // -250 - 750 (0.25)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос датчика ДАВЛЕНИЯ через сериал2
 inline void poolPressure(){  // -9.99 - 9.99 (0.01) 50mv - 80mv
+	unsigned long prStrtErrTime = millis();
 	Serial2.println('p');
-	while(!Serial2.available()){}
-	char s_d = Serial2.read();
-	if(s_d == 'i'){
-		txStVal.val_Press_inh = Serial2.parseFloat();
-	}else{
-		txStVal.val_Press_inh = 0;
+	char s_d = 'r';
+	while(s_d != 'i'){
+		s_d = Serial2.read();
+		if(s_d == 'i'){
+			txStVal.val_Press_inh = Serial2.parseFloat();
+		}
+		if(millis() - prStrtErrTime > 100){
+			Serial.println(" get Pressure serial timeaut ERROR ");
+			break;
+		}
 	}
 	while(s_d != 'e'){
-	}
-	s_d = Serial2.read();
-	if(s_d == 'e'){
-		txStVal.val_Press_exh = Serial2.parseFloat();  // kPa
-	}else{
-		txStVal.val_Press_exh = 0;
+		s_d = Serial2.read();
+		if(s_d == 'e'){
+			txStVal.val_Press_exh = Serial2.parseFloat();  // kPa
+		}
+		if(millis() - prStrtErrTime > 200){
+			Serial.println(" get Pressure serial timeaut ERROR ");
+			break;
+		}
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -409,27 +441,25 @@ inline void poolBatteryLevel(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // общий опрос всех датчиков
 void poolAllSensors(){
-	poolO2();
-	poolTermoparaFast1();
-	poolTermoparaSlow2();
-	poolPressure();
-	poolCO2();
-	poolCO();
-	poolBatteryLevel();
+	if(S_O2_ENABLE){poolO2();}
+	if(S_T1_ENABLE){poolTermoparaFast1();}
+	if(S_T2_ENABLE){poolTermoparaSlow2();}
+	if(S_PR_ENABLE){poolPressure();}
+	if(S_CO2_ENABLE){poolCO2();}
+	if(S_CO_ENABLE){poolCO();}
+	if(S_BAT_ENABLE){poolBatteryLevel();}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // калибровка всех датчиков
-
-
-// калибровка всех сенсоров
 void calibrationAllSensors(){
-	txStVal.val_CO = flap(txStVal.val_CO, calibr_CO_Mas[0], calibr_CO_Mas[1], calibr_CO_Mas[2], calibr_CO_Mas[3]);
-	txStVal.val_T1 = flap(txStVal.val_T1, calibr_T1_Mas[0], calibr_T1_Mas[1], calibr_T1_Mas[2], calibr_T1_Mas[3]);
-	txStVal.val_T2 = flap(txStVal.val_T2, calibr_T2_Mas[0], calibr_T2_Mas[1], calibr_T2_Mas[2], calibr_T2_Mas[3]);
-	txStVal.val_Press_inh = flap(txStVal.val_Press_inh, calibr_Press_Mas[0], calibr_Press_Mas[1], calibr_Press_Mas[2], calibr_Press_Mas[3]);
-	txStVal.val_Press_exh = flap(txStVal.val_Press_exh, calibr_Press_Mas[0], calibr_Press_Mas[1], calibr_Press_Mas[2], calibr_Press_Mas[3]);
-	txStVal.val_CCO2 = flap(txStVal.val_CCO2, calibr_CO2_Mas[0], calibr_CO2_Mas[1], calibr_CO2_Mas[2], calibr_CO2_Mas[3]);
-	txStVal.val_O2 = flap(txStVal.val_O2, calibr_O2_Mas[0], calibr_O2_Mas[1], calibr_O2_Mas[2], calibr_O2_Mas[3]);
+	if(S_CO_ENABLE){txStVal.val_CO = flap(txStVal.val_CO, calibr_CO_Mas[0], calibr_CO_Mas[1], calibr_CO_Mas[2], calibr_CO_Mas[3]);}
+	if(S_T1_ENABLE){txStVal.val_T1 = flap(txStVal.val_T1, calibr_T1_Mas[0], calibr_T1_Mas[1], calibr_T1_Mas[2], calibr_T1_Mas[3]);}
+	if(S_T2_ENABLE){txStVal.val_T2 = flap(txStVal.val_T2, calibr_T2_Mas[0], calibr_T2_Mas[1], calibr_T2_Mas[2], calibr_T2_Mas[3]);}
+	if(S_PR_ENABLE){
+		txStVal.val_Press_inh = flap(txStVal.val_Press_inh, calibr_Press_Mas[0], calibr_Press_Mas[1], calibr_Press_Mas[2], calibr_Press_Mas[3]);
+		txStVal.val_Press_exh = flap(txStVal.val_Press_exh, calibr_Press_Mas[0], calibr_Press_Mas[1], calibr_Press_Mas[2], calibr_Press_Mas[3]);}
+	if(S_CO2_ENABLE){txStVal.val_CCO2 = flap(txStVal.val_CCO2, calibr_CO2_Mas[0], calibr_CO2_Mas[1], calibr_CO2_Mas[2], calibr_CO2_Mas[3]);}
+	if(S_O2_ENABLE){txStVal.val_O2 = flap(txStVal.val_O2, calibr_O2_Mas[0], calibr_O2_Mas[1], calibr_O2_Mas[2], calibr_O2_Mas[3]);}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // финальная функция: общий опрос и калибровка всех датчиков
@@ -458,7 +488,7 @@ void chekVremya(){
 void finalCheckChangeSecondOrMinuteAndPerformAction(){
 	chekVremya();
 
-	// выполняем действие каждую секунду:
+	// ВЫПОЛНЯЕМ ДЕЙСТВИЕ КАЖДУЮ СЕКУНДУ:
 	if (realSecond != treckingSecond){    // Если значение секунд отличается от значения в переменной отслеживания
     	treckingSecond = realSecond;      //  Меняем значение в переменной отслеживания секунд на текущее
 
@@ -498,14 +528,21 @@ void finalCheckChangeSecondOrMinuteAndPerformAction(){
 			FastLED.show();
 		}
 
-		// ОТПРАВЛЯЕМ ЗНАЧЕНИЯ ЗА СЕКУНДУ ПО РАДИО
+		// отправляем значения за секунду по радио
 		txStVal.flagZapisiTransmite = recordFlag;
 		bool radioWriteOk = 0;
 		radio.stopListening();                   // перестаем слушать эфир, для передачи
 		radioWriteOk = radio.write(&txStVal, sizeof(txStVal));
 		radio.startListening();                  // начинаем слушать эфир, для приема
 		// щетчик качества сигнала
-		if(txStVal.signalLevel < 100 && radioWriteOk){txStVal.signalLevel += 10;}
+		if(txStVal.signalLevel < 100 && radioWriteOk){
+			txStVal.signalLevel += 10;
+			Serial.println();
+			Serial.println("radio write persec OK");
+			Serial.println("record flag = ");
+			Serial.println(recordFlag);
+			Serial.println();
+		}
 		else if(txStVal.signalLevel > 0){txStVal.signalLevel -= 10;}
 
 		// сбрасываем макс значения за секунду
@@ -517,7 +554,7 @@ void finalCheckChangeSecondOrMinuteAndPerformAction(){
 		txStVal.val_CCO2 = 0;
 		txStVal.val_CO = 0;
 
-	    // выполняем действие каждую минуту:
+	    // ВЫПОЛНЯЕМ ДЕЙСТВИЕ КАЖДУЮ МИНУТУ:
 		if (realMinute != treckingMinute && recordFlag == 1){// Если знач минут отличается от знач в переменной отслежив
 	    	treckingMinute = realMinute;      //  Меняем значение в переменной отслеживания минут на текущее
 
@@ -549,14 +586,20 @@ bool buttonChangeREC(){
 		if(!digitalRead(START_STOP_BUTTON_PIN)){
 			if(recordFlag == 0){
 				recordFlag = 1;
+				txStVal.flagZapisiTransmite = recordFlag;
 				delay(500);
 				dataSetToFileSTRT();
-				Serial.println("start REC");
+				Serial.println();
+				Serial.println("button changed, start REC");
+				Serial.println();
 			}
 			else{
 				recordFlag = 0;
+				txStVal.flagZapisiTransmite = recordFlag;
 				dataFile.close();
-				Serial.println("stop REC");
+				Serial.println();
+				Serial.println("button changed, stop REC");
+				Serial.println();
 				delay(500);
 			}
 		}
@@ -575,14 +618,20 @@ void radioReceiverCallAndButChng(){
 	if(rxStCalibrVal.operationKeyRX == 1){
 		if(recordFlag == 0){
 			recordFlag = 1;
+			txStVal.flagZapisiTransmite = recordFlag;
 			delay(500);
 			dataSetToFileSTRT();
-			Serial.println("start REC");
+			Serial.println();
+			Serial.println("NRF button changed, start REC");
+			Serial.println();
 		}
 		else{
 			recordFlag = 0;
+			txStVal.flagZapisiTransmite = recordFlag;
 			dataFile.close();
-			Serial.println("stop REC");
+			Serial.println();
+			Serial.println("NRF button changed, stop REC");
+			Serial.println();
 			delay(500);
 		}    
 	}
@@ -608,6 +657,7 @@ void radioReceiverCallAndButChng(){
 			rxStCalibrVal.inMin = (txStVal.val_Press_inh + txStVal.val_Press_exh) / 2;
 		    break;
 		}
+		Serial.println("zapros in Min");
 	}
 	// запрос IN MAX значения отправка через структуру RX
 	if(rxStCalibrVal.operationKeyRX == 3){
@@ -631,6 +681,7 @@ void radioReceiverCallAndButChng(){
 			rxStCalibrVal.inMax = (txStVal.val_Press_inh + txStVal.val_Press_exh) / 2;
 		    break;
 		}
+		Serial.println("zapros in Max");
 	}
 	// прием пакета калибровки и калибровка
 	if(rxStCalibrVal.operationKeyRX == 4){
@@ -673,6 +724,11 @@ void radioReceiverCallAndButChng(){
 		    break;
 		}
 		eeSingleWriteOfRam(rxStCalibrVal.addrNameCalibrUnit);
+		Serial.println();
+		Serial.println("CALIBRATION SENSOR [");
+		Serial.println(rxStCalibrVal.addrNameCalibrUnit);
+		Serial.println("] OK");
+		Serial.println();
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -689,11 +745,13 @@ void setup(){
 	Serial1.begin(250000);   // T1 sensor
 	Serial2.begin(250000);   // Pressure sensor
 	delay(100);
-	Serial.println("START SETUP");
+	Serial.println(" START SETUP");
 
 	FastLED.addLeds<WS2812B, LED_DATA_PIN, RGB>(iLed, 1); // 1 светодиод WS2812B
 
 	radioNrfSetup();  // NRF setup
+	Serial.println(" radio setup ok");
+	Serial.println();
 
 	eePackWrite();  // 1st EEPROM write all calibration val
 	eePackRead();   // EEPROM read all calibration val
@@ -703,22 +761,23 @@ void setup(){
 	Serial.println(" clock init...");
 	// Инициализируем работу с объектом библиотеки DS3231
 	if(!clock.begin()){
-    	Serial.println("initialization failed clock not detected!");
+    	Serial.println(" initialization failed clock not detected!");
 	}else{
-		Serial.println("clock init ok");
+		Serial.println(" clock init ok");
 	}
 	#if SET_CLOK_FOR_PROG == 1
  	clock.setDateTime(__DATE__, __TIME__);     // Устанавливаем время на часах, основываясь на времени компиляции скетча
- 	Serial.println("set time ok");
+ 	Serial.println(" set time ok");
 	//clock.setDateTime(2016, 9, 15, 0, 0, 0);     // Установка времени вручную (Год, Месяц, День, Час, Минута, Секунда)
 	#endif
+	Serial.println();
 
 
 	// MicroSD: init
 	delay(500);
     Serial.println(" microSD init...");
 	if (!SD.begin(CHIPSELEKT)) {
-    	Serial.println("initialization failed SD not detected!");
+    	Serial.println(" initialization failed SD not detected!");
 		delay(5000);
     	if(SDCHEK == 1){
     		while(1){
@@ -732,7 +791,8 @@ void setup(){
   	ads.setGain(GAIN_TWOTHIRDS);  // 2/3x gain +/- 6.144V  1 bit = 3mV      0.1875mV (default)
 	ads.begin();
 
-	Serial.println("END SETUP");
+	Serial.println();
+	Serial.println(" END SETUP. ALL SETUP OK");
 }
 
 
