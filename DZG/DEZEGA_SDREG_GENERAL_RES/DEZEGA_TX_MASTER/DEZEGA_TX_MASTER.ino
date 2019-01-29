@@ -372,10 +372,12 @@ inline void poolO2(){  // 0 - 100 (0.1) 0v - 1.6v
 // опрос быстрой ТЕРМОПАРЫ1 через сериал1
 inline void poolTermoparaFast1(){  // -250 - 750 (0.1)
 	unsigned long t1StrtErrTime = millis();
-	Serial1.println('t');
 	char s_d = 'r';
+	Serial1.println('t');
 	while(s_d != 'm'){
-		s_d = Serial1.read();
+		if (Serial.available() > 0) { 
+			s_d = Serial1.read();
+		}
 		if(s_d == 'm'){
 			txStVal.val_T1 = Serial1.parseFloat();
 		}
@@ -394,10 +396,12 @@ inline void poolTermoparaSlow2(){  // -250 - 750 (0.25)
 // опрос датчика ДАВЛЕНИЯ через сериал2
 inline void poolPressure(){  // -9.99 - 9.99 (0.01) 50mv - 80mv
 	unsigned long prStrtErrTime = millis();
-	Serial2.println('p');
 	char s_d = 'r';
+	Serial2.println('p');
 	while(s_d != 'i'){
-		s_d = Serial2.read();
+		if (Serial.available() > 0) {
+			s_d = Serial2.read();
+		}
 		if(s_d == 'i'){
 			txStVal.val_Press_inh = Serial2.parseFloat();
 		}
@@ -407,7 +411,9 @@ inline void poolPressure(){  // -9.99 - 9.99 (0.01) 50mv - 80mv
 		}
 	}
 	while(s_d != 'e'){
-		s_d = Serial2.read();
+		if (Serial.available() > 0) {
+			s_d = Serial2.read();
+		}
 		if(s_d == 'e'){
 			txStVal.val_Press_exh = Serial2.parseFloat();  // kPa
 		}
@@ -436,7 +442,16 @@ inline void poolCO(){  // 2000 (1) 0v - 3v
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос уровня заряда батареи 
 inline void poolBatteryLevel(){
-	txStVal.val_BatteryLevel_TX = 51;
+	if(BAT_LVL_READ_TYPE == 0){  // analog LVL BAT read
+		int promBatLvlVal;
+		promBatLvlVal = analogRead(BAT_LEVEL_ANALOG_PIN);
+		promBatLvlVal = map(promBatLvlVal, 0, 1023, 0, 500);
+		promBatLvlVal = constrain(promBatLvlVal, 370, 420);
+		promBatLvlVal = map(promBatLvlVal, 370, 420, 0, 100);
+		txStVal.val_BatteryLevel_TX = promBatLvlVal;
+	}
+	else{  // digital LVL BAT read
+	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // общий опрос всех датчиков
@@ -538,12 +553,18 @@ void finalCheckChangeSecondOrMinuteAndPerformAction(){
 		if(txStVal.signalLevel < 100 && radioWriteOk){
 			txStVal.signalLevel += 10;
 			Serial.println();
-			Serial.println("radio write persec OK");
-			Serial.println("record flag = ");
-			Serial.println(recordFlag);
+			Serial.println("radio write per sec OK");
 			Serial.println();
 		}
-		else if(txStVal.signalLevel > 0){txStVal.signalLevel -= 10;}
+		else if(txStVal.signalLevel > 0 && radioWriteOk){
+			txStVal.signalLevel -= 10;
+			Serial.println();
+			Serial.println("radio write per sec ERR");
+			Serial.println();
+		}
+		Serial.println("record flag = ");
+		Serial.println(recordFlag);
+		Serial.println();
 
 		// сбрасываем макс значения за секунду
 		txStVal.val_O2 = 0;
@@ -610,7 +631,8 @@ bool buttonChangeREC(){
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// ПРИЕМ ДАННЫХ КАЛИБРОВКИ И СТАРТ СТОП:
+// NRF ПРИЕМ ДАННЫХ КАЛИБРОВКИ И СТАРТ СТОП:
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void radioReceiverCallAndButChng(){
 	if (radio.available()){radio.read(&rxStCalibrVal, sizeof(rxStCalibrVal));}
 
@@ -730,6 +752,63 @@ void radioReceiverCallAndButChng(){
 		Serial.println("] OK");
 		Serial.println();
 	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// serial calibration F
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void serCalibrator(){
+	unsigned long scStrtErrTime = millis();
+	char s_d = 'r';
+	if (Serial.available() > 0) {
+	    s_d = Serial.read();
+	    if(s_d == 's'){
+	        
+	    }
+
+	    switch (s_d) {
+	        case 's':
+	        	// do something
+	        	break;
+	        case 'c':
+	        	// do something
+	        	break;
+	        default:
+	        	int x;
+	    }
+	}
+	
+
+
+
+	// Serial.println('ok');
+	// while(s_d != 'i'){
+	// 	if (Serial.available() > 0) {
+	// 		s_d = Serial.read();
+	// 	}
+	// 	if(s_d == 'i'){
+	// 		txStVal.val_Press_inh = Serial.parseFloat();
+	// 	}
+	// 	if(millis() - scStrtErrTime > 100){
+	// 		Serial.println(" get Pressure serial timeaut ERROR ");
+	// 		break;
+	// 	}
+	// }
+	// while(s_d != 'e'){
+	// 	if (Serial.available() > 0) {
+	// 		s_d = Serial.read();
+	// 	}
+	// 	if(s_d == 'e'){
+	// 		txStVal.val_Press_exh = Serial.parseFloat();  // kPa
+	// 	}
+	// 	if(millis() - scStrtErrTime > 200){
+	// 		Serial.println(" get Pressure serial timeaut ERROR ");
+	// 		break;
+	// 	}
+	// }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
