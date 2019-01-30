@@ -790,7 +790,7 @@ void serCalibrator(){
 		    s_str += s_d;
 		}
 		s_pint = Serial.parseInt();
-		if(s_str == "set" && s_pint == SET_PAS){
+		if(s_str == "set" && s_pint == SET_PAS){  // ВХОД
 
 		    if(dataFile){dataFile.close();Serial.println("\n\nstop recording");}  // отключить запись на флешку
 
