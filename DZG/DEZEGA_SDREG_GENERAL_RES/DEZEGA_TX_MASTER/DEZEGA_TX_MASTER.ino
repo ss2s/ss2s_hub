@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // НАСТРОЙКИ:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#define SET_PAS 1111             // пароль для входа в сериал настройки. не больше 4 цифр
 #define BAT_LVL_READ_TYPE 0      // тип считывателя уровня батареи: 0-аналоговый,  1-цифровой
 #define SET_CLOK_FOR_PROG 0      // если 1 то установка часов будет при записи программы. если 0 то нет
 #define SDCHEK 1                 // 1 ЕСЛИ ФЛЕШКИ НЕТ ТО НЕ СТАРТОВАТЬ. 0 СТАРТОВАТЬ В ЛЮБОМ СЛУЧАЕ
@@ -237,8 +238,8 @@ void eeSingleWriteOfRam(byte addrName){ // калибровка и запись 
 	}
 }
 
-void eePackWrite(){ // запись всех значений калибровки в EEPROM (ОДНОРАЗОВАЯ ФУНКЦИЯ ДЛЯ ЗАПИСИ EEPROM ПРИ 1 ПРОШИВКЕ)
-	if(EEPROM.read(EEPROM_WRITE_K_ADDR) == EEPROM_WRITE_KEY){return;}  // если код совпадает то не перезаписывать
+void eePackOneInitWrite(){ // запись всех значений калибровки в EEPROM (ОДНОРАЗОВАЯ ФУНКЦИЯ ДЛЯ ЗАПИСИ EEPROM ПРИ 1 ПРОШИВКЕ)
+	if(EEPROM.read(EEPROM_WRITE_K_ADDR) == EEPROM_WRITE_KEY){return;}  // если код перезаписи совпадает то не перезаписывать
 	for(int i=0; i<4; i++){
 	    EEPROM_float_write(0+i, calibr_T1_Mas[i]);
 	    EEPROM_float_write(4+i, calibr_T2_Mas[i]);
@@ -248,6 +249,16 @@ void eePackWrite(){ // запись всех значений калибровк
 	    EEPROM_float_write(20+i, calibr_Press_Mas[i]);
 	}
 	EEPROM.write(EEPROM_WRITE_K_ADDR, EEPROM_WRITE_KEY);
+}
+void eePackWrite(){ // запись всех значений калибровки в EEPROM
+	for(int i=0; i<4; i++){
+	    EEPROM_float_write(0+i, calibr_T1_Mas[i]);
+	    EEPROM_float_write(4+i, calibr_T2_Mas[i]);
+	    EEPROM_float_write(8+i, calibr_CO2_Mas[i]);
+	    EEPROM_float_write(12+i, calibr_O2_Mas[i]);
+	    EEPROM_float_write(16+i, calibr_CO_Mas[i]);
+	    EEPROM_float_write(20+i, calibr_Press_Mas[i]);
+	}
 }
 void eePackRead(){ // чтение всех значений калибровки из EEPROM
 	for(int i=0; i<4; i++){
@@ -761,30 +772,81 @@ void radioReceiverCallAndButChng(){
 // serial calibration F
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void serCalibrator(){
-	unsigned long scStrtErrTime = millis();
-	char s_d = 'r';
-	if (Serial.available() > 0) {
-	    s_d = Serial.read();
-	    if(s_d == 's'){
-	        
-	    }
+	if(Serial.available() > 0){
+		unsigned long scStrtErrTime = millis();
+		char s_d = 'r';
+		String s_str = "";
+		int s_pint;
+		float s_pfcv;
+		for(int i=0; i<3; i++){
+		    s_d = Serial.read();
+		    s_str += s_d;
+		}
+		s_pint = Serial.parseInt();
+		if(s_str == "set" && s_pint == SET_PAS){
 
-	    switch (s_d) {
-	        case 's':
-	        	// do something
-	        	break;
-	        case 'c':
-	        	// do something
-	        	break;
-	        default:
-	        	int x;
-	    }
+		    if(dataFile){dataFile.close();Serial.println("\n\nstop recording");}  // отключить запись на флешку
+
+		    Serial.println("\n\n\n");
+		    Serial.println(" setting ok:\n");
+		    while(1){
+		    	if(Serial.available() > 0){
+		    		for(int i=0; i<3; i++){
+				    	s_d = Serial.read();
+				    	s_str += s_d;
+					}
+
+					if(s_str[2] == 's'){s_pint = Serial.parseInt();}
+					else if(s_str[2] == 'n' || s_str[2] == 'x'){s_pfcv = Serial.parseFloat();}
+
+					// calibr_T1_Mas[] = 
+					// calibr_T2_Mas[] = 
+					// calibr_CO2_Mas[] = 
+					// calibr_CO_Mas[] = 
+					// calibr_O2_Mas[] = 
+					// calibr_Press_Mas[] = 
+
+					if(s_str == "end"){break;}
+					else if(s_str == "ton"){
+						poolTermoparaFast1();
+						delay(100);
+						poolTermoparaFast1();
+						calibr_T1_Mas[0] = txStVal.val_T1;
+						calibr_T1_Mas[2] = s_pfcv;}
+					else if(s_str == "tox"){
+						poolTermoparaFast1();
+						delay(100);
+						poolTermoparaFast1();
+						calibr_T1_Mas[1] = txStVal.val_T1;
+						calibr_T1_Mas[3] = s_pfcv;}
+					else if(s_str == "ttn"){}
+					else if(s_str == "ttx"){}
+					else if(s_str == "ctn"){}
+					else if(s_str == "ctx"){}
+					else if(s_str == "con"){}
+					else if(s_str == "cox"){}
+					else if(s_str == "otn"){}
+					else if(s_str == "otx"){}
+					else if(s_str == "prn"){}
+					else if(s_str == "prx"){}
+					else if(s_str == "ths"){}
+					else if(s_str == "tms"){}
+					else if(s_str == "tss"){}
+					else if(s_str == "dds"){}
+					else if(s_str == "dms"){}
+					else if(s_str == "dys"){}
+					else if(s_str == ""){}
+					else{}
+		    	}
+		    }
+		    eePackWrite();
+		    Serial.println("\nseting end\n\n");
+		}
 	}
 	
 
 
 
-	// Serial.println('ok');
 	// while(s_d != 'i'){
 	// 	if (Serial.available() > 0) {
 	// 		s_d = Serial.read();
@@ -832,7 +894,7 @@ void setup(){
 	Serial.println(" radio setup ok");
 	Serial.println();
 
-	eePackWrite();  // 1st EEPROM write all calibration val
+	eePackOneInitWrite();  // 1st EEPROM write all calibration val
 	eePackRead();   // EEPROM read all calibration val
 
 	// ЧАСЫ: init

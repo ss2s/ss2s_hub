@@ -9,7 +9,7 @@
 int16_t adc0, maxADC = 0;
 float maxTemp = 0;
 
-char serResiveData; // переменная для хранения считывания управляющего байта символа
+char s_d; // переменная для хранения считывания управляющего байта символа
 
 Adafruit_ADS1115 ads;  /* Use this for the 16-bit version */
 float multiplierADS = 0.1875F; /* ADS1115  @ +/- 6.144V gain (16-bit results) */
@@ -29,8 +29,8 @@ void loop(){
 		if(maxADC < adc0){maxADC = adc0;}
 
 		if (Serial.available() > 0){
-		    serResiveData = Serial.read(); // управляющий байт (символ't') определяющий старт отправки температуры
-		    if (serResiveData == 't'){
+		    s_d = Serial.read(); // управляющий байт (символ't') определяющий старт отправки температуры
+		    if (s_d == 't'){
 		    	maxTemp = ((maxADC * multiplierADS / 1000.0) - 1.25) / 0.005;
 
 				// transmite temp to serial_1
