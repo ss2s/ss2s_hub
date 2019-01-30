@@ -127,7 +127,7 @@ typedef struct receiverStructure{
 };
 receiverStructure rxStCalibrVal;
 
-// калибровка всех датчиков. значения: inMin, outMin, inMax, outMax
+// калибровка всех датчиков. значения: inMin, inMax, outMin, outMax
 float calibr_O2_Mas[] = {0, 1000, 0, 1000};
 float calibr_T1_Mas[] = {0, 1000, 0, 1000};
 float calibr_T2_Mas[] = {0, 1000, 0, 1000};
@@ -373,15 +373,16 @@ float flap(float fX, float fY = 0, float fZ = 1000, float fA = 0, float fB = 100
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос датчика O2
-inline void poolO2(){  // 0 - 100 (0.1) 0v - 1.6v
+float poolO2(){  // 0 - 100 (0.1) 0v - 1.6v
 	// resive and convert O2 values
 	adc0_O2 = ads.readADC_SingleEnded(PORT_0_O2_ADS1);
 	txStVal.val_O2 = adc0_O2 * multiplierADS / 1000.0;  // Volt
 	txStVal.val_O2 = flap(txStVal.val_O2, 0, 1.6, 0, 100);  // %
+	return txStVal.val_O2;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос быстрой ТЕРМОПАРЫ1 через сериал1
-inline void poolTermoparaFast1(){  // -250 - 750 (0.1)
+float poolTermoparaFast1(){  // -250 - 750 (0.1)
 	unsigned long t1StrtErrTime = millis();
 	char s_d = 'r';
 	Serial1.println('t');
@@ -397,15 +398,17 @@ inline void poolTermoparaFast1(){  // -250 - 750 (0.1)
 			break;
 		}
 	}
+	return txStVal.val_T1;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос медленной ТЕРМОПАРЫ2
-inline void poolTermoparaSlow2(){  // -250 - 750 (0.25)
+float poolTermoparaSlow2(){  // -250 - 750 (0.25)
 	txStVal.val_T2 = thermocouple2.readCelsius();
+	return txStVal.val_T2;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос датчика ДАВЛЕНИЯ через сериал2
-inline void poolPressure(){  // -9.99 - 9.99 (0.01) 50mv - 80mv
+float poolPressure(){  // -9.99 - 9.99 (0.01) 50mv - 80mv
 	unsigned long prStrtErrTime = millis();
 	char s_d = 'r';
 	Serial2.println('p');
@@ -433,26 +436,29 @@ inline void poolPressure(){  // -9.99 - 9.99 (0.01) 50mv - 80mv
 			break;
 		}
 	}
+	return (txStVal.val_Press_inh + txStVal.val_Press_exh) / 2;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос датчика CO2
-inline void poolCO2(){  // 0 - 5 (0.01) 0v - 4v
+float poolCO2(){  // 0 - 5 (0.01) 0v - 4v
 	// resive and convert CO2 values
 	adc1_CO2 = ads.readADC_SingleEnded(PORT_1_CO2_ADS1);
 	txStVal.val_CCO2 = adc1_CO2 * multiplierADS / 1000.0;  // Volt
 	txStVal.val_CCO2 = flap(txStVal.val_CCO2, 0, 5, 0, 4);          // %
+	return txStVal.val_CCO2;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос датчика CO
-inline void poolCO(){  // 2000 (1) 0v - 3v
+float poolCO(){  // 2000 (1) 0v - 3v
 	// resive and convert CO values
 	adc2_CO = ads.readADC_SingleEnded(PORT_0_O2_ADS1);
 	txStVal.val_CO = adc2_CO * multiplierADS / 1000.0;  // Volt
 	txStVal.val_CO = flap(txStVal.val_CO, 0, 3, 0, 2000);       // ppm
+	return txStVal.val_CO;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос уровня заряда батареи 
-inline void poolBatteryLevel(){
+float poolBatteryLevel(){
 	if(BAT_LVL_READ_TYPE == 0){  // analog LVL BAT read
 		int promBatLvlVal;
 		promBatLvlVal = analogRead(BAT_LEVEL_ANALOG_PIN);
@@ -463,6 +469,7 @@ inline void poolBatteryLevel(){
 	}
 	else{  // digital LVL BAT read
 	}
+	return txStVal.val_BatteryLevel_TX;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // общий опрос всех датчиков
@@ -796,81 +803,97 @@ void serCalibrator(){
 				    	s_str += s_d;
 					}
 
-					if(s_str[2] == 's'){s_pint = Serial.parseInt();}
-					else if(s_str[2] == 'n' || s_str[2] == 'x'){s_pfcv = Serial.parseFloat();}
+					if(s_str[2] == 'n' || s_str[2] == 'x'){s_pfcv = Serial.parseFloat();}
 
-					// calibr_T1_Mas[] = 
-					// calibr_T2_Mas[] = 
-					// calibr_CO2_Mas[] = 
-					// calibr_CO_Mas[] = 
-					// calibr_O2_Mas[] = 
-					// calibr_Press_Mas[] = 
+					if(s_str == "end"){  // ВЫХОД
+						break;
+					}
 
-					if(s_str == "end"){break;}
-					else if(s_str == "ton"){
+					else if(s_str == "ton"){  // T1 MIN
 						poolTermoparaFast1();
 						delay(100);
-						poolTermoparaFast1();
-						calibr_T1_Mas[0] = txStVal.val_T1;
-						calibr_T1_Mas[2] = s_pfcv;}
-					else if(s_str == "tox"){
+						calibr_T1_Mas[0] = poolTermoparaFast1();
+						calibr_T1_Mas[2] = s_pfcv;
+					}
+					else if(s_str == "tox"){  // T1 MAX
 						poolTermoparaFast1();
 						delay(100);
-						poolTermoparaFast1();
-						calibr_T1_Mas[1] = txStVal.val_T1;
-						calibr_T1_Mas[3] = s_pfcv;}
-					else if(s_str == "ttn"){}
-					else if(s_str == "ttx"){}
-					else if(s_str == "ctn"){}
-					else if(s_str == "ctx"){}
-					else if(s_str == "con"){}
-					else if(s_str == "cox"){}
-					else if(s_str == "otn"){}
-					else if(s_str == "otx"){}
-					else if(s_str == "prn"){}
-					else if(s_str == "prx"){}
-					else if(s_str == "ths"){}
-					else if(s_str == "tms"){}
-					else if(s_str == "tss"){}
-					else if(s_str == "dds"){}
-					else if(s_str == "dms"){}
-					else if(s_str == "dys"){}
-					else if(s_str == ""){}
-					else{}
+						calibr_T1_Mas[1] = poolTermoparaFast1();
+						calibr_T1_Mas[3] = s_pfcv;
+					}
+
+					else if(s_str == "ttn"){  // T2 MIN
+						calibr_T2_Mas[0] = poolTermoparaSlow2();
+						calibr_T2_Mas[2] = s_pfcv;
+					}
+					else if(s_str == "ttx"){  // T2 MAX
+						calibr_T2_Mas[1] = poolTermoparaSlow2(); 
+						calibr_T2_Mas[3] = s_pfcv;
+					}
+
+					else if(s_str == "ctn"){  // CO2 MIN
+						calibr_CO2_Mas[0] = poolCO2();
+						calibr_CO2_Mas[2] = s_pfcv;
+					}
+					else if(s_str == "ctx"){  // CO2 MAX
+						calibr_CO2_Mas[1] = poolCO2();
+						calibr_CO2_Mas[3] = s_pfcv;
+					}
+
+					else if(s_str == "con"){  // CO MIN
+						calibr_CO_Mas[0] = poolCO();
+						calibr_CO_Mas[2] = s_pfcv;
+					}
+					else if(s_str == "cox"){  // CO MAX
+						calibr_CO_Mas[1] = poolCO();
+						calibr_CO_Mas[3] = s_pfcv;
+					}
+
+					else if(s_str == "otn"){  // O2 MIN
+						calibr_O2_Mas[0] = poolO2();
+						calibr_O2_Mas[2] = s_pfcv;
+					}
+					else if(s_str == "otx"){  // O2 MAX
+						calibr_O2_Mas[1] = poolO2();
+						calibr_O2_Mas[3] = s_pfcv;
+					}
+
+					else if(s_str == "prn"){  // Press MIN
+						poolPressure();
+						delay(100);
+						calibr_Press_Mas[0] = poolPressure();
+						calibr_Press_Mas[2] = s_pfcv;
+					}
+					else if(s_str == "prx"){  // Press MAX
+						poolPressure();
+						delay(100);
+						calibr_Press_Mas[1] = poolPressure();
+						calibr_Press_Mas[3] = s_pfcv;
+					}
+
+					else if(s_str == "tms"){  // date time:  tms dy dm dd th tm ts
+						int ryear = Serial.parseInt();
+						int rmonth = Serial.parseInt();
+						int rday = Serial.parseInt();
+						int rhour = Serial.parseInt();
+						int rrminute = Serial.parseInt();
+						int rsecond = Serial.parseInt();
+						clock.setDateTime(ryear, rmonth, rday, rhour, rrminute, rsecond);  // Установка времени (Г,М,Д,Ч,М,С)
+					}
+
+					// else if(s_str == ""){}
+					// else{}
 		    	}
+
+		    	if(millis() - scStrtErrTime > 4000){  // авто выход из настроек через 1 час
+					Serial.println(" setting timeout\nsetting end");
+					break;
+				}
 		    }
 		    eePackWrite();
 		    Serial.println("\nseting end\n\n");
 		}
 	}
-	
-
-
-
-	// while(s_d != 'i'){
-	// 	if (Serial.available() > 0) {
-	// 		s_d = Serial.read();
-	// 	}
-	// 	if(s_d == 'i'){
-	// 		txStVal.val_Press_inh = Serial.parseFloat();
-	// 	}
-	// 	if(millis() - scStrtErrTime > 100){
-	// 		Serial.println(" get Pressure serial timeaut ERROR ");
-	// 		break;
-	// 	}
-	// }
-	// while(s_d != 'e'){
-	// 	if (Serial.available() > 0) {
-	// 		s_d = Serial.read();
-	// 	}
-	// 	if(s_d == 'e'){
-	// 		txStVal.val_Press_exh = Serial.parseFloat();  // kPa
-	// 	}
-	// 	if(millis() - scStrtErrTime > 200){
-	// 		Serial.println(" get Pressure serial timeaut ERROR ");
-	// 		break;
-	// 	}
-	// }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -949,5 +972,8 @@ void loop(){
 
 		// прослушивание эфира на случай старта стопа записи или перехода в режим калибровки
 		radioReceiverCallAndButChng();
+
+		// прослушивание сериал порта
+		serCalibrator();
 	}
 }
