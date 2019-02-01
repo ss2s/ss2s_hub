@@ -2,7 +2,7 @@
 // MEGA 2560
 // #    pragma message "SS2S MEGA 2560"  // SS2S
 
-#include "Arduino.h"            // Arduino lib
+// #include "Arduino.h"            // Arduino lib
 #include <SPI.h>                // SPI lib
 #include <Wire.h>               // I2C lib
 #include <EEPROM.h>             // EEPROM lib
@@ -21,17 +21,17 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // НАСТРОЙКИ:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define SET_PAS 1111             // пароль для входа в сериал настройки. не больше 4 цифр
+#define SET_PAS 111             // пароль для входа в сериал настройки. не больше 4 цифр
 #define BAT_LVL_READ_TYPE 0      // тип считывателя уровня батареи: 0-аналоговый,  1-цифровой
 #define SET_CLOK_FOR_PROG 0      // если 1 то установка часов будет при записи программы. если 0 то нет
-#define SDCHEK 1                 // 1 ЕСЛИ ФЛЕШКИ НЕТ ТО НЕ СТАРТОВАТЬ. 0 СТАРТОВАТЬ В ЛЮБОМ СЛУЧАЕ
+#define SDCHEK 0                 // 1 ЕСЛИ ФЛЕШКИ НЕТ ТО НЕ СТАРТОВАТЬ. 0 СТАРТОВАТЬ В ЛЮБОМ СЛУЧАЕ
 #define DEFMaxFileToSD 1000      // макс количество файлов на флешке. макс 65535
 
-#define EEPROM_WRITE_KEY 123     // код перезаписи EEPROM < 255. если изменить то EEPROM перезапишется из оперативки
+#define EEPROM_WRITE_KEY 142     // код перезаписи EEPROM < 255. если изменить то EEPROM перезапишется из оперативки
 #define EEPROM_WRITE_K_ADDR 200  // адрес кода перезаписи EEPROM . 200 <= x < 500
 
-#define BEEPER_FREQ 5000  // частота аварийной пищалки в Герцах
-#define BEEPER_DURATION 1000  // длительность сигнала аварийной пищалки в миллисекундах, не больше 1000
+#define BEEPER_FREQ 500  // частота аварийной пищалки в Герцах
+#define BEEPER_DURATION 1200  // длительность сигнала аварийной пищалки в миллисекундах, не больше 1000
 
 // разрешение опроса датчиков 1:0   опр:не опр
 #define S_O2_ENABLE 1
@@ -42,7 +42,10 @@
 #define S_CO_ENABLE 1
 #define S_BAT_ENABLE 1
 // значение для возврата если сенсор запрещен
-#define SENS_DISABLEREAD_VAL 7305
+#define SENS_DISABLEREAD_VAL 3000
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // РАСПИНОВКА Arduino:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -108,11 +111,11 @@ typedef struct transmiteStructure{
 transmiteStructure txStVal;
 
 // МАКС значения сенсоров за минуту
-float minVal_O2 = 0;
-float maxVal_T1 = 0;
-float maxVal_T2 = 0;
-float minVal_Press_inh = 0;  // мин
-float maxVal_Press_exh = 0;  // макс
+float minVal_O2 = 100;
+float maxVal_T1 = -250;
+float maxVal_T2 = -250;
+float minVal_Press_inh = 10;  // мин
+float maxVal_Press_exh = -10;  // макс
 float maxVal_CCO2 = 0;
 float maxVal_CO = 0;
 
@@ -128,12 +131,12 @@ typedef struct receiverStructure{
 receiverStructure rxStCalibrVal;
 
 // калибровка всех датчиков. значения: inMin, inMax, outMin, outMax
-float calibr_O2_Mas[] = {0, 1000, 0, 1000};
-float calibr_T1_Mas[] = {0, 1000, 0, 1000};
-float calibr_T2_Mas[] = {0, 1000, 0, 1000};
-float calibr_CO2_Mas[] = {0, 1000, 0, 1000};
+float calibr_O2_Mas[] = {0, 100, 0, 100};
+float calibr_T1_Mas[] = {20, 60, 20, 60};
+float calibr_T2_Mas[] = {20, 100, 20, 100};
+float calibr_CO2_Mas[] = {0, 5, 0, 5};
 float calibr_CO_Mas[] = {0, 1000, 0, 1000};
-float calibr_Press_Mas[] = {0, 1000, 0, 1000};
+float calibr_Press_Mas[] = {0, 2000, 0, 2000};
 
 // флаг записи на флешку. если 1 то запись идет если 0 то нет
 bool recordFlag = 0;
@@ -181,7 +184,7 @@ void radioNrfSetup(){
 	radio.openWritingPipe(addressNRF[1]);    // передаем по трубе 1
 	radio.openReadingPipe(1,addressNRF[0]);  // хотим слушать трубу 0
 	radio.setChannel(0x60);                  // выбираем канал (в котором нет шумов!)
-	radio.setPALevel (RF24_PA_MAX); // уровень мощности передатчика RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX
+	radio.setPALevel (RF24_PA_MIN); // уровень мощности передатчика RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX
 	radio.setDataRate (RF24_250KBPS);        // скорость обмена. На выбор RF24_2MBPS, RF24_1MBPS, RF24_250KBPS
 	                                         // при самой низкой скорости самуf высокуf чувствительность и дальность!!
 	radio.powerUp();                         // начать работу
@@ -296,11 +299,11 @@ void dataSetToFileSTRT(){
 		return;
 	}
 
-	while(!SD.exists(indexToNameFileSD(globalFileIndex))){
+	while(SD.exists(indexToNameFileSD(globalFileIndex))){
 		globalFileIndex ++;
 	}
 
-	dataString += "N 	DATE: 	TIME: 	O2% 	Temp 1 	Temp 2 	Pres inh kPa 	Pres exh kPa 	CO2% 	O2%";
+	dataString += "N 	DATE: 	    TIME: 	O2% 	Temp 1 	Temp 2 	Pres inh kPa 	Pres exh kPa 	CO2% 	CO%";
 	dataString += "\n";
 
 	dataFile = SD.open(indexToNameFileSD(globalFileIndex), FILE_WRITE);
@@ -340,9 +343,9 @@ void dataSetToFileWHL(){
 	dataString += String(maxVal_T2);
 	dataString += " 	";
 	dataString += String(minVal_Press_inh);
-	dataString += " 	";
+	dataString += " 	        ";
 	dataString += String(maxVal_Press_exh);
-	dataString += " 	";
+	dataString += " 	        ";
 	dataString += String(maxVal_CCO2);
 	dataString += " 	";
 	dataString += String(maxVal_CO);
@@ -373,10 +376,13 @@ float flap(float fX, float fY = 0, float fZ = 1000, float fA = 0, float fB = 100
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос датчика O2
-float poolO2(){  // 0 - 100 (0.1) 0v - 1.6v
+static float poolO2(){  // 0 - 100 (0.1) 0v - 1.6v
 	// resive and convert O2 values
 	adc0_O2 = ads.readADC_SingleEnded(PORT_0_O2_ADS1);
 	txStVal.val_O2 = adc0_O2 * multiplierADS / 1000.0;  // Volt
+	Serial.print("O2  V ");
+	// Serial.println(txStVal.val_O2, 7);
+	Serial.println(txStVal.val_O2, 7);
 	txStVal.val_O2 = flap(txStVal.val_O2, 0, 1.6, 0, 100);  // %
 	return txStVal.val_O2;
 }
@@ -385,20 +391,21 @@ float poolO2(){  // 0 - 100 (0.1) 0v - 1.6v
 float poolTermoparaFast1(){  // -250 - 750 (0.1)
 	unsigned long t1StrtErrTime = millis();
 	char s_d = 'r';
-	Serial1.println('t');
-	while(s_d != 'm'){
-		if (Serial.available() > 0) { 
+	Serial1.print('t');
+	while(1){
+		if (Serial1.available() > 0) { 
 			s_d = Serial1.read();
-		}
-		if(s_d == 'm'){
-			txStVal.val_T1 = Serial1.parseFloat();
+			if(s_d == 'm'){
+				txStVal.val_T1 = Serial1.parseFloat();
+				// txStVal.val_T1 = 100;
+				break;
+			}
 		}
 		if(millis() - t1StrtErrTime > 100){
 			Serial.println(" get T1 serial timeaut ERROR");
 			break;
 		}
 	}
-	return txStVal.val_T1;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос медленной ТЕРМОПАРЫ2
@@ -413,7 +420,7 @@ float poolPressure(){  // -9.99 - 9.99 (0.01) 50mv - 80mv
 	char s_d = 'r';
 	Serial2.println('p');
 	while(s_d != 'i'){
-		if (Serial.available() > 0) {
+		if (Serial2.available() > 0) {
 			s_d = Serial2.read();
 		}
 		if(s_d == 'i'){
@@ -425,7 +432,7 @@ float poolPressure(){  // -9.99 - 9.99 (0.01) 50mv - 80mv
 		}
 	}
 	while(s_d != 'e'){
-		if (Serial.available() > 0) {
+		if (Serial2.available() > 0) {
 			s_d = Serial2.read();
 		}
 		if(s_d == 'e'){
@@ -444,17 +451,22 @@ float poolCO2(){  // 0 - 5 (0.01) 0v - 4v
 	// resive and convert CO2 values
 	adc1_CO2 = ads.readADC_SingleEnded(PORT_1_CO2_ADS1);
 	txStVal.val_CCO2 = adc1_CO2 * multiplierADS / 1000.0;  // Volt
+	Serial.print("CO2 V ");
+	Serial.println(txStVal.val_CCO2, 7);
 	txStVal.val_CCO2 = flap(txStVal.val_CCO2, 0, 5, 0, 4);          // %
 	return txStVal.val_CCO2;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос датчика CO
-float poolCO(){  // 2000 (1) 0v - 3v
+static float poolCO(){  // 2000 (1) 0v - 3v
 	// resive and convert CO values
-	adc2_CO = ads.readADC_SingleEnded(PORT_0_O2_ADS1);
-	txStVal.val_CO = adc2_CO * multiplierADS / 1000.0;  // Volt
-	txStVal.val_CO = flap(txStVal.val_CO, 0, 3, 0, 2000);       // ppm
-	return txStVal.val_CO;
+	adc2_CO = ads.readADC_SingleEnded(PORT_2_CO_ADS1);
+	float vpco = adc2_CO * multiplierADS / 1000.0;  // Volt
+	Serial.print("CO  V ");
+	Serial.println(vpco, 7);
+	vpco = flap(vpco, 0, 4, 0, 2000);       // ppm
+	txStVal.val_CO = int(vpco);
+	return vpco;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос уровня заряда батареи 
@@ -539,26 +551,35 @@ void finalCheckChangeSecondOrMinuteAndPerformAction(){
 
 		// управление диодом и бузером
 		if(recordFlag == 0){ // BLUE
-			iLed[0] = CRGB::Blue;
+			// iLed[0] = CRGB::Blue;
+			iLed[0] = CRGB(0, 0, 255);  // GRB blue
 			FastLED.show();
+			digitalWrite(BEEPER_PIN, HIGH);
 		}
 		else if(recordFlag && (txStVal.val_CCO2 >= 5 || txStVal.val_CO >= 170 || txStVal.val_O2 < 17)){ // RED, SIGNAL
-			iLed[0] = CRGB::Red;
+			// iLed[0] = CRGB::Red;
+			iLed[0] = CRGB(0, 255, 0);  // GRB red
 			FastLED.show();
 			if(beepFlag == 1){
 				tone(BEEPER_PIN, BEEPER_FREQ, BEEPER_DURATION);
+				// tone(BEEPER_PIN, 500, 500);
 			}else{
 				noTone(BEEPER_PIN);
+				digitalWrite(BEEPER_PIN, HIGH);
+				// tone(BEEPER_PIN, 500, 500);
 			}
 			beepFlag = !beepFlag;
 		}
 		else if(recordFlag && (txStVal.val_CCO2 >= 3 || txStVal.val_CO >= 26 || txStVal.val_O2 < 21)){ // YELOW
-			iLed[0] = CRGB(255, 255, 0);
+			iLed[0] = CRGB(255, 255, 0);  // GRB yelow
 			FastLED.show();
+			digitalWrite(BEEPER_PIN, HIGH);
 		}
 		else if(recordFlag && (txStVal.val_CCO2 < 3 && txStVal.val_CO < 26 && txStVal.val_O2 >= 21)){ // GREEN
-			iLed[0] = CRGB::Green;
+			// iLed[0] = CRGB::Green;
+			iLed[0] = CRGB(255, 0, 0);  // GRB green
 			FastLED.show();
+			digitalWrite(BEEPER_PIN, HIGH);
 		}
 
 		// отправляем значения за секунду по радио
@@ -568,28 +589,41 @@ void finalCheckChangeSecondOrMinuteAndPerformAction(){
 		radioWriteOk = radio.write(&txStVal, sizeof(txStVal));
 		radio.startListening();                  // начинаем слушать эфир, для приема
 		// щетчик качества сигнала
-		if(txStVal.signalLevel < 100 && radioWriteOk){
+		if(txStVal.signalLevel < 100 && radioWriteOk == 1){
 			txStVal.signalLevel += 10;
 			Serial.println();
 			Serial.println("radio write per sec OK");
 			Serial.println();
 		}
-		else if(txStVal.signalLevel > 0 && radioWriteOk){
+		else if(txStVal.signalLevel > 0 && radioWriteOk == 0){
 			txStVal.signalLevel -= 10;
 			Serial.println();
 			Serial.println("radio write per sec ERR");
 			Serial.println();
 		}
-		Serial.println("record flag = ");
+		Serial.print("record flag = ");
 		Serial.println(recordFlag);
-		Serial.println();
+		// Serial.println();
+
+		// выводим значения в сериал
+		Serial.println("DATE: 	TIME: 	     O2% 	Temp 1 	Temp 2 	Pres inh kPa 	Pres exh kPa 	CO2% 	CO%");
+		Serial.print(realDay); Serial.print("."); Serial.print(realMonth); Serial.print("	");
+		Serial.print(realHour); Serial.print(":"); Serial.print(realMinute); Serial.print(":"); Serial.print(realSecond); Serial.print("	 ");
+		Serial.print(txStVal.val_O2); Serial.print("	");
+		Serial.print(txStVal.val_T1); Serial.print("	    ");
+		Serial.print(txStVal.val_T2); Serial.print("	    ");
+		Serial.print(txStVal.val_Press_inh); Serial.print("	        ");
+		Serial.print(txStVal.val_Press_exh); Serial.print("	        ");
+		Serial.print(txStVal.val_CCO2); Serial.print("	");
+		Serial.print(txStVal.val_CO);  // Serial.print("	");
+		Serial.println("\n");
 
 		// сбрасываем макс значения за секунду
-		txStVal.val_O2 = 0;
-		txStVal.val_T1 = 0;
-		txStVal.val_T2 = 0;
-		txStVal.val_Press_inh = 0;
-		txStVal.val_Press_exh = 0;
+		txStVal.val_O2 = 100;
+		txStVal.val_T1 = -250;
+		txStVal.val_T2 = -250;
+		txStVal.val_Press_inh = 10;
+		txStVal.val_Press_exh = -10;
 		txStVal.val_CCO2 = 0;
 		txStVal.val_CO = 0;
 
@@ -601,14 +635,13 @@ void finalCheckChangeSecondOrMinuteAndPerformAction(){
 	    	dataSetToFileWHL();
 
 	    	// сбрасываем макс значение за минуту
-	    	minVal_O2 = 0;
-			maxVal_T1 = 0;
-			maxVal_T2 = 0;
-			minVal_Press_inh = 0;
-			maxVal_Press_exh = 0;
+	    	minVal_O2 = 100;
+			maxVal_T1 = -250;
+			maxVal_T2 = -250;
+			minVal_Press_inh = 10;
+			maxVal_Press_exh = -10;
 			maxVal_CCO2 = 0;
 			maxVal_CO = 0;
-
 		}
 	}
 }
@@ -620,27 +653,44 @@ void finalCheckChangeSecondOrMinuteAndPerformAction(){
 // START STOP RECORDING BUTTON:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool buttonChangeREC(){
-	if(!digitalRead(START_STOP_BUTTON_PIN)){  // если кнопка нажата
+	if(digitalRead(START_STOP_BUTTON_PIN)){  // если кнопка нажата
 		delay(50);
-		if(!digitalRead(START_STOP_BUTTON_PIN)){
+		if(digitalRead(START_STOP_BUTTON_PIN) == HIGH){
+			iLed[0] = CRGB(255, 255, 255);  // GRB white
+			FastLED.show();
+			noTone(BEEPER_PIN);
+			digitalWrite(BEEPER_PIN, HIGH);
 			if(recordFlag == 0){
 				recordFlag = 1;
 				txStVal.flagZapisiTransmite = recordFlag;
-				delay(500);
-				dataSetToFileSTRT();
 				Serial.println();
 				Serial.println("button changed, start REC");
+				dataSetToFileSTRT();
+				Serial.println("start REC OK");
 				Serial.println();
 			}
 			else{
 				recordFlag = 0;
 				txStVal.flagZapisiTransmite = recordFlag;
-				dataFile.close();
 				Serial.println();
 				Serial.println("button changed, stop REC");
+				dataFile.close();
+				Serial.println("stop REC OK");
 				Serial.println();
-				delay(500);
 			}
+			digitalWrite(BEEPER_PIN, LOW);
+			delay(100);
+			digitalWrite(BEEPER_PIN, HIGH);
+			delay(100);
+			digitalWrite(BEEPER_PIN, LOW);
+			delay(100);
+			digitalWrite(BEEPER_PIN, HIGH);
+			delay(100);
+			digitalWrite(BEEPER_PIN, LOW);
+			delay(100);
+			digitalWrite(BEEPER_PIN, HIGH);
+			delay(100);
+			
 		}
 	}
 }
@@ -791,21 +841,30 @@ void serCalibrator(){
 		}
 		s_pint = Serial.parseInt();
 		if(s_str == "set" && s_pint == SET_PAS){  // ВХОД
+			while(Serial.available() > 0){Serial.read();}
 
 		    if(dataFile){dataFile.close();Serial.println("\n\nstop recording");}  // отключить запись на флешку
 
 		    Serial.println("\n\n\n");
+		    Serial.println();
+			Serial.print(s_str);
+			Serial.println(" OK");
 		    Serial.println(" setting ok:\n");
 		    while(1){
 		    	if(Serial.available() > 0){
+		    		String s_str = "";
 		    		for(int i=0; i<3; i++){
 				    	s_d = Serial.read();
 				    	s_str += s_d;
 					}
+		    		Serial.println(s_str);
 
 					if(s_str[2] == 'n' || s_str[2] == 'x'){s_pfcv = Serial.parseFloat();}
 
 					if(s_str == "end"){  // ВЫХОД
+						Serial.println();
+						Serial.print(s_str);
+						Serial.println(" OK");
 						break;
 					}
 
@@ -814,48 +873,78 @@ void serCalibrator(){
 						delay(100);
 						calibr_T1_Mas[0] = poolTermoparaFast1();
 						calibr_T1_Mas[2] = s_pfcv;
+						Serial.println();
+						Serial.print(s_str);
+						Serial.println(" OK");
 					}
 					else if(s_str == "tox"){  // T1 MAX
 						poolTermoparaFast1();
 						delay(100);
 						calibr_T1_Mas[1] = poolTermoparaFast1();
 						calibr_T1_Mas[3] = s_pfcv;
+						Serial.println();
+						Serial.print(s_str);
+						Serial.println(" OK");
 					}
 
 					else if(s_str == "ttn"){  // T2 MIN
 						calibr_T2_Mas[0] = poolTermoparaSlow2();
 						calibr_T2_Mas[2] = s_pfcv;
+						Serial.println();
+						Serial.print(s_str);
+						Serial.println(" OK");
 					}
 					else if(s_str == "ttx"){  // T2 MAX
 						calibr_T2_Mas[1] = poolTermoparaSlow2(); 
 						calibr_T2_Mas[3] = s_pfcv;
+						Serial.println();
+						Serial.print(s_str);
+						Serial.println(" OK");
 					}
 
 					else if(s_str == "ctn"){  // CO2 MIN
 						calibr_CO2_Mas[0] = poolCO2();
 						calibr_CO2_Mas[2] = s_pfcv;
+						Serial.println();
+						Serial.print(s_str);
+						Serial.println(" OK");
 					}
 					else if(s_str == "ctx"){  // CO2 MAX
 						calibr_CO2_Mas[1] = poolCO2();
 						calibr_CO2_Mas[3] = s_pfcv;
+						Serial.println();
+						Serial.print(s_str);
+						Serial.println(" OK");
 					}
 
 					else if(s_str == "con"){  // CO MIN
 						calibr_CO_Mas[0] = poolCO();
 						calibr_CO_Mas[2] = s_pfcv;
+						Serial.println();
+						Serial.print(s_str);
+						Serial.println(" OK");
 					}
 					else if(s_str == "cox"){  // CO MAX
 						calibr_CO_Mas[1] = poolCO();
 						calibr_CO_Mas[3] = s_pfcv;
+						Serial.println();
+						Serial.print(s_str);
+						Serial.println(" OK");
 					}
 
 					else if(s_str == "otn"){  // O2 MIN
 						calibr_O2_Mas[0] = poolO2();
 						calibr_O2_Mas[2] = s_pfcv;
+						Serial.println();
+						Serial.print(s_str);
+						Serial.println(" OK");
 					}
 					else if(s_str == "otx"){  // O2 MAX
 						calibr_O2_Mas[1] = poolO2();
 						calibr_O2_Mas[3] = s_pfcv;
+						Serial.println();
+						Serial.print(s_str);
+						Serial.println(" OK");
 					}
 
 					else if(s_str == "prn"){  // Press MIN
@@ -863,12 +952,18 @@ void serCalibrator(){
 						delay(100);
 						calibr_Press_Mas[0] = poolPressure();
 						calibr_Press_Mas[2] = s_pfcv;
+						Serial.println();
+						Serial.print(s_str);
+						Serial.println(" OK");
 					}
 					else if(s_str == "prx"){  // Press MAX
 						poolPressure();
 						delay(100);
 						calibr_Press_Mas[1] = poolPressure();
 						calibr_Press_Mas[3] = s_pfcv;
+						Serial.println();
+						Serial.print(s_str);
+						Serial.println(" OK");
 					}
 
 					else if(s_str == "tms"){  // date time:  tms dy dm dd th tm ts
@@ -879,19 +974,24 @@ void serCalibrator(){
 						int rrminute = Serial.parseInt();
 						int rsecond = Serial.parseInt();
 						clock.setDateTime(ryear, rmonth, rday, rhour, rrminute, rsecond);  // Установка времени (Г,М,Д,Ч,М,С)
+						Serial.println();
+						Serial.print(s_str);
+						Serial.println(" OK");
 					}
 
-					// else if(s_str == ""){}
-					// else{}
+					else if(s_str == "tst"){  // date time:  tms dy dm dd th tm ts
+						Serial.print(s_str);
+						Serial.println(" OK");
+					}
 		    	}
 
-		    	if(millis() - scStrtErrTime > 4000){  // авто выход из настроек через 1 час
-					Serial.println(" setting timeout\nsetting end");
+		    	if(millis() - scStrtErrTime > 1800000){  // авто выход из настроек через 30 minut
+					Serial.println(" setting timeout");
 					break;
 				}
 		    }
 		    eePackWrite();
-		    Serial.println("\nseting end\n\n");
+		    Serial.println("\nsetting end\n\n");
 		}
 	}
 }
@@ -902,7 +1002,9 @@ void serCalibrator(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void setup(){
 
-	pinMode(START_STOP_BUTTON_PIN, INPUT_PULLUP);
+	pinMode(START_STOP_BUTTON_PIN, INPUT);
+	pinMode(BEEPER_PIN, OUTPUT);
+	digitalWrite(BEEPER_PIN, HIGH);
 
 	// serial init
 	Serial.begin(250000);    // serial
@@ -912,6 +1014,8 @@ void setup(){
 	Serial.println(" START SETUP");
 
 	FastLED.addLeds<WS2812B, LED_DATA_PIN, RGB>(iLed, 1); // 1 светодиод WS2812B
+	iLed[0] = CRGB(255, 255, 255);  // GRB white
+	FastLED.show();
 
 	radioNrfSetup();  // NRF setup
 	Serial.println(" radio setup ok");
