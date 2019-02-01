@@ -383,7 +383,7 @@ static float poolO2(){  // 0 - 100 (0.1) 0v - 1.6v
 	Serial.print("O2  V ");
 	// Serial.println(txStVal.val_O2, 7);
 	Serial.println(txStVal.val_O2, 7);
-	txStVal.val_O2 = flap(txStVal.val_O2, 0, 1.6, 0, 100);  // %
+	txStVal.val_O2 = flap(txStVal.val_O2, 0.009, 0.013, 0, 100);  // %
 	return txStVal.val_O2;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -453,7 +453,7 @@ float poolCO2(){  // 0 - 5 (0.01) 0v - 4v
 	txStVal.val_CCO2 = adc1_CO2 * multiplierADS / 1000.0;  // Volt
 	Serial.print("CO2 V ");
 	Serial.println(txStVal.val_CCO2, 7);
-	txStVal.val_CCO2 = flap(txStVal.val_CCO2, 0, 5, 0, 4);          // %
+	txStVal.val_CCO2 = flap(txStVal.val_CCO2, 0.4, 2, 0, 4);          // %
 	return txStVal.val_CCO2;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -464,7 +464,7 @@ static float poolCO(){  // 2000 (1) 0v - 3v
 	float vpco = adc2_CO * multiplierADS / 1000.0;  // Volt
 	Serial.print("CO  V ");
 	Serial.println(vpco, 7);
-	vpco = flap(vpco, 0, 4, 0, 2000);       // ppm
+	vpco = flap(vpco, 0.4, 2, 0, 2000);       // ppm
 	txStVal.val_CO = int(vpco);
 	return vpco;
 }
@@ -606,16 +606,16 @@ void finalCheckChangeSecondOrMinuteAndPerformAction(){
 		// Serial.println();
 
 		// выводим значения в сериал
-		Serial.println("DATE: 	TIME: 	     O2% 	Temp 1 	Temp 2 	Pres inh kPa 	Pres exh kPa 	CO2% 	CO%");
-		Serial.print(realDay); Serial.print("."); Serial.print(realMonth); Serial.print("	");
-		Serial.print(realHour); Serial.print(":"); Serial.print(realMinute); Serial.print(":"); Serial.print(realSecond); Serial.print("	 ");
-		Serial.print(txStVal.val_O2); Serial.print("	");
-		Serial.print(txStVal.val_T1); Serial.print("	    ");
-		Serial.print(txStVal.val_T2); Serial.print("	    ");
-		Serial.print(txStVal.val_Press_inh); Serial.print("	        ");
-		Serial.print(txStVal.val_Press_exh); Serial.print("	        ");
-		Serial.print(txStVal.val_CCO2); Serial.print("	");
-		Serial.print(txStVal.val_CO);  // Serial.print("	");
+		Serial.println("DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%");
+		Serial.print(realDay); Serial.print("."); Serial.print(realMonth); Serial.print("      ");
+		Serial.print(realHour); Serial.print(":"); Serial.print(realMinute); Serial.print(":"); Serial.print(realSecond); Serial.print("    ");
+		Serial.print(txStVal.val_O2); Serial.print("   ");
+		Serial.print(txStVal.val_T1); Serial.print("     ");
+		Serial.print(txStVal.val_T2); Serial.print("     ");
+		Serial.print(txStVal.val_Press_inh); Serial.print("       ");
+		Serial.print(txStVal.val_Press_exh); Serial.print("       ");
+		Serial.print(txStVal.val_CCO2); Serial.print("   ");
+		Serial.print(txStVal.val_CO);  // Serial.print("    ");
 		Serial.println("\n");
 
 		// сбрасываем макс значения за секунду
