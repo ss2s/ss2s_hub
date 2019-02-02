@@ -27,7 +27,7 @@ void setup(){
 
 void loop(){
 	while(1){
-		// resive and convert termocouple values and find MAX val
+		// resive and convert Pressure values and find MAX val
 		adc64 = hx711Obj.read();
 		// adc64 = hx711Obj.get_value();
 		

@@ -2,13 +2,14 @@
 // MEGA 2560
 // #    pragma message "SS2S MEGA 2560"  // SS2S
 
-// #include "Arduino.h"            // Arduino lib
+// #include "Arduino.h"         // Arduino lib
 #include <SPI.h>                // SPI lib
 #include <Wire.h>               // I2C lib
 #include <EEPROM.h>             // EEPROM lib
 
 #include <SD.h>                 // Micro SD lib
 
+#include "HX711.h"              // ADC 24 BIT lib
 #include "Adafruit_ADS1015.h"   // ads1115 ADC 16 BIT lib
 #include "DS3231.h"             // ds3231 clock lib
 #include "FastLED.h"            // WS2812B svetodiod lib 
@@ -21,7 +22,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // НАСТРОЙКИ:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define SET_PAS 111             // пароль для входа в сериал настройки. не больше 4 цифр
+#define SET_PAS 111              // пароль для входа в сериал настройки. не больше 4 цифр. set 111
 #define BAT_LVL_READ_TYPE 0      // тип считывателя уровня батареи: 0-аналоговый,  1-цифровой
 #define SET_CLOK_FOR_PROG 0      // если 1 то установка часов будет при записи программы. если 0 то нет
 #define SDCHEK 0                 // 1 ЕСЛИ ФЛЕШКИ НЕТ ТО НЕ СТАРТОВАТЬ. 0 СТАРТОВАТЬ В ЛЮБОМ СЛУЧАЕ
@@ -61,6 +62,10 @@
 #define LED_DATA_PIN 8 // led pin
 
 RF24 radio(9,53);  // nrf init CE, CSN  nrf init:
+
+// ADC 24 B HX711
+#define HX711_DOUT_PIN A2
+#define HX711_PD_SCK_PIN A3
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -90,6 +95,9 @@ int treckingSecond = 61;  // Переменная для отслеживани�
 int treckingMinute = 61;  // Переменная для отслеживания изменения минут
 int treckingHour = 25;    // переменная для отслеживания изменения часов
 int treckingDay;          // переменная для отслеживания изменения дня
+// HX711 variables
+long adc64 = 0;
+float voltageO2 = 0;
 // ads 1115 variables
 int16_t adc0_O2, adc1_CO2, adc2_CO;  // ads ADC read val
 float multiplierADS = 0.1875F; // ADS1115 6.144V gain (16-Bit results). делитель для перевода показаний АЦП в вольты
@@ -158,8 +166,10 @@ bool beepFlag = 1;
 MAX6675 thermocouple2(T2_TERMOPARA_SCK_PIN, T2_TERMOPARA_CS_PIN, T2_TERMOPARA_SO_PIN);
 // nrf init:
 byte addressNRF[][6] = {"1Node", "2Node", "3Node", "4Node", "5Node", "6Node"}; //возможные номера труб
-// ads 1115 init:
-Adafruit_ADS1115 ads;         /* Use this for the 16-bit version */
+// HX711 24 BIT ADC init
+HX711 hx711Obj;
+// ads 1115 16 BIT ADC init:
+Adafruit_ADS1115 ads;         /* Use this for the 16-BIT version */
 // clock init:
 DS3231 clock;                // Связываем объект clock с библиотекой DS3231
 // clock dataType
@@ -378,12 +388,22 @@ float flap(float fX, float fY = 0, float fZ = 1000, float fA = 0, float fB = 100
 // опрос датчика O2
 static float poolO2(){  // 0 - 100 (0.1) 0v - 1.6v
 	// resive and convert O2 values
-	adc0_O2 = ads.readADC_SingleEnded(PORT_0_O2_ADS1);
-	txStVal.val_O2 = adc0_O2 * multiplierADS / 1000.0;  // Volt
+
+  	hx711Obj.power_up();
+  	delay(5);
+	adc64 = hx711Obj.read();
+	voltageO2 = flap(adc64, 0, 1073741826, 0, 5000);  // Volt
+	txStVal.val_O2 = flap(voltageO2, 9, 13, 0, 100);  // %
+	hx711Obj.power_down();			        // put the ADC in sleep mode
 	Serial.print("O2  V ");
+	Serial.println(voltageO2, 7);
+
+	// adc0_O2 = ads.readADC_SingleEnded(PORT_0_O2_ADS1);
+	// txStVal.val_O2 = adc0_O2 * multiplierADS / 1000.0;  // Volt
+	// Serial.print("O2  V ");
 	// Serial.println(txStVal.val_O2, 7);
-	Serial.println(txStVal.val_O2, 7);
-	txStVal.val_O2 = flap(txStVal.val_O2, 0.009, 0.013, 0, 100);  // %
+	// txStVal.val_O2 = flap(txStVal.val_O2, 0.009, 0.013, 0, 100);  // %
+
 	return txStVal.val_O2;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1055,7 +1075,10 @@ void setup(){
 		Serial.println(" microSD init ok");
   	}
 
-  	// ads setup
+  	// HX711 setup
+  	hx711Obj.begin(HX711_DOUT_PIN, HX711_PD_SCK_PIN);
+
+  	// ADS1115 setup
   	ads.setGain(GAIN_TWOTHIRDS);  // 2/3x gain +/- 6.144V  1 bit = 3mV      0.1875mV (default)
 	ads.begin();
 
