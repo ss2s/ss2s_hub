@@ -1,0 +1,485 @@
+pi-0.23
+e0.00
+pi-0.23
+e-0.23
+pi-0.23
+e-0.23
+pi-0.23
+e-0.23
+pi-1.96
+e-0.23
+pi-0.23
+e-0.23
+pi-0.23
+e0.00
+pi-0.23
+e-0.23
+pi-0.23
+e-0.23
+pi-0.23
+e-0.23
+pi-0.23
+e-0.23
+pi-0.23
+e-0.23
+pi-0.23
+e-0.23
+pi-0.23
+e-0.23
+pi-0.23
+e-0.23
+pi-0.23
+e-0.23
+pi-0.23
+e-0.23
+pi-0.23
+e-0.23
+pi-5.05
+e-0.23
+pi-6.91
+e-3.30
+pi-11.07
+e-0.23
+ START SETUP
+ radio setup ok
+
+ clock init...
+ clock init ok
+
+ microSD init...
+ microSD init ok
+
+ END SETUP. ALL SETUP OK
+O2  V 0.0000000
+CO2 V 0.7293750
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:25    -225.00   23.40     27.50     -0.23       -0.23       0.82   10
+
+O2  V 0.0000000
+ get Pressure serial timeaut ERROR 
+CO2 V 0.7293750
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:26    -225.00   23.40     27.50     10.00       -0.23       0.82   10
+
+O2  V 0.0000000
+CO2 V 0.7306875
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:27    -225.00   23.40     28.00     -0.23       -0.23       0.83   10
+
+O2  V 0.0000000
+CO2 V 0.7301250
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:28    -225.00   23.40     28.00     -0.23       -0.23       0.83   10
+
+O2  V 0.0000000
+CO2 V 0.7301250
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:29    -225.00   23.40     27.25     -0.23       -0.23       0.83   10
+
+O2  V 0.0000000
+CO2 V 0.7303125
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:30    -225.00   23.40     27.75     -0.23       -0.23       0.83   10
+
+O2  V 0.0000000
+CO2 V 0.7301250
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:31    -225.00   23.40     27.50     -0.23       -0.23       0.83   10
+
+O2  V 0.0000000
+CO2 V 0.7314375
+CO  V 0.4085625
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:32    -225.00   23.40     28.00     -0.23       -0.23       0.83   10
+
+O2  V 0.0000000
+CO2 V 0.7301250
+CO  V 0.4085625
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:33    -225.00   23.40     27.50     -0.23       -0.23       0.83   10
+
+O2  V 0.0000000
+CO2 V 0.7301250
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:34    -225.00   23.40     28.00     -0.23       -0.23       0.83   10
+
+O2  V 0.0000000
+CO2 V 0.7301250
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:35    -225.00   23.40     27.75     -0.23       -0.23       0.83   10
+
+O2  V 0.0000000
+CO2 V 0.7301250
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:36    -225.00   23.40     27.75     -0.23       -0.23       0.83   10
+
+O2  V 0.0000000
+CO2 V 0.7316250
+CO  V 0.4085625
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:37    -225.00   23.40     27.25     -0.23       -0.23       0.83   10
+
+O2  V 0.0000000
+CO2 V 2.0019373
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:38    -225.00   23.40     27.25     -0.23       -0.23       4.00   10
+
+O2  V 0.0000000
+CO2 V 2.0019373
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:39    -225.00   23.40     27.00     -0.23       -0.23       4.00   10
+
+O2  V 0.0000000
+CO2 V 2.0021250
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:40    -225.00   23.40     27.50     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0019373
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:41    -225.00   23.40     28.00     -0.23       -0.23       4.00   10
+
+O2  V 0.0000000
+CO2 V 2.0032498
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:42    -225.00   23.40     27.75     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0019373
+CO  V 0.4085625
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:43    -225.00   23.40     27.75     -0.23       -0.23       4.00   10
+
+O2  V 0.0000000
+CO2 V 2.0019373
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:44    -225.00   23.40     27.75     -0.23       -0.23       4.00   10
+
+O2  V 0.0000000
+CO2 V 2.0019373
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:45    -225.00   23.40     27.75     -0.23       -0.23       4.00   10
+
+O2  V 0.0000000
+CO2 V 2.0019373
+CO  V 0.4085625
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:46    -225.00   23.40     27.50     -0.23       -0.23       4.00   10
+
+O2  V 0.0000000
+CO2 V 2.0034375
+CO  V 0.4085625
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:47    -225.00   23.40     28.00     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0026874
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:48    -225.00   23.40     28.00     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0028750
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:49    -225.00   23.40     27.50     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0028750
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:50    -225.00   23.40     28.00     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0028750
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:51    -225.00   23.40     27.75     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0041875
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:52    -225.00   23.40     28.00     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0021250
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:53    -225.00   23.40     28.25     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0019373
+CO  V 0.4085625
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:54    -225.00   23.40     28.00     -0.23       -0.23       4.00   10
+
+O2  V 0.0000000
+CO2 V 2.0019373
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:55    -225.00   23.40     28.00     -0.23       -0.23       4.00   10
+
+O2  V 0.0000000
+CO2 V 2.0019373
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:56    -225.00   23.40     27.75     -0.23       -0.23       4.00   10
+
+O2  V 0.0000000
+CO2 V 2.0032498
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:57    -225.00   23.40     27.75     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0028750
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:58    -225.00   23.40     28.00     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0028750
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:35:59    -225.00   23.40     27.75     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0026874
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:36:0    -225.00   23.40     27.75     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0026874
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:36:1    -225.00   23.40     28.00     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0043749
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:36:2    -225.00   23.40     28.00     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0028750
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:36:3    -225.00   23.40     28.00     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0028750
+CO  V 0.4085625
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:36:4    -225.00   23.40     28.00     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0028750
+CO  V 0.4085625
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:36:5    -225.00   23.40     27.75     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0028750
+CO  V 0.4085625
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:36:6    -225.00   23.40     27.75     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0043749
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:36:7    -225.00   23.40     28.00     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0028750
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:36:8    -225.00   23.30     28.00     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0028750
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:36:9    -225.00   23.30     27.75     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0028750
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:36:10    -225.00   23.30     27.75     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0028750
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:36:11    -225.00   23.30     27.50     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0041875
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:36:12    -225.00   23.30     27.75     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0026874
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:36:13    -225.00   23.30     27.75     -0.23       -0.23       4.01   10
+
+O2  V 0.0000000
+CO2 V 2.0026874
+CO  V 0.4083750
+record flag = 0
+DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%
+3.2      0:36:14    -225.00   23.40     27.75     -0.23       -0.23       4.01   10
+
+pi-0.23
+e0.00
+pi-0.23
+e-0.23
+pi0.00
+e16.03
+pi10.00
+e16.03
+pi10.00
+e16.03
+pi10.00
+e16.03
+pi10.00
+e16.03
+pi10.00
+e16.03
+pi10.00
+e16.03
+pi10.00
+e16.03
+pi10.00
+e16.03
+pi10.00
+e16.03
+pi-9.78
+e0.00
+pi-9.78
+e-9.78
+pi-9.78
+e-9.78
+pi-9.78
+e-9.78
+pi-9.78
+e-9.78
+pi-9.78
+e-9.78
+pi-9.78
+e-9.78
+pi-9.83
+e0.00
+pi-9.83
+e-9.83
+pi-9.83
+e-9.83
+pi-9.57
+e0.00
+pi-9.57
+e-9.57
+pi-9.57
+e-9.57
+pi0.00
+e16.03
+pi10.00
+e16.03
+pi10.00
+e16.03
+pi10.00
+e16.03
+pi-0.23
+e0.00
+pi-0.23
+e-0.23
+pi-0.23
+e-0.23
+pi-0.23
+e-0.23
+pi-7.34
+e-0.23
+pi-3.75
+e-0.23
+pi-0.23
+e0.00
+pi-0.23
+e-0.23
+pi-0.23
+e-0.23
+pi-0.23
+e0.00
+pi-0.23
+e-0.23
+pi-0.23
+e-0.23

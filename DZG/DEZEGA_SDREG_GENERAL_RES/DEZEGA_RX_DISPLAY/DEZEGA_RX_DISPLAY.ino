@@ -1,19 +1,34 @@
 // ProMini
 
 #include <SPI.h>
+
 #include "nRF24L01.h"
 #include "RF24.h"
 
+#include "FastLED.h"            // WS2812B svetodiod lib 
+
+
+// #include "U8glib.h"
+// U8GLIB_SSD1309_128X64 u8g(13, 11, 10, 9, 8);	// SPI Com: SCK = 13, MOSI = 11, CS = 10, A0 = 9
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-RF24 radio(9,53);  // nrf init CE, CSN  nrf init:
+#define START_STOP_BUTTON_PIN 30  // кнопка включения выключения записи. замыкать
+#define LED_DATA_PIN 8 // led pin
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+RF24 radio(48,53);  // nrf init CE, CSN  nrf init:  MISO:50, MOSI:51, SCK:52
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// значения сенсоров за секунду структура для хранения значений и передачи по радио
+unsigned long signalErrTime;  // signall err Millis start val
+byte innerSignalAntVal = 100;  // внутреннее значение уровня сигнала
+int receiveErrorCounter = 0;  // счетчик ошибок приема
+int otherErrorCounter = 0;  // счетчик ошибок прочие
+
+// значения сенсоров за секунду структура для хранения значений и приема по радио
 typedef struct receiveStructure{
 	float val_T1 = 0;
 	float val_T2 = 0;
@@ -25,24 +40,26 @@ typedef struct receiveStructure{
 	short minuteTest = 0;  // X>=<60  общее количество минут что идет тест
 	byte val_BatteryLevel_TX = 50;  // уровень заряда батареи в %
 	byte signalLevel = 0;                      // щетчик для контроля качества сигнала
-	byte flagZapisiTransmite = 0;  // если 1 то на флешку идет запись если 0 то нет
+	byte flagZapisiAndColorTransmite = 0;  // если 1 то на флешку идет запись если 0 то нет
 	byte operationKeyTX = 0;
 };
-receiveStructure rxStVal;
+receiveStructure rxStrctVal;
 // уровень заряда батареи в %
 byte val_BatteryLevel_TX = 50;
-// значения калибровки структура для приема по радио
+// значения калибровки структура для передачи по радио
 typedef struct transmiteStructure{
-	int operationKey;
-	int addrNameKey;
+	int operationKeyRX;
+	int addrNameCalibrUnit;
 	float inMin = 0;
 	float inMax = 1000;
 	float outMin = 0;
 	float outMax = 1000;
 };
-transmiteStructure txStCalibrVal;
+transmiteStructure txStrctCalibrVal;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 byte addressNRF[][6] = {"1Node", "2Node", "3Node", "4Node", "5Node", "6Node"}; //возможные номера труб
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+CRGB iLed[1];  // Define the Array of leds, LED dataType 1 светодиод
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -67,19 +84,100 @@ void radioNrfSetup(){
 	// radio.stopListening();                // First, stop listening so we can talk.
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// val struct radio receiver
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void radioReseiverGF(){
+
+	if (radio.available()){
+
+		radio.read(&rxStrctVal, sizeof(rxStrctVal));
+
+		if(rxStrctVal.operationKeyTX == 1){
+			rxStrctVal.operationKeyTX = 0;
+			signalErrTime = millis();
+
+			Serial.println("radio receive OK");
+			Serial.println("");
+			Serial.print("T1: "); Serial.println(rxStrctVal.val_T1);
+			Serial.print("T2: "); Serial.println(rxStrctVal.val_T2);
+			Serial.print("CO2: "); Serial.println(rxStrctVal.val_CCO2);
+			Serial.print("O2: "); Serial.println(rxStrctVal.val_O2);
+			Serial.print("CO: "); Serial.println(rxStrctVal.val_CO);
+			Serial.print("Press inh: "); Serial.println(rxStrctVal.val_Press_inh);
+			Serial.print("Press exh: "); Serial.println(rxStrctVal.val_Press_exh);
+			Serial.print("test time: "); Serial.println(rxStrctVal.minuteTest);
+			Serial.print("receive TX bat level: "); Serial.println(rxStrctVal.val_BatteryLevel_TX);
+			Serial.print("receive signal level: "); Serial.println(rxStrctVal.signalLevel);
+			Serial.print("record and color flag: "); Serial.println(rxStrctVal.flagZapisiAndColorTransmite);
+			Serial.print("operation key: "); Serial.println(rxStrctVal.operationKeyTX);
+			Serial.print("inner signal level: "); Serial.println(innerSignalAntVal);
+
+			receiveErrorCounter = 0;
+			otherErrorCounter = 0;
+			if(innerSignalAntVal < 100){innerSignalAntVal += 10;}
+		}else{
+			otherErrorCounter ++;
+			if(otherErrorCounter >= 2000){
+				otherErrorCounter = 0;
+				Serial.println("other error: NRF no connect");
+			}
+		}
+	}
+
+	if(millis() - signalErrTime > 3000){
+		signalErrTime = millis();
+		if(innerSignalAntVal > 0){innerSignalAntVal -= 10;}
+		receiveErrorCounter ++;
+		Serial.println("radio receive failed, timeout end");
+		Serial.print("inner signal level: "); Serial.println(innerSignalAntVal);
+		Serial.print("err count: "); Serial.println(receiveErrorCounter);
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// REC BUTTON CHANGE CHECK
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void recbuttonChangeCheckGF(){
+	if(digitalRead(START_STOP_BUTTON_PIN) == LOW){  // если кнопка нажата
+		delay(50);
+		if(digitalRead(START_STOP_BUTTON_PIN) == LOW){
+			Serial.println("button pressed");
+			iLed[0] = CRGB(255, 255, 255);  // GRB white
+			FastLED.show();
+			// отправляем факт нажатие кнопки по радио
+			txStrctCalibrVal.operationKeyRX = 1;
+			bool radioWriteOk = 0;
+			radio.stopListening();                   // перестаем слушать эфир, для передачи
+			radioWriteOk = radio.write(&txStrctCalibrVal, sizeof(txStrctCalibrVal));
+			radio.startListening();                  // начинаем слушать эфир, для приема
+		}
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
 // NRF rx and tx F
 // NRF signal level F
 // battery level F
-// encoder F
 // display sensor values and battery level and signal level
-// menu calibration and admin pass
 void setup(){
+	pinMode(START_STOP_BUTTON_PIN, INPUT_PULLUP);
 	Serial.begin(250000);
+	delay(500);
+
+	FastLED.addLeds<WS2812B, LED_DATA_PIN, RGB>(iLed, 1); // 1 светодиод WS2812B
+	iLed[0] = CRGB(255, 255, 255);  // GRB white
+	FastLED.show();
+
 	radioNrfSetup();
+
 }
 
 void loop(){
+	radioReseiverGF();
+	recbuttonChangeCheckGF();
 }

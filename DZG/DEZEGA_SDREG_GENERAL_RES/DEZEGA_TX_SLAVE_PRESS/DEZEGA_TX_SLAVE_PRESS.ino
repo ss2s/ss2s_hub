@@ -4,6 +4,7 @@
 #define POMP_PIN 4  // пин подключения насоса
 
 HX711 hx711Obj;
+#define HX711_GAIN 64  // усилитель
 
 #define HX711_DOUT_PIN A2
 #define HX711_PD_SCK_PIN A3
@@ -22,7 +23,7 @@ void setup(){
 	Serial.begin(250000);
 	delay(10);
 
-	hx711Obj.begin(HX711_DOUT_PIN, HX711_PD_SCK_PIN);
+	hx711Obj.begin(HX711_DOUT_PIN, HX711_PD_SCK_PIN, HX711_GAIN);
 }
 
 void loop(){
@@ -31,8 +32,8 @@ void loop(){
 		adc64 = hx711Obj.read();
 		// adc64 = hx711Obj.get_value();
 		
-		voltage = flap(adc64, 0, 1073741826, 0, 5000);
-		realPress = flap(voltage, 0, 80, -9.99, 9.99);
+		voltage = flap(adc64, 0, 1073741826, 0, 5);
+		realPress = flap(voltage, 0, 0.08, -9.99, 9.99);
 		// pump control
 		if(realPress >= -0.02){
 		    digitalWrite(POMP_PIN, LOW);

@@ -28,7 +28,7 @@
 
 // Set up nRF24L01 radio on SPI bus plus pins 7 & 8
 
-RF24 radio(7,8);
+RF24 radio(48,53);
 
 //
 // Channel info
@@ -47,7 +47,7 @@ void setup(void)
   // Print preamble
   //
 
-  Serial.begin(115200);
+  Serial.begin(250000);
   printf_begin();
   Serial.println(F("\n\rRF24/examples/scanner/"));
 
@@ -57,6 +57,7 @@ void setup(void)
 
   radio.begin();
   radio.setAutoAck(false);
+  // radio.setPALevel (RF24_PA_MAX); // уровень мощности передатчика RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX
 
   // Get into standby mode
   radio.startListening();

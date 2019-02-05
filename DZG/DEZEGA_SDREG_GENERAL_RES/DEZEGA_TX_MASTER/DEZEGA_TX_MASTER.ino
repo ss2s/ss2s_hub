@@ -3,6 +3,7 @@
 // #    pragma message "SS2S MEGA 2560"  // SS2S
 
 // #include "Arduino.h"         // Arduino lib
+// #include "DigitalIO.h"
 #include <SPI.h>                // SPI lib
 #include <Wire.h>               // I2C lib
 #include <EEPROM.h>             // EEPROM lib
@@ -51,19 +52,21 @@
 // РАСПИНОВКА Arduino:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define BAT_LEVEL_ANALOG_PIN A0  // пин подключения аналогового сигнала с батареи, если это предусмотрено в настр. выше
-#define CHIPSELEKT 49  // пин чип селект для флэшки: SPI 50 MISO 51 MOSI 52 SCK 49 CHIPSELEKT
-#define START_STOP_BUTTON_PIN 30  // кнопка включения выключения записи. замыкать на землю
+#define START_STOP_BUTTON_PIN 30  // кнопка включения выключения записи
 #define BEEPER_PIN 4  // пин аварийной пищалки
+#define LED_DATA_PIN 8 // led pin
 
 // термопара t2
 #define T2_TERMOPARA_SO_PIN 5
 #define T2_TERMOPARA_CS_PIN 6
 #define T2_TERMOPARA_SCK_PIN 7
-#define LED_DATA_PIN 8 // led pin
 
-RF24 radio(9,53);  // nrf init CE, CSN  nrf init:
+#define CHIPSELEKT 49  // пин чип селект для флэшки: SPI 50 MISO 51 MOSI 52 SCK 49 CHIPSELEKT
 
-// ADC 24 B HX711
+RF24 radio(48,47);  // nrf init CE, CSN  nrf init:  MISO:50, MOSI:51, SCK:52
+
+// ADC 24 B HX711     O2 sensor ADC
+#define HX711_GAIN 64  // усилитель HX711
 #define HX711_DOUT_PIN A2
 #define HX711_PD_SCK_PIN A3
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -73,7 +76,7 @@ RF24 radio(9,53);  // nrf init CE, CSN  nrf init:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // РАСПИНОВКА ads1115:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define PORT_0_O2_ADS1 0   // порт ADS1115 куда подключается датчик O2
+// #define PORT_0_O2_ADS1 0   // порт ADS1115 куда подключается датчик O2
 #define PORT_1_CO2_ADS1 1  // порт ADS1115 куда подключается датчик CO2
 #define PORT_2_CO_ADS1 2   // порт ADS1115 куда подключается датчик CO
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -113,10 +116,10 @@ typedef struct transmiteStructure{
 	short minuteTest = 0;  // X>=<60  общее количество минут что идет тест
 	byte val_BatteryLevel_TX = 50;  // уровень заряда батареи в %
 	byte signalLevel = 0;                      // щетчик для контроля качества сигнала
-	byte flagZapisiTransmite = 0;  // если 1 то на флешку идет запись если 0 то нет
+	byte flagZapisiAndColorTransmite = 0;  // если 1 то на флешку идет запись если 0 то нет
 	byte operationKeyTX = 0;
 };
-transmiteStructure txStVal;
+transmiteStructure txStrctVal;
 
 // МАКС значения сенсоров за минуту
 float minVal_O2 = 100;
@@ -136,7 +139,7 @@ typedef struct receiverStructure{
 	float outMin = 0;
 	float outMax = 1000;
 };
-receiverStructure rxStCalibrVal;
+receiverStructure rxStrctCalibrVal;
 
 // калибровка всех датчиков. значения: inMin, inMax, outMin, outMax
 float calibr_O2_Mas[] = {0, 100, 0, 100};
@@ -251,18 +254,6 @@ void eeSingleWriteOfRam(byte addrName){ // калибровка и запись 
 	}
 }
 
-void eePackOneInitWrite(){ // запись всех значений калибровки в EEPROM (ОДНОРАЗОВАЯ ФУНКЦИЯ ДЛЯ ЗАПИСИ EEPROM ПРИ 1 ПРОШИВКЕ)
-	if(EEPROM.read(EEPROM_WRITE_K_ADDR) == EEPROM_WRITE_KEY){return;}  // если код перезаписи совпадает то не перезаписывать
-	for(int i=0; i<4; i++){
-	    EEPROM_float_write(0+i, calibr_T1_Mas[i]);
-	    EEPROM_float_write(4+i, calibr_T2_Mas[i]);
-	    EEPROM_float_write(8+i, calibr_CO2_Mas[i]);
-	    EEPROM_float_write(12+i, calibr_O2_Mas[i]);
-	    EEPROM_float_write(16+i, calibr_CO_Mas[i]);
-	    EEPROM_float_write(20+i, calibr_Press_Mas[i]);
-	}
-	EEPROM.write(EEPROM_WRITE_K_ADDR, EEPROM_WRITE_KEY);
-}
 void eePackWrite(){ // запись всех значений калибровки в EEPROM
 	for(int i=0; i<4; i++){
 	    EEPROM_float_write(0+i, calibr_T1_Mas[i]);
@@ -282,6 +273,11 @@ void eePackRead(){ // чтение всех значений калибровк�
 	    calibr_CO_Mas[i] = EEPROM_float_read(16+i);
 	    calibr_Press_Mas[i] = EEPROM_float_read(20+i);
 	}
+}
+void eePackOneInitWrite(){ // запись всех значений калибровки в EEPROM (ОДНОРАЗОВАЯ ФУНКЦИЯ ДЛЯ ЗАПИСИ EEPROM ПРИ 1 ПРОШИВКЕ)
+	if(EEPROM.read(EEPROM_WRITE_K_ADDR) == EEPROM_WRITE_KEY){return;}  // если код перезаписи совпадает то не перезаписывать
+	eePackWrite();
+	EEPROM.write(EEPROM_WRITE_K_ADDR, EEPROM_WRITE_KEY);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -328,7 +324,7 @@ void dataSetToFileSTRT(){
  	}
  	chekVremya();
 
-	txStVal.minuteTest = 0;
+	txStrctVal.minuteTest = 0;
 }
 
 // ФУНКЦИЯ ЗАПИСИ ИНФОРМАЦИИ В ФАЙЛ НА ФЛЭШКЕ КАЖДУЮ МИНУТУ
@@ -371,7 +367,7 @@ void dataSetToFileWHL(){
  	 	Serial1.println(indexToNameFileSD(globalFileIndex));
  	}
 
- 	txStVal.minuteTest ++;  // +1 minute test
+ 	txStrctVal.minuteTest ++;  // +1 minute test
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -392,19 +388,19 @@ static float poolO2(){  // 0 - 100 (0.1) 0v - 1.6v
   	hx711Obj.power_up();
   	delay(5);
 	adc64 = hx711Obj.read();
-	voltageO2 = flap(adc64, 0, 1073741826, 0, 5000);  // Volt
-	txStVal.val_O2 = flap(voltageO2, 9, 13, 0, 100);  // %
+	voltageO2 = flap(adc64, 0, 1073741826, 0, 40);  // mVolt
+	txStrctVal.val_O2 = flap(voltageO2, 9, 13, 0, 100);  // %
 	hx711Obj.power_down();			        // put the ADC in sleep mode
 	Serial.print("O2  V ");
 	Serial.println(voltageO2, 7);
 
 	// adc0_O2 = ads.readADC_SingleEnded(PORT_0_O2_ADS1);
-	// txStVal.val_O2 = adc0_O2 * multiplierADS / 1000.0;  // Volt
+	// txStrctVal.val_O2 = adc0_O2 * multiplierADS / 1000.0;  // Volt
 	// Serial.print("O2  V ");
-	// Serial.println(txStVal.val_O2, 7);
-	// txStVal.val_O2 = flap(txStVal.val_O2, 0.009, 0.013, 0, 100);  // %
+	// Serial.println(txStrctVal.val_O2, 7);
+	// txStrctVal.val_O2 = flap(txStrctVal.val_O2, 0.009, 0.013, 0, 100);  // %
 
-	return txStVal.val_O2;
+	return txStrctVal.val_O2;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос быстрой ТЕРМОПАРЫ1 через сериал1
@@ -416,8 +412,8 @@ float poolTermoparaFast1(){  // -250 - 750 (0.1)
 		if (Serial1.available() > 0) { 
 			s_d = Serial1.read();
 			if(s_d == 'm'){
-				txStVal.val_T1 = Serial1.parseFloat();
-				// txStVal.val_T1 = 100;
+				txStrctVal.val_T1 = Serial1.parseFloat();
+				// txStrctVal.val_T1 = 100;
 				break;
 			}
 		}
@@ -430,8 +426,8 @@ float poolTermoparaFast1(){  // -250 - 750 (0.1)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос медленной ТЕРМОПАРЫ2
 float poolTermoparaSlow2(){  // -250 - 750 (0.25)
-	txStVal.val_T2 = thermocouple2.readCelsius();
-	return txStVal.val_T2;
+	txStrctVal.val_T2 = thermocouple2.readCelsius();
+	return txStrctVal.val_T2;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос датчика ДАВЛЕНИЯ через сериал2
@@ -444,7 +440,7 @@ float poolPressure(){  // -9.99 - 9.99 (0.01) 50mv - 80mv
 			s_d = Serial2.read();
 		}
 		if(s_d == 'i'){
-			txStVal.val_Press_inh = Serial2.parseFloat();
+			txStrctVal.val_Press_inh = Serial2.parseFloat();
 		}
 		if(millis() - prStrtErrTime > 100){
 			Serial.println(" get Pressure serial timeaut ERROR ");
@@ -456,25 +452,25 @@ float poolPressure(){  // -9.99 - 9.99 (0.01) 50mv - 80mv
 			s_d = Serial2.read();
 		}
 		if(s_d == 'e'){
-			txStVal.val_Press_exh = Serial2.parseFloat();  // kPa
+			txStrctVal.val_Press_exh = Serial2.parseFloat();  // kPa
 		}
 		if(millis() - prStrtErrTime > 200){
 			Serial.println(" get Pressure serial timeaut ERROR ");
 			break;
 		}
 	}
-	return (txStVal.val_Press_inh + txStVal.val_Press_exh) / 2;
+	return (txStrctVal.val_Press_inh + txStrctVal.val_Press_exh) / 2;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос датчика CO2
 float poolCO2(){  // 0 - 5 (0.01) 0v - 4v
 	// resive and convert CO2 values
 	adc1_CO2 = ads.readADC_SingleEnded(PORT_1_CO2_ADS1);
-	txStVal.val_CCO2 = adc1_CO2 * multiplierADS / 1000.0;  // Volt
+	txStrctVal.val_CCO2 = adc1_CO2 * multiplierADS / 1000.0;  // Volt
 	Serial.print("CO2 V ");
-	Serial.println(txStVal.val_CCO2, 7);
-	txStVal.val_CCO2 = flap(txStVal.val_CCO2, 0.4, 2, 0, 4);          // %
-	return txStVal.val_CCO2;
+	Serial.println(txStrctVal.val_CCO2, 7);
+	txStrctVal.val_CCO2 = flap(txStrctVal.val_CCO2, 0.4, 2, 0, 4);          // %
+	return txStrctVal.val_CCO2;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос датчика CO
@@ -485,7 +481,7 @@ static float poolCO(){  // 2000 (1) 0v - 3v
 	Serial.print("CO  V ");
 	Serial.println(vpco, 7);
 	vpco = flap(vpco, 0.4, 2, 0, 2000);       // ppm
-	txStVal.val_CO = int(vpco);
+	txStrctVal.val_CO = int(vpco);
 	return vpco;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -497,11 +493,11 @@ float poolBatteryLevel(){
 		promBatLvlVal = map(promBatLvlVal, 0, 1023, 0, 500);
 		promBatLvlVal = constrain(promBatLvlVal, 370, 420);
 		promBatLvlVal = map(promBatLvlVal, 370, 420, 0, 100);
-		txStVal.val_BatteryLevel_TX = promBatLvlVal;
+		txStrctVal.val_BatteryLevel_TX = promBatLvlVal;
 	}
 	else{  // digital LVL BAT read
 	}
-	return txStVal.val_BatteryLevel_TX;
+	return txStrctVal.val_BatteryLevel_TX;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // общий опрос всех датчиков
@@ -517,14 +513,14 @@ void poolAllSensors(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // калибровка всех датчиков
 void calibrationAllSensors(){
-	if(S_CO_ENABLE){txStVal.val_CO = flap(txStVal.val_CO, calibr_CO_Mas[0], calibr_CO_Mas[1], calibr_CO_Mas[2], calibr_CO_Mas[3]);}
-	if(S_T1_ENABLE){txStVal.val_T1 = flap(txStVal.val_T1, calibr_T1_Mas[0], calibr_T1_Mas[1], calibr_T1_Mas[2], calibr_T1_Mas[3]);}
-	if(S_T2_ENABLE){txStVal.val_T2 = flap(txStVal.val_T2, calibr_T2_Mas[0], calibr_T2_Mas[1], calibr_T2_Mas[2], calibr_T2_Mas[3]);}
+	if(S_CO_ENABLE){txStrctVal.val_CO = flap(txStrctVal.val_CO, calibr_CO_Mas[0], calibr_CO_Mas[1], calibr_CO_Mas[2], calibr_CO_Mas[3]);}
+	if(S_T1_ENABLE){txStrctVal.val_T1 = flap(txStrctVal.val_T1, calibr_T1_Mas[0], calibr_T1_Mas[1], calibr_T1_Mas[2], calibr_T1_Mas[3]);}
+	if(S_T2_ENABLE){txStrctVal.val_T2 = flap(txStrctVal.val_T2, calibr_T2_Mas[0], calibr_T2_Mas[1], calibr_T2_Mas[2], calibr_T2_Mas[3]);}
 	if(S_PR_ENABLE){
-		txStVal.val_Press_inh = flap(txStVal.val_Press_inh, calibr_Press_Mas[0], calibr_Press_Mas[1], calibr_Press_Mas[2], calibr_Press_Mas[3]);
-		txStVal.val_Press_exh = flap(txStVal.val_Press_exh, calibr_Press_Mas[0], calibr_Press_Mas[1], calibr_Press_Mas[2], calibr_Press_Mas[3]);}
-	if(S_CO2_ENABLE){txStVal.val_CCO2 = flap(txStVal.val_CCO2, calibr_CO2_Mas[0], calibr_CO2_Mas[1], calibr_CO2_Mas[2], calibr_CO2_Mas[3]);}
-	if(S_O2_ENABLE){txStVal.val_O2 = flap(txStVal.val_O2, calibr_O2_Mas[0], calibr_O2_Mas[1], calibr_O2_Mas[2], calibr_O2_Mas[3]);}
+		txStrctVal.val_Press_inh = flap(txStrctVal.val_Press_inh, calibr_Press_Mas[0], calibr_Press_Mas[1], calibr_Press_Mas[2], calibr_Press_Mas[3]);
+		txStrctVal.val_Press_exh = flap(txStrctVal.val_Press_exh, calibr_Press_Mas[0], calibr_Press_Mas[1], calibr_Press_Mas[2], calibr_Press_Mas[3]);}
+	if(S_CO2_ENABLE){txStrctVal.val_CCO2 = flap(txStrctVal.val_CCO2, calibr_CO2_Mas[0], calibr_CO2_Mas[1], calibr_CO2_Mas[2], calibr_CO2_Mas[3]);}
+	if(S_O2_ENABLE){txStrctVal.val_O2 = flap(txStrctVal.val_O2, calibr_O2_Mas[0], calibr_O2_Mas[1], calibr_O2_Mas[2], calibr_O2_Mas[3]);}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // финальная функция: общий опрос и калибровка всех датчиков
@@ -561,23 +557,25 @@ void finalCheckChangeSecondOrMinuteAndPerformAction(){
 		finalPoolAndCalibrationAllSensors();
 
 		// записываем макс значения за секунду в макс значения за минуту
-		if(minVal_O2 > txStVal.val_O2 && recordFlag){minVal_O2 = txStVal.val_O2;}
-		if(maxVal_T1 < txStVal.val_T1 && recordFlag){maxVal_T1 = txStVal.val_T1;}
-		if(maxVal_T2 < txStVal.val_T2 && recordFlag){maxVal_T2 = txStVal.val_T2;}
-		if(minVal_Press_inh > txStVal.val_Press_inh && recordFlag){minVal_Press_inh = txStVal.val_Press_inh;}
-		if(maxVal_Press_exh < txStVal.val_Press_exh && recordFlag){maxVal_Press_exh = txStVal.val_Press_exh;}
-		if(maxVal_CCO2 < txStVal.val_CCO2 && recordFlag){maxVal_CCO2 = txStVal.val_CCO2;}
-		if(maxVal_CO < txStVal.val_CO && recordFlag){maxVal_CO = txStVal.val_CO;}
+		if(minVal_O2 > txStrctVal.val_O2 && recordFlag){minVal_O2 = txStrctVal.val_O2;}
+		if(maxVal_T1 < txStrctVal.val_T1 && recordFlag){maxVal_T1 = txStrctVal.val_T1;}
+		if(maxVal_T2 < txStrctVal.val_T2 && recordFlag){maxVal_T2 = txStrctVal.val_T2;}
+		if(minVal_Press_inh > txStrctVal.val_Press_inh && recordFlag){minVal_Press_inh = txStrctVal.val_Press_inh;}
+		if(maxVal_Press_exh < txStrctVal.val_Press_exh && recordFlag){maxVal_Press_exh = txStrctVal.val_Press_exh;}
+		if(maxVal_CCO2 < txStrctVal.val_CCO2 && recordFlag){maxVal_CCO2 = txStrctVal.val_CCO2;}
+		if(maxVal_CO < txStrctVal.val_CO && recordFlag){maxVal_CO = txStrctVal.val_CO;}
 
 		// управление диодом и бузером
 		if(recordFlag == 0){ // BLUE
 			// iLed[0] = CRGB::Blue;
+			txStrctVal.flagZapisiAndColorTransmite = 0;  // rec 0
 			iLed[0] = CRGB(0, 0, 255);  // GRB blue
 			FastLED.show();
 			digitalWrite(BEEPER_PIN, HIGH);
 		}
-		else if(recordFlag && (txStVal.val_CCO2 >= 5 || txStVal.val_CO >= 170 || txStVal.val_O2 < 17)){ // RED, SIGNAL
+		else if(recordFlag && (txStrctVal.val_CCO2 >= 5 || txStrctVal.val_CO >= 170 || txStrctVal.val_O2 < 17)){ // RED, SIGNAL
 			// iLed[0] = CRGB::Red;
+			txStrctVal.flagZapisiAndColorTransmite = 3;  // rec 1
 			iLed[0] = CRGB(0, 255, 0);  // GRB red
 			FastLED.show();
 			if(beepFlag == 1){
@@ -590,33 +588,37 @@ void finalCheckChangeSecondOrMinuteAndPerformAction(){
 			}
 			beepFlag = !beepFlag;
 		}
-		else if(recordFlag && (txStVal.val_CCO2 >= 3 || txStVal.val_CO >= 26 || txStVal.val_O2 < 21)){ // YELOW
+		else if(recordFlag && (txStrctVal.val_CCO2 >= 3 || txStrctVal.val_CO >= 26 || txStrctVal.val_O2 < 21)){ // YELOW
+			txStrctVal.flagZapisiAndColorTransmite = 2;  // rec 1
 			iLed[0] = CRGB(255, 255, 0);  // GRB yelow
 			FastLED.show();
 			digitalWrite(BEEPER_PIN, HIGH);
 		}
-		else if(recordFlag && (txStVal.val_CCO2 < 3 && txStVal.val_CO < 26 && txStVal.val_O2 >= 21)){ // GREEN
+		else if(recordFlag && (txStrctVal.val_CCO2 < 3 && txStrctVal.val_CO < 26 && txStrctVal.val_O2 >= 21)){ // GREEN
 			// iLed[0] = CRGB::Green;
+			txStrctVal.flagZapisiAndColorTransmite = 1;  // rec 1
 			iLed[0] = CRGB(255, 0, 0);  // GRB green
 			FastLED.show();
 			digitalWrite(BEEPER_PIN, HIGH);
 		}
 
 		// отправляем значения за секунду по радио
-		txStVal.flagZapisiTransmite = recordFlag;
+		txStrctVal.operationKeyTX = 1;
 		bool radioWriteOk = 0;
+		// digitalWrite(CHIPSELEKT, HIGH);
 		radio.stopListening();                   // перестаем слушать эфир, для передачи
-		radioWriteOk = radio.write(&txStVal, sizeof(txStVal));
+		radioWriteOk = radio.write(&txStrctVal, sizeof(txStrctVal));
 		radio.startListening();                  // начинаем слушать эфир, для приема
+		txStrctVal.operationKeyTX = 0;
 		// щетчик качества сигнала
-		if(txStVal.signalLevel < 100 && radioWriteOk == 1){
-			txStVal.signalLevel += 10;
+		if(txStrctVal.signalLevel < 100 && radioWriteOk == 1){
+			txStrctVal.signalLevel += 10;
 			Serial.println();
 			Serial.println("radio write per sec OK");
 			Serial.println();
 		}
-		else if(txStVal.signalLevel > 0 && radioWriteOk == 0){
-			txStVal.signalLevel -= 10;
+		else if(txStrctVal.signalLevel > 0 && radioWriteOk == 0){
+			txStrctVal.signalLevel -= 10;
 			Serial.println();
 			Serial.println("radio write per sec ERR");
 			Serial.println();
@@ -629,23 +631,23 @@ void finalCheckChangeSecondOrMinuteAndPerformAction(){
 		Serial.println("DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%");
 		Serial.print(realDay); Serial.print("."); Serial.print(realMonth); Serial.print("      ");
 		Serial.print(realHour); Serial.print(":"); Serial.print(realMinute); Serial.print(":"); Serial.print(realSecond); Serial.print("    ");
-		Serial.print(txStVal.val_O2); Serial.print("   ");
-		Serial.print(txStVal.val_T1); Serial.print("     ");
-		Serial.print(txStVal.val_T2); Serial.print("     ");
-		Serial.print(txStVal.val_Press_inh); Serial.print("       ");
-		Serial.print(txStVal.val_Press_exh); Serial.print("       ");
-		Serial.print(txStVal.val_CCO2); Serial.print("   ");
-		Serial.print(txStVal.val_CO);  // Serial.print("    ");
+		Serial.print(txStrctVal.val_O2); Serial.print("   ");
+		Serial.print(txStrctVal.val_T1); Serial.print("     ");
+		Serial.print(txStrctVal.val_T2); Serial.print("     ");
+		Serial.print(txStrctVal.val_Press_inh); Serial.print("       ");
+		Serial.print(txStrctVal.val_Press_exh); Serial.print("       ");
+		Serial.print(txStrctVal.val_CCO2); Serial.print("   ");
+		Serial.print(txStrctVal.val_CO);  // Serial.print("    ");
 		Serial.println("\n");
 
 		// сбрасываем макс значения за секунду
-		txStVal.val_O2 = 100;
-		txStVal.val_T1 = -250;
-		txStVal.val_T2 = -250;
-		txStVal.val_Press_inh = 10;
-		txStVal.val_Press_exh = -10;
-		txStVal.val_CCO2 = 0;
-		txStVal.val_CO = 0;
+		txStrctVal.val_O2 = 100;
+		txStrctVal.val_T1 = -250;
+		txStrctVal.val_T2 = -250;
+		txStrctVal.val_Press_inh = 10;
+		txStrctVal.val_Press_exh = -10;
+		txStrctVal.val_CCO2 = 0;
+		txStrctVal.val_CO = 0;
 
 	    // ВЫПОЛНЯЕМ ДЕЙСТВИЕ КАЖДУЮ МИНУТУ:
 		if (realMinute != treckingMinute && recordFlag == 1){// Если знач минут отличается от знач в переменной отслежив
@@ -672,45 +674,47 @@ void finalCheckChangeSecondOrMinuteAndPerformAction(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // START STOP RECORDING BUTTON:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-bool buttonChangeREC(){
+void changeRecOperatingF(){  // функция отслеживания и изменения состояния записи
+	iLed[0] = CRGB(255, 255, 255);  // GRB white
+	FastLED.show();
+	noTone(BEEPER_PIN);
+	digitalWrite(BEEPER_PIN, HIGH);
+	if(recordFlag == 0){
+		recordFlag = 1;
+		Serial.println();
+		Serial.println("changed REC");
+		dataSetToFileSTRT();
+		Serial.println("start REC OK");
+		Serial.println();
+	}
+	else{
+		recordFlag = 0;
+		Serial.println();
+		Serial.println("changed REC");
+		dataFile.close();
+		Serial.println("stop REC OK");
+		Serial.println();
+	}
+	digitalWrite(BEEPER_PIN, LOW);
+	delay(100);
+	digitalWrite(BEEPER_PIN, HIGH);
+	delay(100);
+	digitalWrite(BEEPER_PIN, LOW);
+	delay(100);
+	digitalWrite(BEEPER_PIN, HIGH);
+	delay(100);
+	digitalWrite(BEEPER_PIN, LOW);
+	delay(100);
+	digitalWrite(BEEPER_PIN, HIGH);
+	delay(100);
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void buttonChangeREC(){
 	if(digitalRead(START_STOP_BUTTON_PIN)){  // если кнопка нажата
 		delay(50);
 		if(digitalRead(START_STOP_BUTTON_PIN) == HIGH){
-			iLed[0] = CRGB(255, 255, 255);  // GRB white
-			FastLED.show();
-			noTone(BEEPER_PIN);
-			digitalWrite(BEEPER_PIN, HIGH);
-			if(recordFlag == 0){
-				recordFlag = 1;
-				txStVal.flagZapisiTransmite = recordFlag;
-				Serial.println();
-				Serial.println("button changed, start REC");
-				dataSetToFileSTRT();
-				Serial.println("start REC OK");
-				Serial.println();
-			}
-			else{
-				recordFlag = 0;
-				txStVal.flagZapisiTransmite = recordFlag;
-				Serial.println();
-				Serial.println("button changed, stop REC");
-				dataFile.close();
-				Serial.println("stop REC OK");
-				Serial.println();
-			}
-			digitalWrite(BEEPER_PIN, LOW);
-			delay(100);
-			digitalWrite(BEEPER_PIN, HIGH);
-			delay(100);
-			digitalWrite(BEEPER_PIN, LOW);
-			delay(100);
-			digitalWrite(BEEPER_PIN, HIGH);
-			delay(100);
-			digitalWrite(BEEPER_PIN, LOW);
-			delay(100);
-			digitalWrite(BEEPER_PIN, HIGH);
-			delay(100);
-			
+			Serial.println("button pressed");
+			changeRecOperatingF();
 		}
 	}
 }
@@ -722,121 +726,106 @@ bool buttonChangeREC(){
 // NRF ПРИЕМ ДАННЫХ КАЛИБРОВКИ И СТАРТ СТОП:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void radioReceiverCallAndButChng(){
-	if (radio.available()){radio.read(&rxStCalibrVal, sizeof(rxStCalibrVal));}
+	if (radio.available()){radio.read(&rxStrctCalibrVal, sizeof(rxStrctCalibrVal));}
 
 	// start stop recording radio button
-	if(rxStCalibrVal.operationKeyRX == 1){
-		if(recordFlag == 0){
-			recordFlag = 1;
-			txStVal.flagZapisiTransmite = recordFlag;
-			delay(500);
-			dataSetToFileSTRT();
-			Serial.println();
-			Serial.println("NRF button changed, start REC");
-			Serial.println();
-		}
-		else{
-			recordFlag = 0;
-			txStVal.flagZapisiTransmite = recordFlag;
-			dataFile.close();
-			Serial.println();
-			Serial.println("NRF button changed, stop REC");
-			Serial.println();
-			delay(500);
-		}    
+	if(rxStrctCalibrVal.operationKeyRX == 1){
+		Serial.println("NRF button pressed");
+		rxStrctCalibrVal.operationKeyRX = 0;
+		changeRecOperatingF();
 	}
 	// запрос IN MIN значения отправка через структуру RX
-	if(rxStCalibrVal.operationKeyRX == 2){
-		switch (rxStCalibrVal.addrNameCalibrUnit){
+	if(rxStrctCalibrVal.operationKeyRX == 2){
+		switch (rxStrctCalibrVal.addrNameCalibrUnit){
 		    case 0:
-			rxStCalibrVal.inMin = txStVal.val_T1;
+			rxStrctCalibrVal.inMin = txStrctVal.val_T1;
 		    break;
 		    case 1:
-			rxStCalibrVal.inMin = txStVal.val_T2;
+			rxStrctCalibrVal.inMin = txStrctVal.val_T2;
 		    break;
 		    case 2:
-			rxStCalibrVal.inMin = txStVal.val_CCO2;
+			rxStrctCalibrVal.inMin = txStrctVal.val_CCO2;
 		    break;
 		    case 3:
-			rxStCalibrVal.inMin = txStVal.val_O2;
+			rxStrctCalibrVal.inMin = txStrctVal.val_O2;
 		    break;
 		    case 4:
-			rxStCalibrVal.inMin = txStVal.val_CO;
+			rxStrctCalibrVal.inMin = txStrctVal.val_CO;
 		    break;
 		    case 5:
-			rxStCalibrVal.inMin = (txStVal.val_Press_inh + txStVal.val_Press_exh) / 2;
+			rxStrctCalibrVal.inMin = (txStrctVal.val_Press_inh + txStrctVal.val_Press_exh) / 2;
 		    break;
 		}
 		Serial.println("zapros in Min");
 	}
 	// запрос IN MAX значения отправка через структуру RX
-	if(rxStCalibrVal.operationKeyRX == 3){
-		switch (rxStCalibrVal.addrNameCalibrUnit){
+	if(rxStrctCalibrVal.operationKeyRX == 3){
+		switch (rxStrctCalibrVal.addrNameCalibrUnit){
 		    case 0:
-			rxStCalibrVal.inMax = txStVal.val_T1;
+			rxStrctCalibrVal.inMax = txStrctVal.val_T1;
 		    break;
 		    case 1:
-			rxStCalibrVal.inMax = txStVal.val_T2;
+			rxStrctCalibrVal.inMax = txStrctVal.val_T2;
 		    break;
 		    case 2:
-			rxStCalibrVal.inMax = txStVal.val_CCO2;
+			rxStrctCalibrVal.inMax = txStrctVal.val_CCO2;
 		    break;
 		    case 3:
-			rxStCalibrVal.inMax = txStVal.val_O2;
+			rxStrctCalibrVal.inMax = txStrctVal.val_O2;
 		    break;
 		    case 4:
-			rxStCalibrVal.inMax = txStVal.val_CO;
+			rxStrctCalibrVal.inMax = txStrctVal.val_CO;
 		    break;
 		    case 5:
-			rxStCalibrVal.inMax = (txStVal.val_Press_inh + txStVal.val_Press_exh) / 2;
+			rxStrctCalibrVal.inMax = (txStrctVal.val_Press_inh + txStrctVal.val_Press_exh) / 2;
 		    break;
 		}
 		Serial.println("zapros in Max");
 	}
 	// прием пакета калибровки и калибровка
-	if(rxStCalibrVal.operationKeyRX == 4){
-		switch (rxStCalibrVal.addrNameCalibrUnit){
+	if(rxStrctCalibrVal.operationKeyRX == 4){
+		switch (rxStrctCalibrVal.addrNameCalibrUnit){
 		    case 0:
-			calibr_T1_Mas[0] = rxStCalibrVal.inMin;
-			calibr_T1_Mas[1] = rxStCalibrVal.inMax;
-			calibr_T1_Mas[2] = rxStCalibrVal.outMin;
-			calibr_T1_Mas[3] = rxStCalibrVal.outMax;
+			calibr_T1_Mas[0] = rxStrctCalibrVal.inMin;
+			calibr_T1_Mas[1] = rxStrctCalibrVal.inMax;
+			calibr_T1_Mas[2] = rxStrctCalibrVal.outMin;
+			calibr_T1_Mas[3] = rxStrctCalibrVal.outMax;
 		    break;
 		    case 1:
-			calibr_T2_Mas[0] = rxStCalibrVal.inMin;
-			calibr_T2_Mas[1] = rxStCalibrVal.inMax;
-			calibr_T2_Mas[2] = rxStCalibrVal.outMin;
-			calibr_T2_Mas[3] = rxStCalibrVal.outMax;
+			calibr_T2_Mas[0] = rxStrctCalibrVal.inMin;
+			calibr_T2_Mas[1] = rxStrctCalibrVal.inMax;
+			calibr_T2_Mas[2] = rxStrctCalibrVal.outMin;
+			calibr_T2_Mas[3] = rxStrctCalibrVal.outMax;
 		    break;
 		    case 2:
-			calibr_CO2_Mas[0] = rxStCalibrVal.inMin;
-			calibr_CO2_Mas[1] = rxStCalibrVal.inMax;
-			calibr_CO2_Mas[2] = rxStCalibrVal.outMin;
-			calibr_CO2_Mas[3] = rxStCalibrVal.outMax;
+			calibr_CO2_Mas[0] = rxStrctCalibrVal.inMin;
+			calibr_CO2_Mas[1] = rxStrctCalibrVal.inMax;
+			calibr_CO2_Mas[2] = rxStrctCalibrVal.outMin;
+			calibr_CO2_Mas[3] = rxStrctCalibrVal.outMax;
 		    break;
 		    case 3:
-			calibr_O2_Mas[0] = rxStCalibrVal.inMin;
-			calibr_O2_Mas[1] = rxStCalibrVal.inMax;
-			calibr_O2_Mas[2] = rxStCalibrVal.outMin;
-			calibr_O2_Mas[3] = rxStCalibrVal.outMax;
+			calibr_O2_Mas[0] = rxStrctCalibrVal.inMin;
+			calibr_O2_Mas[1] = rxStrctCalibrVal.inMax;
+			calibr_O2_Mas[2] = rxStrctCalibrVal.outMin;
+			calibr_O2_Mas[3] = rxStrctCalibrVal.outMax;
 		    break;
 		    case 4:
-			calibr_CO_Mas[0] = rxStCalibrVal.inMin;
-			calibr_CO_Mas[1] = rxStCalibrVal.inMax;
-			calibr_CO_Mas[2] = rxStCalibrVal.outMin;
-			calibr_CO_Mas[3] = rxStCalibrVal.outMax;
+			calibr_CO_Mas[0] = rxStrctCalibrVal.inMin;
+			calibr_CO_Mas[1] = rxStrctCalibrVal.inMax;
+			calibr_CO_Mas[2] = rxStrctCalibrVal.outMin;
+			calibr_CO_Mas[3] = rxStrctCalibrVal.outMax;
 		    break;
 		    case 5:
-			calibr_Press_Mas[0] = rxStCalibrVal.inMin;
-			calibr_Press_Mas[1] = rxStCalibrVal.inMax;
-			calibr_Press_Mas[2] = rxStCalibrVal.outMin;
-			calibr_Press_Mas[3] = rxStCalibrVal.outMax;
+			calibr_Press_Mas[0] = rxStrctCalibrVal.inMin;
+			calibr_Press_Mas[1] = rxStrctCalibrVal.inMax;
+			calibr_Press_Mas[2] = rxStrctCalibrVal.outMin;
+			calibr_Press_Mas[3] = rxStrctCalibrVal.outMax;
 		    break;
 		}
-		eeSingleWriteOfRam(rxStCalibrVal.addrNameCalibrUnit);
+		eeSingleWriteOfRam(rxStrctCalibrVal.addrNameCalibrUnit);
 		Serial.println();
 		Serial.println("CALIBRATION SENSOR [");
-		Serial.println(rxStCalibrVal.addrNameCalibrUnit);
+		Serial.println(rxStrctCalibrVal.addrNameCalibrUnit);
 		Serial.println("] OK");
 		Serial.println();
 	}
@@ -851,7 +840,7 @@ void radioReceiverCallAndButChng(){
 void serCalibrator(){
 	if(Serial.available() > 0){
 		unsigned long scStrtErrTime = millis();
-		char s_d = 'r';
+		char s_d = 'y';
 		String s_str = "";
 		int s_pint;
 		float s_pfcv;
@@ -999,7 +988,7 @@ void serCalibrator(){
 						Serial.println(" OK");
 					}
 
-					else if(s_str == "tst"){  // date time:  tms dy dm dd th tm ts
+					else if(s_str == "tst"){  // test
 						Serial.print(s_str);
 						Serial.println(" OK");
 					}
@@ -1012,6 +1001,10 @@ void serCalibrator(){
 		    }
 		    eePackWrite();
 		    Serial.println("\nsetting end\n\n");
+		}
+		else if(s_str == "rec"){  // changed rec state
+			Serial.println("uart changed rec");
+			changeRecOperatingF();
 		}
 	}
 }
@@ -1030,7 +1023,7 @@ void setup(){
 	Serial.begin(250000);    // serial
 	Serial1.begin(250000);   // T1 sensor
 	Serial2.begin(250000);   // Pressure sensor
-	delay(100);
+	delay(500);
 	Serial.println(" START SETUP");
 
 	FastLED.addLeds<WS2812B, LED_DATA_PIN, RGB>(iLed, 1); // 1 светодиод WS2812B
@@ -1038,6 +1031,7 @@ void setup(){
 	FastLED.show();
 
 	radioNrfSetup();  // NRF setup
+	// digitalWrite(47, HIGH);
 	Serial.println(" radio setup ok");
 	Serial.println();
 
@@ -1076,12 +1070,13 @@ void setup(){
   	}
 
   	// HX711 setup
-  	hx711Obj.begin(HX711_DOUT_PIN, HX711_PD_SCK_PIN);
+  	hx711Obj.begin(HX711_DOUT_PIN, HX711_PD_SCK_PIN, HX711_GAIN);
 
   	// ADS1115 setup
   	ads.setGain(GAIN_TWOTHIRDS);  // 2/3x gain +/- 6.144V  1 bit = 3mV      0.1875mV (default)
 	ads.begin();
 
+	
 	Serial.println();
 	Serial.println(" END SETUP. ALL SETUP OK");
 }
