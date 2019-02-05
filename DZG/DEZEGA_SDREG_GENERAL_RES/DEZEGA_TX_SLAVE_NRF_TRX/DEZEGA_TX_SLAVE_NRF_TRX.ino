@@ -1,48 +1,118 @@
 // ProMini
 
-#include <Wire.h>
-#include <Adafruit_ADS1015.h>
+#include <SPI.h>
 
-#define PORT_ADS 0  // порт ADS1115 куда подключается датчик, от 0 до 3
+#include "nRF24L01.h"
+#include "RF24.h"
 
-//static char outstr[15];  // масив для строки с точкой
-int16_t adc0, maxADC = 0;
-float maxTemp = 0;
+// значение для возврата если сенсор запрещен
+#define SENS_DISABLEREAD_VAL 3000
+
+RF24 radio(9,10);  // nrf init CE, CSN  nrf init:  MISO:50, MOSI:51, SCK:52
+
+// nrf init:
+byte addressNRF[][6] = {"1Node", "2Node", "3Node", "4Node", "5Node", "6Node"}; //возможные номера труб
 
 char s_d; // переменная для хранения считывания управляющего байта символа
 
-Adafruit_ADS1115 ads;  /* Use this for the 16-bit version */
-float multiplierADS = 0.1875F; /* ADS1115  @ +/- 6.144V gain (16-bit results) */
+typedef struct transmiteStructure{
+	byte operationKeyTX = 0;
+	float val_T1 = SENS_DISABLEREAD_VAL;
+	float val_T2 = SENS_DISABLEREAD_VAL;
+	float val_CCO2 = SENS_DISABLEREAD_VAL;
+	float val_O2 = SENS_DISABLEREAD_VAL;
+	short val_CO = SENS_DISABLEREAD_VAL;
+	float val_Press_inh = SENS_DISABLEREAD_VAL;  // мин
+	float val_Press_exh = SENS_DISABLEREAD_VAL;  // макс
+	short minuteTest = 0;  // X>=<60  общее количество минут что идет тест
+	byte val_BatteryLevel_TX = 50;  // уровень заряда батареи в %
+	byte flagZapisiAndColorTransmite = 0;  // если 1 то на флешку идет запись если 0 то нет
+};
+transmiteStructure txStrctVal;
+
+// значения калибровки структура для приема по радио
+typedef struct receiverStructure{
+	int operationKeyRX;
+};
+receiverStructure rxStrctCalibrVal;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// NRF rx and tx F
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void radioNrfSetup(){
+	radio.begin();                           // активировать модуль
+	radio.setAutoAck(1);                     // режим подтверждения приёма, 1 вкл 0 выкл
+	radio.setRetries(0,15);                  // (время между попыткой достучаться, число попыток)
+	radio.enableAckPayload();                // разрешить отсылку данных в ответ на входящий сигнал
+	radio.setPayloadSize(32);                // размер пакета, в байтах
+	radio.openWritingPipe(addressNRF[1]);    // передаем по трубе 1
+	radio.openReadingPipe(1,addressNRF[0]);  // хотим слушать трубу 0
+	radio.setChannel(0x60);                  // выбираем канал (в котором нет шумов!)
+	radio.setPALevel (RF24_PA_MIN); // уровень мощности передатчика RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX
+	radio.setDataRate (RF24_250KBPS);        // скорость обмена. На выбор RF24_2MBPS, RF24_1MBPS, RF24_250KBPS
+	                                         // при самой низкой скорости самуf высокуf чувствительность и дальность!!
+	radio.powerUp();                         // начать работу
+	radio.startListening();                  // начинаем слушать эфир, приёмный модуль
+	// radio.stopListening();                // стоп прослушивания для передачи
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void sendNRFdataF(){
+	// отправляем значения за секунду по радио
+		txStrctVal.operationKeyTX = 1;
+		bool radioWriteOk = 0;
+		radio.stopListening();                   // перестаем слушать эфир, для передачи
+		radioWriteOk = radio.write(&txStrctVal, sizeof(txStrctVal));
+		radio.startListening();                  // начинаем слушать эфир, для приема
+		txStrctVal.operationKeyTX = 0;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// NRF ПРИЕМ ДАННЫХ КАЛИБРОВКИ И СТАРТ СТОП:
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void radioReceiverButChng(){
+	if (radio.available()){radio.read(&rxStrctCalibrVal, sizeof(rxStrctCalibrVal));}
+
+	// start stop recording radio button
+	if(rxStrctCalibrVal.operationKeyRX == 1){
+		rxStrctCalibrVal.operationKeyRX = 0;
+		Serial.print("bch");  // отправка нажатой кнопки из радио в сериал
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void setup(){
 	Serial.begin(250000);
 	delay(10);
-
-	ads.setGain(GAIN_TWOTHIRDS);  // 2/3x gain +/- 6.144V  1 bit = 3mV      0.1875mV (default)
-	ads.begin();
+	radioNrfSetup();
 }
 
 void loop(){
 	while(1){
-		// resive and convert termocouple values and find MAX val
-		adc0 = ads.readADC_SingleEnded(PORT_ADS);
-		if(maxADC < adc0){maxADC = adc0;}
+		if(Serial.available() > 0){
+		    char s_d = 'y';
+			String s_str = "";
+			for(int i=0; i<3; i++){
+		    	s_d = Serial.read();
+		    	s_str += s_d;
+			}
+			if(s_str == "snd"){
+				txStrctVal.val_T1 = Serial.parseFloat();  // float
+				txStrctVal.val_T2 = Serial.parseFloat();  // float
+				txStrctVal.val_CCO2 = Serial.parseFloat();  // float
+				txStrctVal.val_O2 = Serial.parseFloat();  // float
+				txStrctVal.val_CO = Serial.parseInt();  // short
+				txStrctVal.val_Press_inh = Serial.parseFloat();  // float
+				txStrctVal.val_Press_exh = Serial.parseFloat();  // float
+				txStrctVal.minuteTest = Serial.parseInt();  // short
+				Serial.read();
+				txStrctVal.val_BatteryLevel_TX = Serial.read();  // byte
+				Serial.read();
+				txStrctVal.flagZapisiAndColorTransmite = Serial.read();  // byte
 
-		if (Serial.available() > 0){
-		    s_d = Serial.read(); // управляющий байт (символ't') определяющий старт отправки температуры
-		    if (s_d == 't'){
-		    	maxTemp = ((maxADC * multiplierADS / 1000.0) - 1.25) / 0.005;
-
-				// transmite temp to serial_1
-				// maxTemp = int(maxTemp * 10);
-		    	Serial.print('m');
-		    	Serial.println(maxTemp, 1);  // передача температуры через serial, 1 знак после запятой
-		    	// Serial.print('a');
-				// dtostrf(maxTemp, 7, 1, outstr);
-				// Serial.println(outstr);
-		    	
-		    	maxADC = 0;
-		    }
+				sendNRFdataF();
+			}
 		}
+		radioReceiverButChng();
 	}
 }

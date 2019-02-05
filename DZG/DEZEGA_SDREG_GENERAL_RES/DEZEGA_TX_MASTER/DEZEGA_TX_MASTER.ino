@@ -1,6 +1,6 @@
 
 // MEGA 2560
-// #    pragma message "SS2S MEGA 2560"  // SS2S
+// #    pragma message "MEGA 2560"
 
 // #include "Arduino.h"         // Arduino lib
 
@@ -15,9 +15,6 @@
 #include "DS3231.h"             // ds3231 clock lib
 #include "FastLED.h"            // WS2812B svetodiod lib 
 #include "max6675.h"            // T2 termopara lib
-
-// #include "nRF24L01.h"           // NRF radio config
-// #include "RF24.h"               // NRF radio lib
 
 
 
@@ -62,9 +59,6 @@
 #define T2_TERMOPARA_SO_PIN 5
 #define T2_TERMOPARA_CS_PIN 6
 #define T2_TERMOPARA_SCK_PIN 7
-
-
-// RF24 radio(48,47);  // nrf init CE, CSN  nrf init:  MISO:50, MOSI:51, SCK:52
 
 // ADC 24 B HX711     O2 sensor ADC
 #define HX711_GAIN 64  // усилитель HX711
@@ -116,11 +110,20 @@ typedef struct transmiteStructure{
 	float val_Press_exh = SENS_DISABLEREAD_VAL;  // макс
 	short minuteTest = 0;  // X>=<60  общее количество минут что идет тест
 	byte val_BatteryLevel_TX = 50;  // уровень заряда батареи в %
-	byte signalLevel = 0;                      // щетчик для контроля качества сигнала
 	byte flagZapisiAndColorTransmite = 0;  // если 1 то на флешку идет запись если 0 то нет
-	byte operationKeyTX = 0;
 };
 transmiteStructure txStrctVal;
+
+// txStrctVal.val_T1
+// txStrctVal.val_T2
+// txStrctVal.val_CCO2
+// txStrctVal.val_O2
+// txStrctVal.val_CO
+// txStrctVal.val_Press_inh
+// txStrctVal.val_Press_exh
+// txStrctVal.minuteTest
+// txStrctVal.val_BatteryLevel_TX
+// txStrctVal.flagZapisiAndColorTransmite
 
 // МАКС значения сенсоров за минуту
 float minVal_O2 = 100;
@@ -130,17 +133,6 @@ float minVal_Press_inh = 10;  // мин
 float maxVal_Press_exh = -10;  // макс
 float maxVal_CCO2 = 0;
 float maxVal_CO = 0;
-
-// значения калибровки структура для приема по радио
-typedef struct receiverStructure{
-	int operationKeyRX;
-	int addrNameCalibrUnit;
-	float inMin = 0;
-	float inMax = 1000;
-	float outMin = 0;
-	float outMax = 1000;
-};
-receiverStructure rxStrctCalibrVal;
 
 // калибровка всех датчиков. значения: inMin, inMax, outMin, outMax
 float calibr_O2_Mas[] = {0, 100, 0, 100};
@@ -182,29 +174,6 @@ RTCDateTime DateTime;        // Определяем переменную DateTi
 CRGB iLed[1];
 // microSD  dataType
 File dataFile;               // переменная для работы с флэшкой
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// NRF rx and tx F
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// void radioNrfSetup(){
-// 	radio.begin();                           // активировать модуль
-// 	radio.setAutoAck(1);                     // режим подтверждения приёма, 1 вкл 0 выкл
-// 	radio.setRetries(0,15);                  // (время между попыткой достучаться, число попыток)
-// 	radio.enableAckPayload();                // разрешить отсылку данных в ответ на входящий сигнал
-// 	radio.setPayloadSize(32);                // размер пакета, в байтах
-// 	radio.openWritingPipe(addressNRF[1]);    // передаем по трубе 1
-// 	radio.openReadingPipe(1,addressNRF[0]);  // хотим слушать трубу 0
-// 	radio.setChannel(0x60);                  // выбираем канал (в котором нет шумов!)
-// 	radio.setPALevel (RF24_PA_MIN); // уровень мощности передатчика RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX
-// 	radio.setDataRate (RF24_250KBPS);        // скорость обмена. На выбор RF24_2MBPS, RF24_1MBPS, RF24_250KBPS
-// 	                                         // при самой низкой скорости самуf высокуf чувствительность и дальность!!
-// 	radio.powerUp();                         // начать работу
-// 	radio.startListening();                  // начинаем слушать эфир, приёмный модуль
-// 	// radio.stopListening();                // First, stop listening so we can talk.
-// }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -316,9 +285,7 @@ void dataSetToFileSTRT(){
 	dataFile = SD.open(indexToNameFileSD(globalFileIndex), FILE_WRITE);
  	if(dataFile){
  	 	dataFile.println(dataString);
- 	 	Serial.println();
- 	 	Serial.println(" START RECORDING TO SD");
- 	 	Serial.println();
+ 	 	Serial.println("\n START RECORDING TO SD\n");
  	}else{
  	 	Serial1.print("error START SD write ");
  	 	Serial1.println(indexToNameFileSD(globalFileIndex));
@@ -337,32 +304,20 @@ void dataSetToFileWHL(){
 		return;
 	}
 
-	dataString += String(NppStr);
-	dataString += " 	";
-	dataString += String(realYear); dataString += ".";dataString += String(realMonth); dataString += ".";dataString += String(realDay);
-	dataString += " 	";
-	dataString += String(realHour); dataString += ":";dataString += String(realMinute);
-	dataString += " 	";
-	dataString += String(minVal_O2);
-	dataString += " 	";
-	dataString += String(maxVal_T1);
-	dataString += " 	";
-	dataString += String(maxVal_T2);
-	dataString += " 	";
-	dataString += String(minVal_Press_inh);
-	dataString += " 	        ";
-	dataString += String(maxVal_Press_exh);
-	dataString += " 	        ";
-	dataString += String(maxVal_CCO2);
-	dataString += " 	";
-	dataString += String(maxVal_CO);
-	dataString += " 	";
+	dataString += String(NppStr); dataString += " 	";
+	dataString += String(realYear); dataString += "."; dataString += String(realMonth); dataString += "."; dataString += String(realDay); dataString += " 	";
+	dataString += String(realHour); dataString += ":"; dataString += String(realMinute); dataString += " 	";
+	dataString += String(minVal_O2); dataString += " 	";
+	dataString += String(maxVal_T1); dataString += " 	";
+	dataString += String(maxVal_T2); dataString += " 	";
+	dataString += String(minVal_Press_inh); dataString += " 	        ";
+	dataString += String(maxVal_Press_exh); dataString += " 	        ";
+	dataString += String(maxVal_CCO2); dataString += " 	";
+	dataString += String(maxVal_CO); dataString += " 	";
 
  	if (dataFile){
  	 	dataFile.println(dataString);
- 	 	Serial.println();
- 	 	Serial.println(" WRITE DATA TO SD ON WHL");
- 	 	Serial.println();
+ 	 	Serial.println("\n WRITE DATA TO SD ON WHL\n");
  	}else{
  	 	Serial1.print("error WHL SD write ");
  	 	Serial1.println(indexToNameFileSD(globalFileIndex));
@@ -395,12 +350,6 @@ static float poolO2(){  // 0 - 100 (0.1) 0v - 1.6v
 	Serial.print("O2  V ");
 	Serial.println(voltageO2, 7);
 
-	// adc0_O2 = ads.readADC_SingleEnded(PORT_0_O2_ADS1);
-	// txStrctVal.val_O2 = adc0_O2 * multiplierADS / 1000.0;  // Volt
-	// Serial.print("O2  V ");
-	// Serial.println(txStrctVal.val_O2, 7);
-	// txStrctVal.val_O2 = flap(txStrctVal.val_O2, 0.009, 0.013, 0, 100);  // %
-
 	return txStrctVal.val_O2;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -414,7 +363,6 @@ float poolTermoparaFast1(){  // -250 - 750 (0.1)
 			s_d = Serial1.read();
 			if(s_d == 'm'){
 				txStrctVal.val_T1 = Serial1.parseFloat();
-				// txStrctVal.val_T1 = 100;
 				break;
 			}
 		}
@@ -568,14 +516,12 @@ void finalCheckChangeSecondOrMinuteAndPerformAction(){
 
 		// управление диодом и бузером
 		if(recordFlag == 0){ // BLUE
-			// iLed[0] = CRGB::Blue;
 			txStrctVal.flagZapisiAndColorTransmite = 0;  // rec 0
 			iLed[0] = CRGB(0, 0, 255);  // GRB blue
 			FastLED.show();
 			digitalWrite(BEEPER_PIN, HIGH);
 		}
 		else if(recordFlag && (txStrctVal.val_CCO2 >= 5 || txStrctVal.val_CO >= 170 || txStrctVal.val_O2 < 17)){ // RED, SIGNAL
-			// iLed[0] = CRGB::Red;
 			txStrctVal.flagZapisiAndColorTransmite = 3;  // rec 1
 			iLed[0] = CRGB(0, 255, 0);  // GRB red
 			FastLED.show();
@@ -596,36 +542,30 @@ void finalCheckChangeSecondOrMinuteAndPerformAction(){
 			digitalWrite(BEEPER_PIN, HIGH);
 		}
 		else if(recordFlag && (txStrctVal.val_CCO2 < 3 && txStrctVal.val_CO < 26 && txStrctVal.val_O2 >= 21)){ // GREEN
-			// iLed[0] = CRGB::Green;
 			txStrctVal.flagZapisiAndColorTransmite = 1;  // rec 1
 			iLed[0] = CRGB(255, 0, 0);  // GRB green
 			FastLED.show();
 			digitalWrite(BEEPER_PIN, HIGH);
 		}
 
-		// // отправляем значения за секунду по радио
-		// txStrctVal.operationKeyTX = 1;
-		// bool radioWriteOk = 0;
-		// radio.stopListening();                   // перестаем слушать эфир, для передачи
-		// radioWriteOk = radio.write(&txStrctVal, sizeof(txStrctVal));
-		// radio.startListening();                  // начинаем слушать эфир, для приема
-		// txStrctVal.operationKeyTX = 0;
-		// // щетчик качества сигнала
-		// if(txStrctVal.signalLevel < 100 && radioWriteOk == 1){
-		// 	txStrctVal.signalLevel += 10;
-		// 	Serial.println();
-		// 	Serial.println("radio write per sec OK");
-		// 	Serial.println();
-		// }
-		// else if(txStrctVal.signalLevel > 0 && radioWriteOk == 0){
-		// 	txStrctVal.signalLevel -= 10;
-		// 	Serial.println();
-		// 	Serial.println("radio write per sec ERR");
-		// 	Serial.println();
-		// }
+		// отправляем значения за секунду по сериал3 радио
+		Serial3.println("snd");
+		Serial3.print(" "); Serial3.print(txStrctVal.val_T1);  // float
+		Serial3.print(" "); Serial3.print(txStrctVal.val_T2);  // float
+		Serial3.print(" "); Serial3.print(txStrctVal.val_CCO2);  // float
+		Serial3.print(" "); Serial3.print(txStrctVal.val_O2);  // float
+		Serial3.print(" "); Serial3.print(txStrctVal.val_CO);  // short
+		Serial3.print(" "); Serial3.print(txStrctVal.val_Press_inh);  // float
+		Serial3.print(" "); Serial3.print(txStrctVal.val_Press_exh);  // float
+		Serial3.print(" "); Serial3.print(txStrctVal.minuteTest);  // short
+		Serial3.print(" "); Serial3.print(txStrctVal.val_BatteryLevel_TX);  // byte
+		Serial3.print(" "); Serial3.print(txStrctVal.flagZapisiAndColorTransmite);  // byte
+
+		Serial.println("\nserial radio write per sec\n");
+
+		// send record flag to serial
 		Serial.print("record flag = ");
 		Serial.println(recordFlag);
-		// Serial.println();
 
 		// выводим значения в сериал
 		Serial.println("DATE:    TIME:      O2%    Temp 1    Temp 2    Pres inh    Pres exh    CO2    CO%");
@@ -723,113 +663,22 @@ void buttonChangeREC(){
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// NRF ПРИЕМ ДАННЫХ КАЛИБРОВКИ И СТАРТ СТОП:
+// serial3 NRF ПРИЕМ ДАННЫХ СТАРТ СТОП:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// void radioReceiverCallAndButChng(){
-// 	if (radio.available()){radio.read(&rxStrctCalibrVal, sizeof(rxStrctCalibrVal));}
-
-// 	// start stop recording radio button
-// 	if(rxStrctCalibrVal.operationKeyRX == 1){
-// 		Serial.println("NRF button pressed");
-// 		rxStrctCalibrVal.operationKeyRX = 0;
-// 		changeRecOperatingF();
-// 	}
-// 	// запрос IN MIN значения отправка через структуру RX
-// 	if(rxStrctCalibrVal.operationKeyRX == 2){
-// 		switch (rxStrctCalibrVal.addrNameCalibrUnit){
-// 		    case 0:
-// 			rxStrctCalibrVal.inMin = txStrctVal.val_T1;
-// 		    break;
-// 		    case 1:
-// 			rxStrctCalibrVal.inMin = txStrctVal.val_T2;
-// 		    break;
-// 		    case 2:
-// 			rxStrctCalibrVal.inMin = txStrctVal.val_CCO2;
-// 		    break;
-// 		    case 3:
-// 			rxStrctCalibrVal.inMin = txStrctVal.val_O2;
-// 		    break;
-// 		    case 4:
-// 			rxStrctCalibrVal.inMin = txStrctVal.val_CO;
-// 		    break;
-// 		    case 5:
-// 			rxStrctCalibrVal.inMin = (txStrctVal.val_Press_inh + txStrctVal.val_Press_exh) / 2;
-// 		    break;
-// 		}
-// 		Serial.println("zapros in Min");
-// 	}
-// 	// запрос IN MAX значения отправка через структуру RX
-// 	if(rxStrctCalibrVal.operationKeyRX == 3){
-// 		switch (rxStrctCalibrVal.addrNameCalibrUnit){
-// 		    case 0:
-// 			rxStrctCalibrVal.inMax = txStrctVal.val_T1;
-// 		    break;
-// 		    case 1:
-// 			rxStrctCalibrVal.inMax = txStrctVal.val_T2;
-// 		    break;
-// 		    case 2:
-// 			rxStrctCalibrVal.inMax = txStrctVal.val_CCO2;
-// 		    break;
-// 		    case 3:
-// 			rxStrctCalibrVal.inMax = txStrctVal.val_O2;
-// 		    break;
-// 		    case 4:
-// 			rxStrctCalibrVal.inMax = txStrctVal.val_CO;
-// 		    break;
-// 		    case 5:
-// 			rxStrctCalibrVal.inMax = (txStrctVal.val_Press_inh + txStrctVal.val_Press_exh) / 2;
-// 		    break;
-// 		}
-// 		Serial.println("zapros in Max");
-// 	}
-// 	// прием пакета калибровки и калибровка
-// 	if(rxStrctCalibrVal.operationKeyRX == 4){
-// 		switch (rxStrctCalibrVal.addrNameCalibrUnit){
-// 		    case 0:
-// 			calibr_T1_Mas[0] = rxStrctCalibrVal.inMin;
-// 			calibr_T1_Mas[1] = rxStrctCalibrVal.inMax;
-// 			calibr_T1_Mas[2] = rxStrctCalibrVal.outMin;
-// 			calibr_T1_Mas[3] = rxStrctCalibrVal.outMax;
-// 		    break;
-// 		    case 1:
-// 			calibr_T2_Mas[0] = rxStrctCalibrVal.inMin;
-// 			calibr_T2_Mas[1] = rxStrctCalibrVal.inMax;
-// 			calibr_T2_Mas[2] = rxStrctCalibrVal.outMin;
-// 			calibr_T2_Mas[3] = rxStrctCalibrVal.outMax;
-// 		    break;
-// 		    case 2:
-// 			calibr_CO2_Mas[0] = rxStrctCalibrVal.inMin;
-// 			calibr_CO2_Mas[1] = rxStrctCalibrVal.inMax;
-// 			calibr_CO2_Mas[2] = rxStrctCalibrVal.outMin;
-// 			calibr_CO2_Mas[3] = rxStrctCalibrVal.outMax;
-// 		    break;
-// 		    case 3:
-// 			calibr_O2_Mas[0] = rxStrctCalibrVal.inMin;
-// 			calibr_O2_Mas[1] = rxStrctCalibrVal.inMax;
-// 			calibr_O2_Mas[2] = rxStrctCalibrVal.outMin;
-// 			calibr_O2_Mas[3] = rxStrctCalibrVal.outMax;
-// 		    break;
-// 		    case 4:
-// 			calibr_CO_Mas[0] = rxStrctCalibrVal.inMin;
-// 			calibr_CO_Mas[1] = rxStrctCalibrVal.inMax;
-// 			calibr_CO_Mas[2] = rxStrctCalibrVal.outMin;
-// 			calibr_CO_Mas[3] = rxStrctCalibrVal.outMax;
-// 		    break;
-// 		    case 5:
-// 			calibr_Press_Mas[0] = rxStrctCalibrVal.inMin;
-// 			calibr_Press_Mas[1] = rxStrctCalibrVal.inMax;
-// 			calibr_Press_Mas[2] = rxStrctCalibrVal.outMin;
-// 			calibr_Press_Mas[3] = rxStrctCalibrVal.outMax;
-// 		    break;
-// 		}
-// 		eeSingleWriteOfRam(rxStrctCalibrVal.addrNameCalibrUnit);
-// 		Serial.println();
-// 		Serial.println("CALIBRATION SENSOR [");
-// 		Serial.println(rxStrctCalibrVal.addrNameCalibrUnit);
-// 		Serial.println("] OK");
-// 		Serial.println();
-// 	}
-// }
+void srf3changeButChek(){
+	if(Serial3.available() > 0){
+		char s_d = 'y';
+		String s_str = "";
+		for(int i=0; i<3; i++){
+		    s_d = Serial3.read();
+		    s_str += s_d;
+		}
+		if(s_str == "bch"){
+			Serial.println("NRF button pressed");
+			changeRecOperatingF();
+		}
+	}
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -854,11 +703,7 @@ void serCalibrator(){
 
 		    if(dataFile){dataFile.close();Serial.println("\n\nstop recording");}  // отключить запись на флешку
 
-		    Serial.println("\n\n\n");
-		    Serial.println();
-			Serial.print(s_str);
-			Serial.println(" OK");
-		    Serial.println(" setting ok:\n");
+		    Serial.println("\n\n\n");Serial.println();Serial.print(s_str);Serial.println(" OK");Serial.println(" setting ok:\n");
 		    while(1){
 		    	if(Serial.available() > 0){
 		    		String s_str = "";
@@ -871,108 +716,50 @@ void serCalibrator(){
 					if(s_str[2] == 'n' || s_str[2] == 'x'){s_pfcv = Serial.parseFloat();}
 
 					if(s_str == "end"){  // ВЫХОД
-						Serial.println();
-						Serial.print(s_str);
-						Serial.println(" OK");
+						Serial.println();Serial.print(s_str);Serial.println(" OK");
 						break;
 					}
 
 					else if(s_str == "ton"){  // T1 MIN
-						poolTermoparaFast1();
-						delay(100);
-						calibr_T1_Mas[0] = poolTermoparaFast1();
-						calibr_T1_Mas[2] = s_pfcv;
-						Serial.println();
-						Serial.print(s_str);
-						Serial.println(" OK");
+						poolTermoparaFast1();delay(100);calibr_T1_Mas[0] = poolTermoparaFast1();calibr_T1_Mas[2] = s_pfcv;Serial.println();Serial.print(s_str);Serial.println(" OK");
 					}
 					else if(s_str == "tox"){  // T1 MAX
-						poolTermoparaFast1();
-						delay(100);
-						calibr_T1_Mas[1] = poolTermoparaFast1();
-						calibr_T1_Mas[3] = s_pfcv;
-						Serial.println();
-						Serial.print(s_str);
-						Serial.println(" OK");
+						poolTermoparaFast1();delay(100);calibr_T1_Mas[1] = poolTermoparaFast1();calibr_T1_Mas[3] = s_pfcv;Serial.println();Serial.print(s_str);Serial.println(" OK");
 					}
 
 					else if(s_str == "ttn"){  // T2 MIN
-						calibr_T2_Mas[0] = poolTermoparaSlow2();
-						calibr_T2_Mas[2] = s_pfcv;
-						Serial.println();
-						Serial.print(s_str);
-						Serial.println(" OK");
+						calibr_T2_Mas[0] = poolTermoparaSlow2();calibr_T2_Mas[2] = s_pfcv;Serial.println();Serial.print(s_str);Serial.println(" OK");
 					}
 					else if(s_str == "ttx"){  // T2 MAX
-						calibr_T2_Mas[1] = poolTermoparaSlow2(); 
-						calibr_T2_Mas[3] = s_pfcv;
-						Serial.println();
-						Serial.print(s_str);
-						Serial.println(" OK");
+						calibr_T2_Mas[1] = poolTermoparaSlow2(); calibr_T2_Mas[3] = s_pfcv;Serial.println();Serial.print(s_str);Serial.println(" OK");
 					}
 
 					else if(s_str == "ctn"){  // CO2 MIN
-						calibr_CO2_Mas[0] = poolCO2();
-						calibr_CO2_Mas[2] = s_pfcv;
-						Serial.println();
-						Serial.print(s_str);
-						Serial.println(" OK");
+						calibr_CO2_Mas[0] = poolCO2();calibr_CO2_Mas[2] = s_pfcv;Serial.println();Serial.print(s_str);Serial.println(" OK");
 					}
 					else if(s_str == "ctx"){  // CO2 MAX
-						calibr_CO2_Mas[1] = poolCO2();
-						calibr_CO2_Mas[3] = s_pfcv;
-						Serial.println();
-						Serial.print(s_str);
-						Serial.println(" OK");
+						calibr_CO2_Mas[1] = poolCO2();calibr_CO2_Mas[3] = s_pfcv;Serial.println();Serial.print(s_str);Serial.println(" OK");
 					}
 
 					else if(s_str == "con"){  // CO MIN
-						calibr_CO_Mas[0] = poolCO();
-						calibr_CO_Mas[2] = s_pfcv;
-						Serial.println();
-						Serial.print(s_str);
-						Serial.println(" OK");
+						calibr_CO_Mas[0] = poolCO();calibr_CO_Mas[2] = s_pfcv;Serial.println();Serial.print(s_str);Serial.println(" OK");
 					}
 					else if(s_str == "cox"){  // CO MAX
-						calibr_CO_Mas[1] = poolCO();
-						calibr_CO_Mas[3] = s_pfcv;
-						Serial.println();
-						Serial.print(s_str);
-						Serial.println(" OK");
+						calibr_CO_Mas[1] = poolCO();calibr_CO_Mas[3] = s_pfcv;Serial.println();Serial.print(s_str);Serial.println(" OK");
 					}
 
 					else if(s_str == "otn"){  // O2 MIN
-						calibr_O2_Mas[0] = poolO2();
-						calibr_O2_Mas[2] = s_pfcv;
-						Serial.println();
-						Serial.print(s_str);
-						Serial.println(" OK");
+						calibr_O2_Mas[0] = poolO2();calibr_O2_Mas[2] = s_pfcv;Serial.println();Serial.print(s_str);Serial.println(" OK");
 					}
 					else if(s_str == "otx"){  // O2 MAX
-						calibr_O2_Mas[1] = poolO2();
-						calibr_O2_Mas[3] = s_pfcv;
-						Serial.println();
-						Serial.print(s_str);
-						Serial.println(" OK");
+						calibr_O2_Mas[1] = poolO2();calibr_O2_Mas[3] = s_pfcv;Serial.println();Serial.print(s_str);Serial.println(" OK");
 					}
 
 					else if(s_str == "prn"){  // Press MIN
-						poolPressure();
-						delay(100);
-						calibr_Press_Mas[0] = poolPressure();
-						calibr_Press_Mas[2] = s_pfcv;
-						Serial.println();
-						Serial.print(s_str);
-						Serial.println(" OK");
+						poolPressure();delay(100);calibr_Press_Mas[0] = poolPressure();calibr_Press_Mas[2] = s_pfcv;Serial.println();Serial.print(s_str);Serial.println(" OK");
 					}
 					else if(s_str == "prx"){  // Press MAX
-						poolPressure();
-						delay(100);
-						calibr_Press_Mas[1] = poolPressure();
-						calibr_Press_Mas[3] = s_pfcv;
-						Serial.println();
-						Serial.print(s_str);
-						Serial.println(" OK");
+						poolPressure();delay(100);calibr_Press_Mas[1] = poolPressure();calibr_Press_Mas[3] = s_pfcv;Serial.println();Serial.print(s_str);Serial.println(" OK");
 					}
 
 					else if(s_str == "tms"){  // date time:  tms dy dm dd th tm ts
@@ -983,14 +770,11 @@ void serCalibrator(){
 						int rrminute = Serial.parseInt();
 						int rsecond = Serial.parseInt();
 						clock.setDateTime(ryear, rmonth, rday, rhour, rrminute, rsecond);  // Установка времени (Г,М,Д,Ч,М,С)
-						Serial.println();
-						Serial.print(s_str);
-						Serial.println(" OK");
+						Serial.println();Serial.print(s_str);Serial.println(" OK");
 					}
 
 					else if(s_str == "tst"){  // test
-						Serial.print(s_str);
-						Serial.println(" OK");
+						Serial.print(s_str);Serial.println(" OK");
 					}
 		    	}
 
@@ -1030,10 +814,6 @@ void setup(){
 	FastLED.addLeds<WS2812B, LED_DATA_PIN, RGB>(iLed, 1); // 1 светодиод WS2812B
 	iLed[0] = CRGB(255, 255, 255);  // GRB white
 	FastLED.show();
-
-	// radioNrfSetup();  // NRF setup
-	// Serial.println(" radio setup ok");
-	// Serial.println();
 
 	delay(50);
 
@@ -1094,8 +874,8 @@ void loop(){
 		// отслеживание кнопки на случай старта стопа записи
 		buttonChangeREC();//старт стоп записи: созд файла для записи на СД карте, запись заголовков || закрытие файла
 
-		// прослушивание эфира на случай старта стопа записи или перехода в режим калибровки
-		// radioReceiverCallAndButChng();
+		// прослушивание эфира на случай старта стопа записи serial3 nrf
+		srf3changeButChek();
 
 		// прослушивание сериал порта
 		serCalibrator();

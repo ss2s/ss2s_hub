@@ -28,8 +28,12 @@ byte innerSignalAntVal = 100;  // внутреннее значение уров
 int receiveErrorCounter = 0;  // счетчик ошибок приема
 int otherErrorCounter = 0;  // счетчик ошибок прочие
 
+// уровень заряда батареи в %
+byte val_BatteryLevel_RX = 50;
+
 // значения сенсоров за секунду структура для хранения значений и приема по радио
 typedef struct receiveStructure{
+	byte operationKeyTX = 0;
 	float val_T1 = 0;
 	float val_T2 = 0;
 	float val_CCO2 = 0;
@@ -39,21 +43,12 @@ typedef struct receiveStructure{
 	float val_Press_exh = 0;  // макс
 	short minuteTest = 0;  // X>=<60  общее количество минут что идет тест
 	byte val_BatteryLevel_TX = 50;  // уровень заряда батареи в %
-	byte signalLevel = 0;                      // щетчик для контроля качества сигнала
 	byte flagZapisiAndColorTransmite = 0;  // если 1 то на флешку идет запись если 0 то нет
-	byte operationKeyTX = 0;
 };
 receiveStructure rxStrctVal;
-// уровень заряда батареи в %
-byte val_BatteryLevel_TX = 50;
-// значения калибровки структура для передачи по радио
+// start stop структура для передачи по радио
 typedef struct transmiteStructure{
 	int operationKeyRX;
-	int addrNameCalibrUnit;
-	float inMin = 0;
-	float inMax = 1000;
-	float outMin = 0;
-	float outMax = 1000;
 };
 transmiteStructure txStrctCalibrVal;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -107,7 +102,6 @@ void radioReseiverGF(){
 			Serial.print("Press exh: "); Serial.println(rxStrctVal.val_Press_exh);
 			Serial.print("test time: "); Serial.println(rxStrctVal.minuteTest);
 			Serial.print("receive TX bat level: "); Serial.println(rxStrctVal.val_BatteryLevel_TX);
-			Serial.print("receive signal level: "); Serial.println(rxStrctVal.signalLevel);
 			Serial.print("record and color flag: "); Serial.println(rxStrctVal.flagZapisiAndColorTransmite);
 			Serial.print("operation key: "); Serial.println(rxStrctVal.operationKeyTX);
 			Serial.print("inner signal level: "); Serial.println(innerSignalAntVal);
