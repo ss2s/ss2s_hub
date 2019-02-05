@@ -3,7 +3,7 @@
 // #    pragma message "SS2S MEGA 2560"  // SS2S
 
 // #include "Arduino.h"         // Arduino lib
-// #include "DigitalIO.h"
+
 #include <SPI.h>                // SPI lib
 #include <Wire.h>               // I2C lib
 #include <EEPROM.h>             // EEPROM lib
@@ -15,8 +15,9 @@
 #include "DS3231.h"             // ds3231 clock lib
 #include "FastLED.h"            // WS2812B svetodiod lib 
 #include "max6675.h"            // T2 termopara lib
-#include "nRF24L01.h"           // NRF radio config
-#include "RF24.h"               // NRF radio lib
+
+// #include "nRF24L01.h"           // NRF radio config
+// #include "RF24.h"               // NRF radio lib
 
 
 
@@ -55,15 +56,15 @@
 #define START_STOP_BUTTON_PIN 30  // кнопка включения выключения записи
 #define BEEPER_PIN 4  // пин аварийной пищалки
 #define LED_DATA_PIN 8 // led pin
+#define CHIPSELEKT 49  // пин чип селект для флэшки: SPI 50 MISO 51 MOSI 52 SCK 49 CHIPSELEKT
 
 // термопара t2
 #define T2_TERMOPARA_SO_PIN 5
 #define T2_TERMOPARA_CS_PIN 6
 #define T2_TERMOPARA_SCK_PIN 7
 
-#define CHIPSELEKT 49  // пин чип селект для флэшки: SPI 50 MISO 51 MOSI 52 SCK 49 CHIPSELEKT
 
-RF24 radio(48,47);  // nrf init CE, CSN  nrf init:  MISO:50, MOSI:51, SCK:52
+// RF24 radio(48,47);  // nrf init CE, CSN  nrf init:  MISO:50, MOSI:51, SCK:52
 
 // ADC 24 B HX711     O2 sensor ADC
 #define HX711_GAIN 64  // усилитель HX711
@@ -177,10 +178,10 @@ Adafruit_ADS1115 ads;         /* Use this for the 16-BIT version */
 DS3231 clock;                // Связываем объект clock с библиотекой DS3231
 // clock dataType
 RTCDateTime DateTime;        // Определяем переменную DateTime, как описанную структурой RTCDateTime
-// microSD  dataType
-File dataFile;               // переменная для работы с флэшкой
 // Define the Array of leds, LED dataType 1 светодиод
 CRGB iLed[1];
+// microSD  dataType
+File dataFile;               // переменная для работы с флэшкой
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -188,22 +189,22 @@ CRGB iLed[1];
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // NRF rx and tx F
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void radioNrfSetup(){
-	radio.begin();                           // активировать модуль
-	radio.setAutoAck(1);                     // режим подтверждения приёма, 1 вкл 0 выкл
-	radio.setRetries(0,15);                  // (время между попыткой достучаться, число попыток)
-	radio.enableAckPayload();                // разрешить отсылку данных в ответ на входящий сигнал
-	radio.setPayloadSize(32);                // размер пакета, в байтах
-	radio.openWritingPipe(addressNRF[1]);    // передаем по трубе 1
-	radio.openReadingPipe(1,addressNRF[0]);  // хотим слушать трубу 0
-	radio.setChannel(0x60);                  // выбираем канал (в котором нет шумов!)
-	radio.setPALevel (RF24_PA_MIN); // уровень мощности передатчика RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX
-	radio.setDataRate (RF24_250KBPS);        // скорость обмена. На выбор RF24_2MBPS, RF24_1MBPS, RF24_250KBPS
-	                                         // при самой низкой скорости самуf высокуf чувствительность и дальность!!
-	radio.powerUp();                         // начать работу
-	radio.startListening();                  // начинаем слушать эфир, приёмный модуль
-	// radio.stopListening();                // First, stop listening so we can talk.
-}
+// void radioNrfSetup(){
+// 	radio.begin();                           // активировать модуль
+// 	radio.setAutoAck(1);                     // режим подтверждения приёма, 1 вкл 0 выкл
+// 	radio.setRetries(0,15);                  // (время между попыткой достучаться, число попыток)
+// 	radio.enableAckPayload();                // разрешить отсылку данных в ответ на входящий сигнал
+// 	radio.setPayloadSize(32);                // размер пакета, в байтах
+// 	radio.openWritingPipe(addressNRF[1]);    // передаем по трубе 1
+// 	radio.openReadingPipe(1,addressNRF[0]);  // хотим слушать трубу 0
+// 	radio.setChannel(0x60);                  // выбираем канал (в котором нет шумов!)
+// 	radio.setPALevel (RF24_PA_MIN); // уровень мощности передатчика RF24_PA_MIN, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX
+// 	radio.setDataRate (RF24_250KBPS);        // скорость обмена. На выбор RF24_2MBPS, RF24_1MBPS, RF24_250KBPS
+// 	                                         // при самой низкой скорости самуf высокуf чувствительность и дальность!!
+// 	radio.powerUp();                         // начать работу
+// 	radio.startListening();                  // начинаем слушать эфир, приёмный модуль
+// 	// radio.stopListening();                // First, stop listening so we can talk.
+// }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -602,27 +603,26 @@ void finalCheckChangeSecondOrMinuteAndPerformAction(){
 			digitalWrite(BEEPER_PIN, HIGH);
 		}
 
-		// отправляем значения за секунду по радио
-		txStrctVal.operationKeyTX = 1;
-		bool radioWriteOk = 0;
-		// digitalWrite(CHIPSELEKT, HIGH);
-		radio.stopListening();                   // перестаем слушать эфир, для передачи
-		radioWriteOk = radio.write(&txStrctVal, sizeof(txStrctVal));
-		radio.startListening();                  // начинаем слушать эфир, для приема
-		txStrctVal.operationKeyTX = 0;
-		// щетчик качества сигнала
-		if(txStrctVal.signalLevel < 100 && radioWriteOk == 1){
-			txStrctVal.signalLevel += 10;
-			Serial.println();
-			Serial.println("radio write per sec OK");
-			Serial.println();
-		}
-		else if(txStrctVal.signalLevel > 0 && radioWriteOk == 0){
-			txStrctVal.signalLevel -= 10;
-			Serial.println();
-			Serial.println("radio write per sec ERR");
-			Serial.println();
-		}
+		// // отправляем значения за секунду по радио
+		// txStrctVal.operationKeyTX = 1;
+		// bool radioWriteOk = 0;
+		// radio.stopListening();                   // перестаем слушать эфир, для передачи
+		// radioWriteOk = radio.write(&txStrctVal, sizeof(txStrctVal));
+		// radio.startListening();                  // начинаем слушать эфир, для приема
+		// txStrctVal.operationKeyTX = 0;
+		// // щетчик качества сигнала
+		// if(txStrctVal.signalLevel < 100 && radioWriteOk == 1){
+		// 	txStrctVal.signalLevel += 10;
+		// 	Serial.println();
+		// 	Serial.println("radio write per sec OK");
+		// 	Serial.println();
+		// }
+		// else if(txStrctVal.signalLevel > 0 && radioWriteOk == 0){
+		// 	txStrctVal.signalLevel -= 10;
+		// 	Serial.println();
+		// 	Serial.println("radio write per sec ERR");
+		// 	Serial.println();
+		// }
 		Serial.print("record flag = ");
 		Serial.println(recordFlag);
 		// Serial.println();
@@ -725,111 +725,111 @@ void buttonChangeREC(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // NRF ПРИЕМ ДАННЫХ КАЛИБРОВКИ И СТАРТ СТОП:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void radioReceiverCallAndButChng(){
-	if (radio.available()){radio.read(&rxStrctCalibrVal, sizeof(rxStrctCalibrVal));}
+// void radioReceiverCallAndButChng(){
+// 	if (radio.available()){radio.read(&rxStrctCalibrVal, sizeof(rxStrctCalibrVal));}
 
-	// start stop recording radio button
-	if(rxStrctCalibrVal.operationKeyRX == 1){
-		Serial.println("NRF button pressed");
-		rxStrctCalibrVal.operationKeyRX = 0;
-		changeRecOperatingF();
-	}
-	// запрос IN MIN значения отправка через структуру RX
-	if(rxStrctCalibrVal.operationKeyRX == 2){
-		switch (rxStrctCalibrVal.addrNameCalibrUnit){
-		    case 0:
-			rxStrctCalibrVal.inMin = txStrctVal.val_T1;
-		    break;
-		    case 1:
-			rxStrctCalibrVal.inMin = txStrctVal.val_T2;
-		    break;
-		    case 2:
-			rxStrctCalibrVal.inMin = txStrctVal.val_CCO2;
-		    break;
-		    case 3:
-			rxStrctCalibrVal.inMin = txStrctVal.val_O2;
-		    break;
-		    case 4:
-			rxStrctCalibrVal.inMin = txStrctVal.val_CO;
-		    break;
-		    case 5:
-			rxStrctCalibrVal.inMin = (txStrctVal.val_Press_inh + txStrctVal.val_Press_exh) / 2;
-		    break;
-		}
-		Serial.println("zapros in Min");
-	}
-	// запрос IN MAX значения отправка через структуру RX
-	if(rxStrctCalibrVal.operationKeyRX == 3){
-		switch (rxStrctCalibrVal.addrNameCalibrUnit){
-		    case 0:
-			rxStrctCalibrVal.inMax = txStrctVal.val_T1;
-		    break;
-		    case 1:
-			rxStrctCalibrVal.inMax = txStrctVal.val_T2;
-		    break;
-		    case 2:
-			rxStrctCalibrVal.inMax = txStrctVal.val_CCO2;
-		    break;
-		    case 3:
-			rxStrctCalibrVal.inMax = txStrctVal.val_O2;
-		    break;
-		    case 4:
-			rxStrctCalibrVal.inMax = txStrctVal.val_CO;
-		    break;
-		    case 5:
-			rxStrctCalibrVal.inMax = (txStrctVal.val_Press_inh + txStrctVal.val_Press_exh) / 2;
-		    break;
-		}
-		Serial.println("zapros in Max");
-	}
-	// прием пакета калибровки и калибровка
-	if(rxStrctCalibrVal.operationKeyRX == 4){
-		switch (rxStrctCalibrVal.addrNameCalibrUnit){
-		    case 0:
-			calibr_T1_Mas[0] = rxStrctCalibrVal.inMin;
-			calibr_T1_Mas[1] = rxStrctCalibrVal.inMax;
-			calibr_T1_Mas[2] = rxStrctCalibrVal.outMin;
-			calibr_T1_Mas[3] = rxStrctCalibrVal.outMax;
-		    break;
-		    case 1:
-			calibr_T2_Mas[0] = rxStrctCalibrVal.inMin;
-			calibr_T2_Mas[1] = rxStrctCalibrVal.inMax;
-			calibr_T2_Mas[2] = rxStrctCalibrVal.outMin;
-			calibr_T2_Mas[3] = rxStrctCalibrVal.outMax;
-		    break;
-		    case 2:
-			calibr_CO2_Mas[0] = rxStrctCalibrVal.inMin;
-			calibr_CO2_Mas[1] = rxStrctCalibrVal.inMax;
-			calibr_CO2_Mas[2] = rxStrctCalibrVal.outMin;
-			calibr_CO2_Mas[3] = rxStrctCalibrVal.outMax;
-		    break;
-		    case 3:
-			calibr_O2_Mas[0] = rxStrctCalibrVal.inMin;
-			calibr_O2_Mas[1] = rxStrctCalibrVal.inMax;
-			calibr_O2_Mas[2] = rxStrctCalibrVal.outMin;
-			calibr_O2_Mas[3] = rxStrctCalibrVal.outMax;
-		    break;
-		    case 4:
-			calibr_CO_Mas[0] = rxStrctCalibrVal.inMin;
-			calibr_CO_Mas[1] = rxStrctCalibrVal.inMax;
-			calibr_CO_Mas[2] = rxStrctCalibrVal.outMin;
-			calibr_CO_Mas[3] = rxStrctCalibrVal.outMax;
-		    break;
-		    case 5:
-			calibr_Press_Mas[0] = rxStrctCalibrVal.inMin;
-			calibr_Press_Mas[1] = rxStrctCalibrVal.inMax;
-			calibr_Press_Mas[2] = rxStrctCalibrVal.outMin;
-			calibr_Press_Mas[3] = rxStrctCalibrVal.outMax;
-		    break;
-		}
-		eeSingleWriteOfRam(rxStrctCalibrVal.addrNameCalibrUnit);
-		Serial.println();
-		Serial.println("CALIBRATION SENSOR [");
-		Serial.println(rxStrctCalibrVal.addrNameCalibrUnit);
-		Serial.println("] OK");
-		Serial.println();
-	}
-}
+// 	// start stop recording radio button
+// 	if(rxStrctCalibrVal.operationKeyRX == 1){
+// 		Serial.println("NRF button pressed");
+// 		rxStrctCalibrVal.operationKeyRX = 0;
+// 		changeRecOperatingF();
+// 	}
+// 	// запрос IN MIN значения отправка через структуру RX
+// 	if(rxStrctCalibrVal.operationKeyRX == 2){
+// 		switch (rxStrctCalibrVal.addrNameCalibrUnit){
+// 		    case 0:
+// 			rxStrctCalibrVal.inMin = txStrctVal.val_T1;
+// 		    break;
+// 		    case 1:
+// 			rxStrctCalibrVal.inMin = txStrctVal.val_T2;
+// 		    break;
+// 		    case 2:
+// 			rxStrctCalibrVal.inMin = txStrctVal.val_CCO2;
+// 		    break;
+// 		    case 3:
+// 			rxStrctCalibrVal.inMin = txStrctVal.val_O2;
+// 		    break;
+// 		    case 4:
+// 			rxStrctCalibrVal.inMin = txStrctVal.val_CO;
+// 		    break;
+// 		    case 5:
+// 			rxStrctCalibrVal.inMin = (txStrctVal.val_Press_inh + txStrctVal.val_Press_exh) / 2;
+// 		    break;
+// 		}
+// 		Serial.println("zapros in Min");
+// 	}
+// 	// запрос IN MAX значения отправка через структуру RX
+// 	if(rxStrctCalibrVal.operationKeyRX == 3){
+// 		switch (rxStrctCalibrVal.addrNameCalibrUnit){
+// 		    case 0:
+// 			rxStrctCalibrVal.inMax = txStrctVal.val_T1;
+// 		    break;
+// 		    case 1:
+// 			rxStrctCalibrVal.inMax = txStrctVal.val_T2;
+// 		    break;
+// 		    case 2:
+// 			rxStrctCalibrVal.inMax = txStrctVal.val_CCO2;
+// 		    break;
+// 		    case 3:
+// 			rxStrctCalibrVal.inMax = txStrctVal.val_O2;
+// 		    break;
+// 		    case 4:
+// 			rxStrctCalibrVal.inMax = txStrctVal.val_CO;
+// 		    break;
+// 		    case 5:
+// 			rxStrctCalibrVal.inMax = (txStrctVal.val_Press_inh + txStrctVal.val_Press_exh) / 2;
+// 		    break;
+// 		}
+// 		Serial.println("zapros in Max");
+// 	}
+// 	// прием пакета калибровки и калибровка
+// 	if(rxStrctCalibrVal.operationKeyRX == 4){
+// 		switch (rxStrctCalibrVal.addrNameCalibrUnit){
+// 		    case 0:
+// 			calibr_T1_Mas[0] = rxStrctCalibrVal.inMin;
+// 			calibr_T1_Mas[1] = rxStrctCalibrVal.inMax;
+// 			calibr_T1_Mas[2] = rxStrctCalibrVal.outMin;
+// 			calibr_T1_Mas[3] = rxStrctCalibrVal.outMax;
+// 		    break;
+// 		    case 1:
+// 			calibr_T2_Mas[0] = rxStrctCalibrVal.inMin;
+// 			calibr_T2_Mas[1] = rxStrctCalibrVal.inMax;
+// 			calibr_T2_Mas[2] = rxStrctCalibrVal.outMin;
+// 			calibr_T2_Mas[3] = rxStrctCalibrVal.outMax;
+// 		    break;
+// 		    case 2:
+// 			calibr_CO2_Mas[0] = rxStrctCalibrVal.inMin;
+// 			calibr_CO2_Mas[1] = rxStrctCalibrVal.inMax;
+// 			calibr_CO2_Mas[2] = rxStrctCalibrVal.outMin;
+// 			calibr_CO2_Mas[3] = rxStrctCalibrVal.outMax;
+// 		    break;
+// 		    case 3:
+// 			calibr_O2_Mas[0] = rxStrctCalibrVal.inMin;
+// 			calibr_O2_Mas[1] = rxStrctCalibrVal.inMax;
+// 			calibr_O2_Mas[2] = rxStrctCalibrVal.outMin;
+// 			calibr_O2_Mas[3] = rxStrctCalibrVal.outMax;
+// 		    break;
+// 		    case 4:
+// 			calibr_CO_Mas[0] = rxStrctCalibrVal.inMin;
+// 			calibr_CO_Mas[1] = rxStrctCalibrVal.inMax;
+// 			calibr_CO_Mas[2] = rxStrctCalibrVal.outMin;
+// 			calibr_CO_Mas[3] = rxStrctCalibrVal.outMax;
+// 		    break;
+// 		    case 5:
+// 			calibr_Press_Mas[0] = rxStrctCalibrVal.inMin;
+// 			calibr_Press_Mas[1] = rxStrctCalibrVal.inMax;
+// 			calibr_Press_Mas[2] = rxStrctCalibrVal.outMin;
+// 			calibr_Press_Mas[3] = rxStrctCalibrVal.outMax;
+// 		    break;
+// 		}
+// 		eeSingleWriteOfRam(rxStrctCalibrVal.addrNameCalibrUnit);
+// 		Serial.println();
+// 		Serial.println("CALIBRATION SENSOR [");
+// 		Serial.println(rxStrctCalibrVal.addrNameCalibrUnit);
+// 		Serial.println("] OK");
+// 		Serial.println();
+// 	}
+// }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1023,17 +1023,19 @@ void setup(){
 	Serial.begin(250000);    // serial
 	Serial1.begin(250000);   // T1 sensor
 	Serial2.begin(250000);   // Pressure sensor
-	delay(500);
+	Serial3.begin(250000);   // nrf tranciever
+	delay(50);
 	Serial.println(" START SETUP");
 
 	FastLED.addLeds<WS2812B, LED_DATA_PIN, RGB>(iLed, 1); // 1 светодиод WS2812B
 	iLed[0] = CRGB(255, 255, 255);  // GRB white
 	FastLED.show();
 
-	radioNrfSetup();  // NRF setup
-	// digitalWrite(47, HIGH);
-	Serial.println(" radio setup ok");
-	Serial.println();
+	// radioNrfSetup();  // NRF setup
+	// Serial.println(" radio setup ok");
+	// Serial.println();
+
+	delay(50);
 
 	eePackOneInitWrite();  // 1st EEPROM write all calibration val
 	eePackRead();   // EEPROM read all calibration val
@@ -1093,7 +1095,7 @@ void loop(){
 		buttonChangeREC();//старт стоп записи: созд файла для записи на СД карте, запись заголовков || закрытие файла
 
 		// прослушивание эфира на случай старта стопа записи или перехода в режим калибровки
-		radioReceiverCallAndButChng();
+		// radioReceiverCallAndButChng();
 
 		// прослушивание сериал порта
 		serCalibrator();
