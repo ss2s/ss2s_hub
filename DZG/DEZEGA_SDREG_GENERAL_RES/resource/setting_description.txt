@@ -25,6 +25,6 @@
 |    prn    |  PRESS MIN          |  prn -10                  |
 |    prx    |  PRESS MAX          |  prx 10                   |
 |    tms    |  DATE TIME SET      |  tms 2019 12 31 23 59 59  |
-|    psv    |  SET PUMP SVITCH VAL|  psv 0.2                  |
+|    psv    |  SET PUMP SVITCH VAL|  psv 0.05                 |
 ---------------------------------------------------------------
 tms 2019 1 1 13 58 0

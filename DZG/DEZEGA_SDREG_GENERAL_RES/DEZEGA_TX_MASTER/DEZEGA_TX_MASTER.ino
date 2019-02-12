@@ -101,6 +101,9 @@ int16_t adc1_CO2, adc2_CO;  // ads ADC read val
 float multiplierADS = 0.1875F; // ADS1115 6.144V gain (16-Bit results). делитель для перевода показаний АЦП в вольты
 float voltageCO2 = 0;
 float voltageCO = 0;
+// other
+float voltageT1 = 0;
+float voltagePressure = 0;
 // значения сенсоров за секунду структура для хранения значений и передачи по радио
 typedef struct transmiteStructure{
 	float val_T1 = SENS_DISABLEREAD_VAL;
@@ -382,6 +385,11 @@ float poolTermoparaFast1(){  // -250 - 750 (0.1)
 			break;
 		}
 	}
+	voltageT1 = txStrctVal.val_T1 * 0.005 + 1.25;
+	Serial.print("T1  V ");
+	Serial.println(voltageT1, 7);
+
+	return txStrctVal.val_T1;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос медленной ТЕРМОПАРЫ2
@@ -445,6 +453,9 @@ float poolPressure(){  // -9.99 - 9.99 (0.01) 50mv - 80mv
 		}
 	}
 	// if(txStrctVal.val_Press_inh = 8388608){Serial2.print('r');}
+	voltagePressure = flap(txStrctVal.val_Press_exh, -8388608, 8388608, -0.08, 0.08);
+	Serial.print("Press V ");
+	Serial.println(voltagePressure, 7);
 	return (txStrctVal.val_Press_inh + txStrctVal.val_Press_exh) / 2;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
