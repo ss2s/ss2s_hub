@@ -20,6 +20,8 @@ void setup(){
 
 	ads.setGain(GAIN_TWOTHIRDS);  // 2/3x gain +/- 6.144V  1 bit = 3mV      0.1875mV (default)
 	ads.begin();
+	
+	delay(950);
 }
 
 void loop(){

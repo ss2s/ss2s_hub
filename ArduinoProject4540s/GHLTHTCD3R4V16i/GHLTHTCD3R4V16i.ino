@@ -15,9 +15,11 @@
 // GHLTHTCD3R4V16i GROW HUCKER LIGHT TEMP HUMI TIMER CONTROL DATAIN 3 RELEOUT 4 VERSION 16/2 i2c
 
 //#include "Arduino.h"
+// #include <avr/pgmspace.h>
 #include "Dht11.h"
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+
 
 // res.h
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -34,6 +36,15 @@
 #endif
 
 
+void animationReleDelay();
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -63,8 +74,8 @@
 // DHT 11;
 #define IN_DHT_DATA_PIN 15 // A1
 // EXTTENDED .... - VCC/ DHT 22/ SENSOR_POCVI/ GND;
+#define EXTENDED_IN_DATCHIK_POCVI A0  // D14
 #define EXTENDED_IN_DHT_DATA_PIN 16 // A2
-#define EXTENDED_IN_DATCHIK_POCVI A0
 
 // OUT RELE
 #define OUT_SVETTIMER_RELE_PIN 5
@@ -78,11 +89,6 @@
 LiquidCrystal_I2C lcd(0x27, 16, 2); // установка адреса 0x27 и разрешения 16/2 дисплея
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                                                                    
-
-
-
-
-
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -102,12 +108,12 @@ LiquidCrystal_I2C lcd(0x27, 16, 2); // установка адреса 0x27 и �
 
 
 
-
-
 #include "lcdbyte.h"  // символы для дисплея
 
 
 
+// ЯРКОСТЬ ДИСПЛЕЯ
+byte yarkostDispleya = 10;                // яркость екрана 0 - 100
 
 
 
@@ -122,6 +128,8 @@ bool flagPoliva3 = 0;        // для хранения переменной в�
 bool flagTermorele = 0;      // для хранения переменной вкл/выкл
 
 bool flagHumidityrele = 0;   // для хранения переменной вкл/выкл
+
+byte flagAnimaciiReleStateCounter = 1;  // счетчик флага анимации включеного реле 0 - 5
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -141,17 +149,19 @@ byte second, minute = 61, hour, dayOfWeek, dayOfMonth, month, year;
 
 byte TEMP = 0; // температура
 byte HMDT = 0; // влажность
+byte calibrValTEMP = 1; // значение + калибровки температуры
+byte calibrValHMDT = 27; // значение + калибровки влажносты
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ПЕРЕМЕННЫЕ УПРАВЛЕНИЯ И НАСТРОЙКИ ПАРАМЕТРОВ
 
 // СВЕТОЦИКЛ
-byte svetociklType = 1;                    // 2 таймер досветки : 1 таймер светоцикла : 0 отключено
-byte vremyaVkluchenieSveta[2] = {6,0};     // время включения реле света
-byte vremyaVikluchenieSveta[2] = {18,0};   // время выключения реле света
-byte vremyaVkluchenieSveta2[2] = {6,0};    // 2 время включения реле света
-byte vremyaVikluchenieSveta2[2] = {18,0};  // 2 время выключения реле света
+byte svetociklType = 1;                      // 2 таймер досветки : 1 таймер светоцикла : 0 отключено
+byte vremyaVkluchenieSveta[2] = {12,30};     // время включения реле света
+byte vremyaVikluchenieSveta[2] = {19,55};    // время выключения реле света
+byte vremyaVkluchenieSveta2[2] = {1,27};     // 2 время включения реле света
+byte vremyaVikluchenieSveta2[2] = {1,28};    // 2 время выключения реле света
 
 
 
@@ -176,9 +186,9 @@ byte datchikPolivaValAnalogSet = 50;       // точка сработки дат
 // ТЕМПЕРАТУРА
 byte tempRejim = 1;                        // 3 настраиваемый : 2 нагрев : 1 охлаждение : 0 отключено
 byte temperaturaUderjania = 23;           // температура которая будет поддерживатся
-byte temperaturaVkluchenia = 25;          // температура включения реле температуры
+byte temperaturaVkluchenia = 24;          // температура включения реле температуры
 byte temperaturaVikluchenia = 22;         // температура выключения реле температуры
-byte gisterezisTemperaturi = 2;           // гистерезис температуры
+byte gisterezisTemperaturi = 1;           // гистерезис температуры
 
 
 
@@ -189,10 +199,6 @@ byte vlajnostVkluchenia = 50;             // влажность включени
 byte vlajnostVikluchenia = 60;            // влажность выключения реле влажности
 byte gisterezisVlajnosti = 10;            // гистерезис влажности
 
-
-
-// ЯРКОСТЬ ДИСПЛЕЯ
-byte yarkostDispleya = 255;                // яркость екрана 0 - 256
 
 
 
@@ -221,7 +227,7 @@ byte pinButton = IN_ENKODER_BUTTON_PIN;  //Пин прерывания нажа�
 byte pinB = IN_ENKODER_DT_PIN;           //другой пин енкодера
 
 long timeButtonPressed = 1000;    // Долгое удержание кнопки после 1 секунд. настройка поведения ниже ↓
-#define LONG_PRESS_CONTINUES 1    // 1 будет выполнятся одно событие, 0 будут повторятся события пока нажата кнопка
+#define LONG_PRESS_CONTINUES 0    // 1 будет выполнятся одно событие, 0 будут повторятся события пока нажата кнопка
 
 volatile int state = 0;                 // Переменная хранящая статус вращения
 
@@ -236,6 +242,13 @@ volatile bool isButtonDown      = false;     // Переменная храня�
 volatile bool longPressReleased = false;     // Переменная для фиксации срабатывания долгого нажатия
 
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "chekparam.h"  // функции управления реле по установленным параметрам
+#include "extmenu.h"    // extmenu
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -298,7 +311,6 @@ void Button(){
 
 
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -313,7 +325,6 @@ void Button(){
 //                                                    
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 ///// часы DS3231 ..
 byte decToBcd(byte val){
@@ -369,6 +380,7 @@ void getDateDs1307(byte *second,
   	*dayOfMonth = bcdToDec(Wire.read());
   	*month      = bcdToDec(Wire.read());
   	*year       = bcdToDec(Wire.read());
+  	if(*hour == 0){*hour = 24;}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   
@@ -406,15 +418,14 @@ void getDhtData(byte *TE, byte *HU){
   	switch (sensor.read()) {
 
     	case Dht11::OK:
-        //lcd.clear(); // очистить дисплей
         *TE = sensor.getTemperature();
-        *HU = sensor.getHumidity();      
+        *HU = sensor.getHumidity();
         break;
 
     	case Dht11::ERROR_CHECKSUM:    
         lcd.clear(); // очистить дисплей
         lcd.setCursor(0,0);
-        lcd.println("Checksum error");
+        lcd.println(F("DHT Checksum err"));
         delay(1000);
         lcd.clear(); // очистить дисплей
         break;
@@ -422,7 +433,7 @@ void getDhtData(byte *TE, byte *HU){
     	case Dht11::ERROR_TIMEOUT:
         lcd.clear(); // очистить дисплей
         lcd.setCursor(0,0);
-        lcd.println("Timeout error");
+        lcd.println(F("DHT Time err"));
         delay(1000);
         lcd.clear(); // очистить дисплей
         break;
@@ -430,7 +441,7 @@ void getDhtData(byte *TE, byte *HU){
     	default:
         lcd.clear(); // очистить дисплей
         lcd.setCursor(0,0);
-        lcd.println("Unknown error"); 
+        lcd.println(F("DHT Unknown err")); 
         delay(1000);
         lcd.clear(); // очистить дисплей
         break;
@@ -445,7 +456,6 @@ void getDhtDataByte(void){
   	switch (sensor.read()) {
 
     	case Dht11::OK:
-        //lcd.clear(); // очистить дисплей
         TEMP = sensor.getTemperature();
         HMDT = sensor.getHumidity();      
         break;
@@ -453,7 +463,7 @@ void getDhtDataByte(void){
     	case Dht11::ERROR_CHECKSUM:    
         lcd.clear(); // очистить дисплей
         lcd.setCursor(0,0);
-        lcd.println("Checksum error");
+        lcd.println(F("DHT Checksum err"));
         delay(1000);
         lcd.clear(); // очистить дисплей
         break;
@@ -461,7 +471,7 @@ void getDhtDataByte(void){
     	case Dht11::ERROR_TIMEOUT:
         lcd.clear(); // очистить дисплей
         lcd.setCursor(0,0);
-        lcd.println("Timeout error");
+        lcd.println(F("DHT Time err"));
         delay(1000);
         lcd.clear(); // очистить дисплей
         break;
@@ -469,15 +479,12 @@ void getDhtDataByte(void){
     	default:
         lcd.clear(); // очистить дисплей
         lcd.setCursor(0,0);
-        lcd.println("Unknown error"); 
+        lcd.println(F("DHT Unknown err")); 
         delay(1000);
         lcd.clear(); // очистить дисплей
         break;
     }
 }
-
-
-
 
 
 
@@ -501,7 +508,7 @@ void chekMenuLoop(unsigned int count = 1){
 
 	horizontalStep = 0;
 	vertikalStep = 0;
-	sei();                                      // Разрешаем обработку прерываний
+	// sei();                                      // Разрешаем обработку прерываний
 
 	for(int i=0; i<count; i++){
 
@@ -510,13 +517,13 @@ void chekMenuLoop(unsigned int count = 1){
 		enkoderChek();                              // проверка переменных енкодера
 	 	if(horizontalStep > 0){
 
-	 		cli();
+	 		// cli();
 	 		i = count;
 	 		menuLoop();
 	 	}
 	}
 
-	cli();                                      // Запрещаем обработку прерываний, чтобы не отвлекаться
+	// cli();                                      // Запрещаем обработку прерываний, чтобы не отвлекаться
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -537,15 +544,15 @@ void menuLoop(){
 
 	lcd.clear();
   	lcd.setCursor(5, 0);
-  	lcd.print("MENU");
+  	lcd.print(F("MENU"));
 
 	delay(500);
 
-	sei();
+	// sei();
 
 
 
-	cli();
+	// cli();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -635,8 +642,6 @@ void menuLoop(){
 
 
 
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -663,26 +668,26 @@ void enkoderChek(){
   	if (flagCW) {                             // Шаг вращения по часовой стрелке
   	  	// ....
   	  	horizontalStep ++;
-  	  	Serial.println("turn_right");
+  	  	Serial.println(F("turn_right"));
   	  	flagCW = false;                       // Действие обработано - сбрасываем флаг
   	}
   	if (flagCCW) {                            // Шаг вращения против часовой стрелки
   	  	// ...
   	  	horizontalStep --;
-  	  	Serial.println("turn_left");
+  	  	Serial.println(F("turn_left"));
   	  	flagCCW = false;                      // Действие обработано - сбрасываем флаг
   	}
   	if (flagButton) {                         // Кнопка нажата
   	  	// .
   	  	vertikalStep ++;
-  	  	Serial.println("short_press");
+  	  	Serial.println(F("short_press"));
   	  	flagButton = false;                   // Действие обработано - сбрасываем флаг
   	}
   	if (flagButtonLong && isButtonDown) {   // Кнопка удерживается
   	  	if (!digitalRead(pinButton) && millis() - timeButtonDown > timeButtonPressed) { //Защита от ложного срабатывания
   	    // ..
   	  		vertikalStep --;
-  	    	Serial.println("long_press");
+  	    	Serial.println(F("long_press"));
   	  	}
 
   	  	//================================= Настраиваем реакцию на долгое удержание кнопки =============================
@@ -700,8 +705,6 @@ void enkoderChek(){
   	  	flagButtonLong = false;               // Действие обработано - сбрасываем флаг
   	}
 }
-
-
 
 
 
@@ -723,31 +726,89 @@ void enkoderChek(){
 void chekReleToPrint( byte rele){  // функция печатает на дисплее состояние выбранного выхода
 
 	if(digitalRead(rele) == DW_H){
-		lcd.write(byte(1));
+		lcd.write(byte(flagAnimaciiReleStateCounter));
 	}else{
 		lcd.write(byte(0));
 	}
 }
 
-void displayMain(){
+void calibrationTempHmdt(){
+	TEMP += calibrValTEMP;
+	HMDT += calibrValHMDT;
+    // TEMP += masMenu[85][3];
+    // HMDT += masMenu[86][3];
+}
+
+void animAtom(byte x,byte y,byte r){
+	lcd.setCursor(x, y);
+	lcd.print(F(" "));
+	lcd.setCursor(x, y);
+	chekReleToPrint(r);
+}
+
+unsigned int animationDelayVal = 500;
+
+void animationReleDelay(unsigned int delMsek){
+	unsigned int thsLOpDel = animationDelayVal;  // animation Delay
+	int fcount = delMsek / thsLOpDel + 1;
+	for(int i=0; i<fcount; i++){
+
+		flagAnimaciiReleStateCounter ++;
+		if(flagAnimaciiReleStateCounter > 4){flagAnimaciiReleStateCounter = 1;}
+
+	  	animAtom(5, 0, OUT_SVETTIMER_RELE_PIN);
+	  	animAtom(14, 0, OUT_TEMPERATURA_RELE_PIN);
+	  	animAtom(5, 1, OUT_POLIVTIMER_RELE_PIN);
+	  	animAtom(14, 1, OUT_VLAJNOST_RELE_PIN);
+
+	  	delay(thsLOpDel);
+	}
+}
+void animationReleDelayLinear(unsigned int delMsek){
+	unsigned int thsLOpDel = animationDelayVal;  // animation Delay
+	int fcount = delMsek / thsLOpDel + 1;
+	for(int i=0; i<fcount; i++){
+
+		flagAnimaciiReleStateCounter ++;
+		if(flagAnimaciiReleStateCounter > 4){flagAnimaciiReleStateCounter = 1;}
+
+	  	animAtom(1, 1, OUT_SVETTIMER_RELE_PIN);
+	  	animAtom(5, 1, OUT_POLIVTIMER_RELE_PIN);
+	  	animAtom(9, 1, OUT_TEMPERATURA_RELE_PIN);
+	  	animAtom(13, 1, OUT_VLAJNOST_RELE_PIN);
+
+	  	delay(thsLOpDel);
+	}
+}
+
+void displayMain(unsigned int thsLOpDel = 1000){
 
 	getDateDs1307(&second, &minute, &hour, &dayOfWeek, &dayOfMonth, &month, &year);  // запрос текущего времени
   	getDhtData(&TEMP, &HMDT);  // запрос текущей температуры и влажности
+  	calibrationTempHmdt();     // калибровка температуры и влажности
 
-  	lcd.clear();
-  	lcd.print("CBET ");
-  	chekReleToPrint(OUT_SVETTIMER_RELE_PIN);
-  	lcd.setCursor(8, 0);
-  	lcd.print("TEMP ");
+  	// lcd.clear();
+  	lcd.setCursor(0, 0);
+  	lcd.print(F("LGHT"));
+  	animAtom(5, 0, OUT_SVETTIMER_RELE_PIN);
+  	lcd.setCursor(7, 0);
+  	lcd.print(F("TEMP"));
+  	lcd.setCursor(12, 0);
   	lcd.print(TEMP);
-  	chekReleToPrint(OUT_TEMPERATURA_RELE_PIN);
+  	lcd.print(F(" "));
+	animAtom(14, 0, OUT_TEMPERATURA_RELE_PIN);
   	lcd.setCursor(0, 1);
-  	lcd.print("POLIV");
-  	chekReleToPrint(OUT_POLIVTIMER_RELE_PIN);
-  	lcd.setCursor(8, 1);
-  	lcd.print("VLAJ");
+  	lcd.print(F("WTRG"));
+	animAtom(5, 1, OUT_POLIVTIMER_RELE_PIN);
+  	lcd.setCursor(7, 1);
+  	lcd.print(F("HMDT"));
+  	lcd.setCursor(12, 1);
   	lcd.print(HMDT);
-  	chekReleToPrint(OUT_VLAJNOST_RELE_PIN);
+  	lcd.print(F(" "));
+	animAtom(14, 1, OUT_VLAJNOST_RELE_PIN);
+
+  	animationReleDelay(thsLOpDel);
+  	// delay(1000);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -762,17 +823,25 @@ void displayMainHumidity(){}
 
 void displayMainTimer(){}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+String zwf(byte chislo){
+	String retstr = "";
+	if(chislo < 10){retstr = "0";}
+	retstr += String(chislo);
+	return retstr;
+}
 
-void displayMainDateTime(){}
+void displayMainDateTime(){
+	getDateDs1307(&second, &minute, &hour, &dayOfWeek, &dayOfMonth, &month, &year);  // запрос текущего времени
+	lcd.clear();
+	lcd.setCursor(0, 0);
+	lcd.print(zwf(dayOfMonth));lcd.print(F("."));lcd.print(zwf(month));lcd.print(F("."));lcd.print(zwf(year));
+	lcd.setCursor(10, 0);
+	lcd.print(zwf(hour));lcd.print(F(":"));lcd.print(zwf(minute));/*lcd.print(F(":"));lcd.print(zwf(second));*/
+	// delay(3000);
+	animationReleDelayLinear(5000);
+	lcd.clear();
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-#include "chekparam.h"  // функции управления реле по установленным параметрам
-#include "extmenu.h"    // extmenu
 
 
 
@@ -802,6 +871,7 @@ void setup() {
 	pinMode(OUT_VLAJNOST_RELE_PIN, OUTPUT);
 	pinMode(OUT_POLIVTIMER_RELE_PIN, OUTPUT);
 
+
 	digitalWrite(OUT_SVETTIMER_RELE_PIN, DW_L);
 	digitalWrite(OUT_TEMPERATURA_RELE_PIN, DW_L);
 	digitalWrite(OUT_VLAJNOST_RELE_PIN, DW_L);
@@ -810,53 +880,82 @@ void setup() {
 	pinMode(pinA, INPUT);           // Пины в режим приема INPUT
   	pinMode(pinB, INPUT);           // Пины в режим приема INPUT
   	pinMode(pinButton, INPUT);      // Пины в режим приема INPUT
+  	
+
+	Serial.begin(250000);
+
+	delay(100);
 
 	Wire.begin();
 
-    lcd.createChar(0, off0);  // create a new custom character
-    lcd.createChar(1, on1);   // create a new custom character
-    lcd.createChar(2, strelkaVibora2);   // create a new custom character
-    lcd.createChar(3, strelkaNazad3);   // create a new custom character
-    // lcd.write(byte(0));
-    // lcd.write(byte(1));
-    // lcd.write(byte(2));
-    // lcd.write(byte(3));
 
 	lcd.begin(); // иниализация дисплея LCD 16/2
   	lcd.clear(); // очистить дисплей
 
+	pinMode(OUT_YARKOST_DISPLEYA_PWM_PIN, OUTPUT);
+  	if(yarkostDispleya >= 100){digitalWrite(OUT_YARKOST_DISPLEYA_PWM_PIN, HIGH);}
+  	else if(yarkostDispleya == 0){digitalWrite(OUT_YARKOST_DISPLEYA_PWM_PIN, LOW);}
+  	else{analogWrite(OUT_YARKOST_DISPLEYA_PWM_PIN, map(yarkostDispleya, 0, 100, 0, 255));}
+
+  	lcd.print(F("  GROW HACKER"));
+  	lcd.setCursor(0, 1);
+  	lcd.print(F("    V_1.0.1"));
+  	delay(2000);
+
+    lcd.createChar(0, off0);  // create a new custom character
+    lcd.createChar(1, on1);   // create a new custom character
+    lcd.createChar(2, on2);   // create a new custom character
+    lcd.createChar(3, on3);   // create a new custom character
+    lcd.createChar(4, on4);   // create a new custom character
+    lcd.createChar(5, dop5);   // create a new custom character
+    lcd.createChar(6, strelkaVibora6);   // create a new custom character
+    lcd.createChar(7, strelkaNazad7);   // create a new custom character
+    // lcd.write(byte(0));  // off0
 
  	// УСТАНОВКА ЧАСОВ:↓
- /*
+ 	/*
   	second = 30;
-  	minute = 0;
-  	hour = 12;
-  	dayOfWeek = 3; // день недели
-  	dayOfMonth = 21; // день
-  	month = 3;
-  	year = 18;
+  	minute = 50;
+  	hour = 23;
+  	dayOfWeek = 5; // день недели
+  	dayOfMonth = 8; // день
+  	month = 2;
+  	year = 19;
 
   	setDateDs1307(second, minute, hour, dayOfWeek, dayOfMonth, month, year);
- */
-
-  	extMenuSetup();
-
-	Serial.begin(9600);
+ 	*/
 
   	attachInterrupt(0, A, CHANGE);        // Настраиваем обработчик прерываний по изменению сигнала на линии A
   	attachInterrupt(1, Button, CHANGE);   // Настраиваем обработчик прерываний по изменению сигнала нажатия кнопки
+
+  	lcd.clear();
+
+  	displayMain(1000);
+
+  	extMenuSetup();  // --------------------------->>>
+
+  	// test
+	// digitalWrite(OUT_SVETTIMER_RELE_PIN, DW_H);
+	// digitalWrite(OUT_TEMPERATURA_RELE_PIN, DW_H);
+	// digitalWrite(OUT_VLAJNOST_RELE_PIN, DW_H);
+	// digitalWrite(OUT_POLIVTIMER_RELE_PIN, DW_H);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void loop() {
 
-	//displayMain();    // osnovnoy displey
 
-	//chekMenuLoop(1);  // proverka vhoda v menu s enkodera (raz)
+	//chekMenuLoop(1);      // чек енкодера на случай входа в меню и переключение экранов (раз)
 
-	extMenuLoop();
+	extMenuLoop();       // внешнее меню
+ 
+	// chekParam();            // управление реле
 
-	//chekParam();      // chek param
+	// displayMain(5000);      // основной дисплей
+
+	// chekParam();            // управление реле
+
+	// displayMainDateTime();  // вывод даты и времени на экран
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

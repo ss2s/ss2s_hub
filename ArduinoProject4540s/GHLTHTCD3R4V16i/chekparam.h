@@ -23,69 +23,47 @@ void chekLightLoop(){
 
 		getDateDs1307(&second, &minute, &hour, &dayOfWeek, &dayOfMonth, &month, &year);  // запрос текущего времени
 
-		if((hour == vremyaVkluchenieSveta[0]) 
-			&& (minute >= vremyaVkluchenieSveta[1]) 
-			&& (flagSvetocikla == 0) 
-			&& ((hour < vremyaVikluchenieSveta[0]) 
-				|| ((hour == vremyaVikluchenieSveta[0]) 
-					&& (minute < vremyaVikluchenieSveta[1])))){
-
-			digitalWrite(OUT_SVETTIMER_RELE_PIN, DW_H);
-			flagSvetocikla = 1;
+		int crntMin = hour * 60 + minute;
+		int strtMin = vremyaVkluchenieSveta[0] * 60 + vremyaVkluchenieSveta[1];
+		int stopMin = vremyaVikluchenieSveta[0] * 60 + vremyaVikluchenieSveta[1];
+		if (strtMin > stopMin){
+			if(crntMin < strtMin){crntMin += 1440;}
+			stopMin += 1440;
 		}
-		else if((hour == vremyaVikluchenieSveta[0]) 
-			&& (minute >= vremyaVikluchenieSveta[1]) 
-			&& (flagSvetocikla == 1)){
 
-			digitalWrite(OUT_SVETTIMER_RELE_PIN, DW_L);
-			flagSvetocikla = 0;
+		if (crntMin >= strtMin && crntMin < stopMin){
+			if (digitalRead(OUT_SVETTIMER_RELE_PIN == DW_L)){digitalWrite(OUT_SVETTIMER_RELE_PIN, DW_H);}
+		}
+		else {
+			if (digitalRead(OUT_SVETTIMER_RELE_PIN == DW_H)){digitalWrite(OUT_SVETTIMER_RELE_PIN, DW_L);}
 		}
 	}else if(svetociklType == 2){  // dosvetka
 
 		getDateDs1307(&second, &minute, &hour, &dayOfWeek, &dayOfMonth, &month, &year);  // запрос текущего времени
 
-		if((hour == vremyaVkluchenieSveta[0]) 
-			&& (minute >= vremyaVkluchenieSveta[1]) 
-			&& (flagSvetocikla == 0) 
-			&& (flagSvetocikla2 == 0)
-			&& ((hour < vremyaVikluchenieSveta[0]) 
-				|| ((hour == vremyaVikluchenieSveta[0]) 
-					&& (minute < vremyaVikluchenieSveta[1])))){
-
-			digitalWrite(OUT_SVETTIMER_RELE_PIN, DW_H);
-			flagSvetocikla = 1;
+		int crntMin = hour * 60 + minute;
+		int strtMin = vremyaVkluchenieSveta[0] * 60 + vremyaVkluchenieSveta[1];
+		int stopMin = vremyaVikluchenieSveta[0] * 60 + vremyaVikluchenieSveta[1];
+		if (strtMin > stopMin){
+			if(crntMin < strtMin){crntMin += 1440;}
+			stopMin += 1440;
 		}
-		else if((hour == vremyaVikluchenieSveta[0]) 
-			&& (minute >= vremyaVikluchenieSveta[1]) 
-			&& (flagSvetocikla == 1)
-			&& (flagSvetocikla2 == 0)){
-
-			digitalWrite(OUT_SVETTIMER_RELE_PIN, DW_L);
-			flagSvetocikla = 0;
-		}else if((hour == vremyaVkluchenieSveta2[0]) 
-			&& (minute >= vremyaVkluchenieSveta2[1]) 
-			&& (flagSvetocikla2 == 0)
-			&& (flagSvetocikla == 0) 
-			&& ((hour < vremyaVikluchenieSveta2[0]) 
-				|| ((hour == vremyaVikluchenieSveta2[0]) 
-					&& (minute < vremyaVikluchenieSveta2[1])))){
-
-			digitalWrite(OUT_SVETTIMER_RELE_PIN, DW_H);
-			flagSvetocikla2 = 1;
+		int crntMin2 = hour * 60 + minute;
+		int strtMin2 = vremyaVkluchenieSveta2[0] * 60 + vremyaVkluchenieSveta2[1];
+		int stopMin2 = vremyaVikluchenieSveta2[0] * 60 + vremyaVikluchenieSveta2[1];
+		if (strtMin2 > stopMin2){
+			if(crntMin2 < strtMin2){crntMin2 += 1440;}
+			stopMin2 += 1440;
 		}
-		else if((hour == vremyaVikluchenieSveta2[0]) 
-			&& (minute >= vremyaVikluchenieSveta2[1]) 
-			&& (flagSvetocikla2 == 1)
-			&& (flagSvetocikla == 0)){
 
-			digitalWrite(OUT_SVETTIMER_RELE_PIN, DW_L);
-			flagSvetocikla2 = 0;
+		if ((crntMin >= strtMin && crntMin < stopMin) || (crntMin2 >= strtMin2 && crntMin2 < stopMin2)){
+			if (digitalRead(OUT_SVETTIMER_RELE_PIN == DW_L)){digitalWrite(OUT_SVETTIMER_RELE_PIN, DW_H);}
+		}
+		else {
+			if (digitalRead(OUT_SVETTIMER_RELE_PIN == DW_H)){digitalWrite(OUT_SVETTIMER_RELE_PIN, DW_L);}
 		}
 	}
 }
-
-
-
 
 
 
@@ -263,7 +241,7 @@ void chekTempLoop(){
 		return;
 	}else if(tempRejim == 1){  // если охлаждение
 
-		getDhtData(&TEMP, &HMDT);  // запрос текущей температуры и влажности
+		// getDhtData(&TEMP, &HMDT);  // запрос текущей температуры и влажности
 
 		float temperaturaUderjaniaAndGisterezis = temperaturaUderjania + gisterezisTemperaturi;
 
@@ -276,7 +254,7 @@ void chekTempLoop(){
 		}
 	}else if(tempRejim == 2){  // если нагрев    
 
-		getDhtData(&TEMP, &HMDT);  // запрос текущей температуры и влажности
+		// getDhtData(&TEMP, &HMDT);  // запрос текущей температуры и влажности
 
 		float temperaturaUderjaniaAndGisterezis = temperaturaUderjania - gisterezisTemperaturi;
 
@@ -289,7 +267,7 @@ void chekTempLoop(){
 		}
 	}else if(tempRejim == 3){  // если настраиваемый
 
-		getDhtData(&TEMP, &HMDT);  // запрос текущей температуры и влажности
+		// getDhtData(&TEMP, &HMDT);  // запрос текущей температуры и влажности
 
 		if(temperaturaVkluchenia > temperaturaVikluchenia){
 
@@ -332,7 +310,7 @@ void chekHumidityLoop(){
 		return;
 	}else if(vlajnostRejim == 1){  // если сушка
 
-		getDhtData(&TEMP, &HMDT);  // запрос текущей температуры и влажности
+		// getDhtData(&TEMP, &HMDT);  // запрос текущей температуры и влажности
 
 		float vlajnostUderjaniaAndGisterezis = vlajnostUderjania + gisterezisVlajnosti;
 
@@ -345,7 +323,7 @@ void chekHumidityLoop(){
 		}
 	}else if(vlajnostRejim == 2){  // если увлажнение   
 
-		getDhtData(&TEMP, &HMDT);  // запрос текущей температуры и влажности
+		// getDhtData(&TEMP, &HMDT);  // запрос текущей температуры и влажности
 
 		float vlajnostUderjaniaAndGisterezis = vlajnostUderjania - gisterezisVlajnosti;
 
@@ -358,7 +336,7 @@ void chekHumidityLoop(){
 		}
 	}else if(vlajnostRejim == 3){  // если настраиваемый   
 
-		getDhtData(&TEMP, &HMDT);  // запрос текущей температуры и влажности
+		// getDhtData(&TEMP, &HMDT);  // запрос текущей температуры и влажности
 
 		if(vlajnostVkluchenia > vlajnostVikluchenia){
 
@@ -392,8 +370,6 @@ void chekHumidityLoop(){
 
 	
 void chekParam(){
-
-	// chek param
 	chekLightLoop();
 	chekPolivLoop();
 	chekTempLoop();

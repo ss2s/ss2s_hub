@@ -85,6 +85,8 @@ void setup(){
 	Serial.begin(250000);
 	delay(10);
 	radioNrfSetup();
+
+	delay(990);
 }
 
 void loop(){
@@ -105,10 +107,10 @@ void loop(){
 				txStrctVal.val_Press_inh = Serial.parseFloat();  // float
 				txStrctVal.val_Press_exh = Serial.parseFloat();  // float
 				txStrctVal.minuteTest = Serial.parseInt();  // short
-				Serial.read();
-				txStrctVal.val_BatteryLevel_TX = Serial.read();  // byte
-				Serial.read();
-				txStrctVal.flagZapisiAndColorTransmite = Serial.read();  // byte
+				// Serial.read();
+				txStrctVal.val_BatteryLevel_TX = Serial.parseInt();  // byte
+				// Serial.read();
+				txStrctVal.flagZapisiAndColorTransmite = Serial.parseInt();  // byte
 
 				sendNRFdataF();
 			}

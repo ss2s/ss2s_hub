@@ -48,3 +48,7 @@ int ascii_cod2(char x)
 return x;
 }
 
+
+
+
+// Serial.println(adc64, 10);

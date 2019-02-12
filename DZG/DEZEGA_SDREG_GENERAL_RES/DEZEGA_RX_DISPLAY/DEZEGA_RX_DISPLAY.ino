@@ -11,10 +11,11 @@
 // #include "U8glib.h"
 // U8GLIB_SSD1309_128X64 u8g(13, 11, 10, 9, 8);	// SPI Com: SCK = 13, MOSI = 11, CS = 10, A0 = 9
 
-
+#define BAT_LVL_READ_TYPE 0      // тип считывателя уровня батареи: 0-аналоговый,  1-цифровой
+#define BAT_LEVEL_ANALOG_PIN A0  // пин подключения аналогового сигнала с батареи, если это предусмотрено в настр. выше
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define START_STOP_BUTTON_PIN 30  // кнопка включения выключения записи. замыкать
+#define START_STOP_BUTTON_PIN 4  // кнопка включения выключения записи. замыкать
 #define LED_DATA_PIN 8 // led pin
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 RF24 radio(48,53);  // nrf init CE, CSN  nrf init:  MISO:50, MOSI:51, SCK:52
@@ -88,7 +89,6 @@ void radioReseiverGF(){
 		radio.read(&rxStrctVal, sizeof(rxStrctVal));
 
 		if(rxStrctVal.operationKeyTX == 1){
-			rxStrctVal.operationKeyTX = 0;
 			signalErrTime = millis();
 
 			Serial.println("radio receive OK");
@@ -102,16 +102,18 @@ void radioReseiverGF(){
 			Serial.print("Press exh: "); Serial.println(rxStrctVal.val_Press_exh);
 			Serial.print("test time: "); Serial.println(rxStrctVal.minuteTest);
 			Serial.print("receive TX bat level: "); Serial.println(rxStrctVal.val_BatteryLevel_TX);
+			Serial.print("RX bat level: "); Serial.println(val_BatteryLevel_RX);
 			Serial.print("record and color flag: "); Serial.println(rxStrctVal.flagZapisiAndColorTransmite);
 			Serial.print("operation key: "); Serial.println(rxStrctVal.operationKeyTX);
 			Serial.print("inner signal level: "); Serial.println(innerSignalAntVal);
 
+			rxStrctVal.operationKeyTX = 0;
 			receiveErrorCounter = 0;
 			otherErrorCounter = 0;
 			if(innerSignalAntVal < 100){innerSignalAntVal += 10;}
 		}else{
 			otherErrorCounter ++;
-			if(otherErrorCounter >= 2000){
+			if(otherErrorCounter >= 1200){
 				otherErrorCounter = 0;
 				Serial.println("other error: NRF no connect");
 			}
@@ -144,9 +146,11 @@ void recbuttonChangeCheckGF(){
 			// отправляем факт нажатие кнопки по радио
 			txStrctCalibrVal.operationKeyRX = 1;
 			bool radioWriteOk = 0;
-			radio.stopListening();                   // перестаем слушать эфир, для передачи
+			radio.stopListening();  // перестаем слушать эфир, для передачи
 			radioWriteOk = radio.write(&txStrctCalibrVal, sizeof(txStrctCalibrVal));
-			radio.startListening();                  // начинаем слушать эфир, для приема
+			radio.startListening();  // начинаем слушать эфир, для приема
+
+			delay(2000);
 		}
 	}
 }
@@ -154,10 +158,55 @@ void recbuttonChangeCheckGF(){
 
 
 
-// NRF rx and tx F
-// NRF signal level F
-// battery level F
-// display sensor values and battery level and signal level
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// опрос уровня заряда батареи 
+float poolBatteryLevel(){
+	if(BAT_LVL_READ_TYPE == 0){  // analog LVL BAT read
+		int promBatLvlVal;
+		promBatLvlVal = analogRead(BAT_LEVEL_ANALOG_PIN);
+		promBatLvlVal = map(promBatLvlVal, 0, 1023, 0, 500);
+		promBatLvlVal = constrain(promBatLvlVal, 370, 420);
+		promBatLvlVal = map(promBatLvlVal, 370, 420, 0, 100);
+		val_BatteryLevel_RX = promBatLvlVal;
+	}
+	else{  // digital LVL BAT read
+	}
+	return val_BatteryLevel_RX;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// led show
+void ledReceiverShow(){
+	switch(rxStrctVal.flagZapisiAndColorTransmite){
+		case 0:  // blue no REC
+		iLed[0] = CRGB(0, 0, 255);  // GRB blue
+		FastLED.show();
+		break;
+
+		case 1:  // green
+		iLed[0] = CRGB(255, 0, 0);  // GRB green
+		FastLED.show();
+		break;
+
+		case 2:  // yelow
+		iLed[0] = CRGB(255, 255, 0);  // GRB yelow
+		FastLED.show();
+		break;
+
+		case 3:  // red
+		iLed[0] = CRGB(0, 255, 0);  // GRB red
+		FastLED.show();
+		break;
+	}
+	if(rxStrctVal.flagZapisiAndColorTransmite != 4){rxStrctVal.flagZapisiAndColorTransmite = 4;}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 void setup(){
 	pinMode(START_STOP_BUTTON_PIN, INPUT_PULLUP);
 	Serial.begin(250000);
@@ -168,10 +217,12 @@ void setup(){
 	FastLED.show();
 
 	radioNrfSetup();
-
+	delay(500);
 }
 
 void loop(){
 	radioReseiverGF();
 	recbuttonChangeCheckGF();
+	ledReceiverShow();
+	poolBatteryLevel();
 }

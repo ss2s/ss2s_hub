@@ -27,7 +27,7 @@
 #define SDCHEK 0                 // 1 ЕСЛИ ФЛЕШКИ НЕТ ТО НЕ СТАРТОВАТЬ. 0 СТАРТОВАТЬ В ЛЮБОМ СЛУЧАЕ
 #define DEFMaxFileToSD 1000      // макс количество файлов на флешке. макс 65535
 
-#define EEPROM_WRITE_KEY 142     // код перезаписи EEPROM < 255. если изменить то EEPROM перезапишется из оперативки
+#define EEPROM_WRITE_KEY 114     // код перезаписи EEPROM < 255. если изменить то EEPROM перезапишется из оперативки
 #define EEPROM_WRITE_K_ADDR 200  // адрес кода перезаписи EEPROM . 200 <= x < 500
 
 #define BEEPER_FREQ 500  // частота аварийной пищалки в Герцах
@@ -97,8 +97,10 @@ int treckingDay;          // переменная для отслеживани�
 long adc64 = 0;
 float voltageO2 = 0;
 // ads 1115 variables
-int16_t adc0_O2, adc1_CO2, adc2_CO;  // ads ADC read val
+int16_t adc1_CO2, adc2_CO;  // ads ADC read val
 float multiplierADS = 0.1875F; // ADS1115 6.144V gain (16-Bit results). делитель для перевода показаний АЦП в вольты
+float voltageCO2 = 0;
+float voltageCO = 0;
 // значения сенсоров за секунду структура для хранения значений и передачи по радио
 typedef struct transmiteStructure{
 	float val_T1 = SENS_DISABLEREAD_VAL;
@@ -135,12 +137,15 @@ float maxVal_CCO2 = 0;
 float maxVal_CO = 0;
 
 // калибровка всех датчиков. значения: inMin, inMax, outMin, outMax
-float calibr_O2_Mas[] = {0, 100, 0, 100};
+float calibr_O2_Mas[] = {1887436.8, 2726297.6, 0, 100};
 float calibr_T1_Mas[] = {20, 60, 20, 60};
 float calibr_T2_Mas[] = {20, 100, 20, 100};
-float calibr_CO2_Mas[] = {0, 5, 0, 5};
-float calibr_CO_Mas[] = {0, 1000, 0, 1000};
-float calibr_Press_Mas[] = {0, 2000, 0, 2000};
+float calibr_CO2_Mas[] = {2133, 10666.6, 0, 5};
+float calibr_CO_Mas[] = {2133, 10666.6, 0, 2000};
+float calibr_Press_Mas[] = {5242880, 8388608, -9.99, 9.99};  // ok
+
+float pumpThresholdVal = -0.05;  // порог включения помпы на TX SLAVE PRESSURE
+bool pumpThresholdValWriteOkFlag = 0;  // флаг успешной отправки значения запуска помпы
 
 // флаг записи на флешку. если 1 то запись идет если 0 то нет
 bool recordFlag = 0;
@@ -199,26 +204,29 @@ void EEPROM_float_write(int addr, float data){
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // запись/чтение калибровочных значений из/в EEPROM
-void eeSingleWriteOfRam(byte addrName){ // калибровка и запись значений калибровки в EEPROM
+void eeSingleWriteOfRam(byte addrName){ // запись значений калибровки в EEPROM
 	for(int i=0; i<4; i++){	
 		switch (addrName){
 		    case 0:
 			EEPROM_float_write(0+i, calibr_T1_Mas[i]);
 		    break;
 		    case 1:
-			EEPROM_float_write(4+i, calibr_T2_Mas[i]);
+			EEPROM_float_write(1+i, calibr_T2_Mas[i]);
 		    break;
 		    case 2:
-			EEPROM_float_write(8+i, calibr_CO2_Mas[i]);
+			EEPROM_float_write(2+i, calibr_CO2_Mas[i]);
 		    break;
 		    case 3:
-			EEPROM_float_write(12+i, calibr_O2_Mas[i]);
+			EEPROM_float_write(3+i, calibr_O2_Mas[i]);
 		    break;
 		    case 4:
-			EEPROM_float_write(16+i, calibr_CO_Mas[i]);
+			EEPROM_float_write(4+i, calibr_CO_Mas[i]);
 		    break;
 		    case 5:
-			EEPROM_float_write(20+i, calibr_Press_Mas[i]);
+			EEPROM_float_write(5+i, calibr_Press_Mas[i]);
+		    break;
+		    case 6:
+			EEPROM_float_write(6, pumpThresholdVal);
 		    break;
 		}
 	}
@@ -227,22 +235,24 @@ void eeSingleWriteOfRam(byte addrName){ // калибровка и запись 
 void eePackWrite(){ // запись всех значений калибровки в EEPROM
 	for(int i=0; i<4; i++){
 	    EEPROM_float_write(0+i, calibr_T1_Mas[i]);
-	    EEPROM_float_write(4+i, calibr_T2_Mas[i]);
-	    EEPROM_float_write(8+i, calibr_CO2_Mas[i]);
-	    EEPROM_float_write(12+i, calibr_O2_Mas[i]);
-	    EEPROM_float_write(16+i, calibr_CO_Mas[i]);
-	    EEPROM_float_write(20+i, calibr_Press_Mas[i]);
+	    EEPROM_float_write(1+i, calibr_T2_Mas[i]);
+	    EEPROM_float_write(2+i, calibr_CO2_Mas[i]);
+	    EEPROM_float_write(3+i, calibr_O2_Mas[i]);
+	    EEPROM_float_write(4+i, calibr_CO_Mas[i]);
+	    EEPROM_float_write(5+i, calibr_Press_Mas[i]);
 	}
+	EEPROM_float_write(6, pumpThresholdVal);
 }
 void eePackRead(){ // чтение всех значений калибровки из EEPROM
 	for(int i=0; i<4; i++){
 	    calibr_T1_Mas[i] = EEPROM_float_read(0+i);
-	    calibr_T2_Mas[i] = EEPROM_float_read(4+i);
-	    calibr_CO2_Mas[i] = EEPROM_float_read(8+i);
-	    calibr_O2_Mas[i] = EEPROM_float_read(12+i);
-	    calibr_CO_Mas[i] = EEPROM_float_read(16+i);
-	    calibr_Press_Mas[i] = EEPROM_float_read(20+i);
+	    calibr_T2_Mas[i] = EEPROM_float_read(1+i);
+	    calibr_CO2_Mas[i] = EEPROM_float_read(2+i);
+	    calibr_O2_Mas[i] = EEPROM_float_read(3+i);
+	    calibr_CO_Mas[i] = EEPROM_float_read(4+i);
+	    calibr_Press_Mas[i] = EEPROM_float_read(5+i);
 	}
+	pumpThresholdVal = EEPROM_float_read(6);
 }
 void eePackOneInitWrite(){ // запись всех значений калибровки в EEPROM (ОДНОРАЗОВАЯ ФУНКЦИЯ ДЛЯ ЗАПИСИ EEPROM ПРИ 1 ПРОШИВКЕ)
 	if(EEPROM.read(EEPROM_WRITE_K_ADDR) == EEPROM_WRITE_KEY){return;}  // если код перезаписи совпадает то не перезаписывать
@@ -338,14 +348,15 @@ float flap(float fX, float fY = 0, float fZ = 1000, float fA = 0, float fB = 100
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос датчика O2
-static float poolO2(){  // 0 - 100 (0.1) 0v - 1.6v
+static float poolO2(){  // 0 - 100 (0.1) 0v - 1.6v  (9-13mV)
 	// resive and convert O2 values
 
   	hx711Obj.power_up();
-  	delay(5);
+  	delay(50);
 	adc64 = hx711Obj.read();
-	voltageO2 = flap(adc64, 0, 1073741826, 0, 40);  // mVolt
-	txStrctVal.val_O2 = flap(voltageO2, 9, 13, 0, 100);  // %
+	voltageO2 = flap(adc64, -8388608, 8388608, -0.04, 0.04);  // Volt
+	// txStrctVal.val_O2 = flap(voltageO2, 0.009, 0.013, 0, 100);  // %
+	txStrctVal.val_O2 = adc64;
 	hx711Obj.power_down();			        // put the ADC in sleep mode
 	Serial.print("O2  V ");
 	Serial.println(voltageO2, 7);
@@ -356,7 +367,7 @@ static float poolO2(){  // 0 - 100 (0.1) 0v - 1.6v
 // опрос быстрой ТЕРМОПАРЫ1 через сериал1
 float poolTermoparaFast1(){  // -250 - 750 (0.1)
 	unsigned long t1StrtErrTime = millis();
-	char s_d = 'r';
+	char s_d = 'x';
 	Serial1.print('t');
 	while(1){
 		if (Serial1.available() > 0) { 
@@ -382,14 +393,19 @@ float poolTermoparaSlow2(){  // -250 - 750 (0.25)
 // опрос датчика ДАВЛЕНИЯ через сериал2
 float poolPressure(){  // -9.99 - 9.99 (0.01) 50mv - 80mv
 	unsigned long prStrtErrTime = millis();
-	char s_d = 'r';
-	Serial2.println('p');
+	char s_d = 'x';
+	if(pumpThresholdValWriteOkFlag == 0){
+		Serial2.println('f');
+	}
+	else{
+		Serial2.println('p');
+	}
 	while(s_d != 'i'){
 		if (Serial2.available() > 0) {
 			s_d = Serial2.read();
 		}
 		if(s_d == 'i'){
-			txStrctVal.val_Press_inh = Serial2.parseFloat();
+			txStrctVal.val_Press_inh = Serial2.parseInt();
 		}
 		if(millis() - prStrtErrTime > 100){
 			Serial.println(" get Pressure serial timeaut ERROR ");
@@ -401,13 +417,34 @@ float poolPressure(){  // -9.99 - 9.99 (0.01) 50mv - 80mv
 			s_d = Serial2.read();
 		}
 		if(s_d == 'e'){
-			txStrctVal.val_Press_exh = Serial2.parseFloat();  // kPa
+			txStrctVal.val_Press_exh = Serial2.parseInt();  // ADC
 		}
 		if(millis() - prStrtErrTime > 200){
 			Serial.println(" get Pressure serial timeaut ERROR ");
 			break;
 		}
 	}
+	if(pumpThresholdValWriteOkFlag == 0){
+		long vppv = flap(pumpThresholdVal, calibr_Press_Mas[2], calibr_Press_Mas[3], calibr_Press_Mas[0], calibr_Press_Mas[1]);
+		Serial2.print('n');
+		Serial2.println(vppv);
+		while(s_d != 'n'){
+			if (Serial2.available() > 0) {
+				s_d = Serial2.read();
+			}
+			if(s_d == 'n'){
+				vppv = Serial2.parseInt();  // PUMP val
+				if(vppv == flap(pumpThresholdVal, calibr_Press_Mas[2], calibr_Press_Mas[3], calibr_Press_Mas[0], calibr_Press_Mas[1])){
+					pumpThresholdValWriteOkFlag = 1;
+				}
+			}
+			if(millis() - prStrtErrTime > 300){
+				Serial.println(" get PUMP val serial timeaut ERROR ");
+				break;
+			}
+		}
+	}
+	// if(txStrctVal.val_Press_inh = 8388608){Serial2.print('r');}
 	return (txStrctVal.val_Press_inh + txStrctVal.val_Press_exh) / 2;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -415,10 +452,12 @@ float poolPressure(){  // -9.99 - 9.99 (0.01) 50mv - 80mv
 float poolCO2(){  // 0 - 5 (0.01) 0v - 4v
 	// resive and convert CO2 values
 	adc1_CO2 = ads.readADC_SingleEnded(PORT_1_CO2_ADS1);
-	txStrctVal.val_CCO2 = adc1_CO2 * multiplierADS / 1000.0;  // Volt
+	voltageCO2 = adc1_CO2 * multiplierADS / 1000.0;  // Volt
+	// txStrctVal.val_CCO2 = adc1_CO2 * multiplierADS / 1000.0;  // Volt
 	Serial.print("CO2 V ");
-	Serial.println(txStrctVal.val_CCO2, 7);
-	txStrctVal.val_CCO2 = flap(txStrctVal.val_CCO2, 0.4, 2, 0, 4);          // %
+	Serial.println(voltageCO2, 7);
+	// txStrctVal.val_CCO2 = flap(voltageCO2, 0.4, 2, 0, 5);          // %
+	txStrctVal.val_CCO2 = adc1_CO2;
 	return txStrctVal.val_CCO2;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -426,12 +465,12 @@ float poolCO2(){  // 0 - 5 (0.01) 0v - 4v
 static float poolCO(){  // 2000 (1) 0v - 3v
 	// resive and convert CO values
 	adc2_CO = ads.readADC_SingleEnded(PORT_2_CO_ADS1);
-	float vpco = adc2_CO * multiplierADS / 1000.0;  // Volt
+	voltageCO = adc2_CO * multiplierADS / 1000.0;  // Volt
 	Serial.print("CO  V ");
-	Serial.println(vpco, 7);
-	vpco = flap(vpco, 0.4, 2, 0, 2000);       // ppm
-	txStrctVal.val_CO = int(vpco);
-	return vpco;
+	Serial.println(voltageCO, 7);
+	// txStrctVal.val_CO = flap(voltageCO, 0.4, 2, 0, 2000);       // ppm
+	txStrctVal.val_CO = adc2_CO;
+	return txStrctVal.val_CO;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // опрос уровня заряда батареи 
@@ -713,7 +752,7 @@ void serCalibrator(){
 					}
 		    		Serial.println(s_str);
 
-					if(s_str[2] == 'n' || s_str[2] == 'x'){s_pfcv = Serial.parseFloat();}
+					if(s_str[2] == 'n' || s_str[2] == 'x' || s_str[2] == 'v'){s_pfcv = Serial.parseFloat();}
 
 					if(s_str == "end"){  // ВЫХОД
 						Serial.println();Serial.print(s_str);Serial.println(" OK");
@@ -761,6 +800,9 @@ void serCalibrator(){
 					else if(s_str == "prx"){  // Press MAX
 						poolPressure();delay(100);calibr_Press_Mas[1] = poolPressure();calibr_Press_Mas[3] = s_pfcv;Serial.println();Serial.print(s_str);Serial.println(" OK");
 					}
+					else if(s_str == "psv"){  // PUMP start val
+						pumpThresholdVal = s_pfcv;Serial.println();Serial.print(s_str);Serial.println(" OK");pumpThresholdValWriteOkFlag = 0;
+					}
 
 					else if(s_str == "tms"){  // date time:  tms dy dm dd th tm ts
 						int ryear = Serial.parseInt();
@@ -778,7 +820,7 @@ void serCalibrator(){
 					}
 		    	}
 
-		    	if(millis() - scStrtErrTime > 1800000){  // авто выход из настроек через 30 minut
+		    	if(millis() - scStrtErrTime > 300000){  // авто выход из настроек через 5 minut
 					Serial.println(" setting timeout");
 					break;
 				}
@@ -858,6 +900,7 @@ void setup(){
   	ads.setGain(GAIN_TWOTHIRDS);  // 2/3x gain +/- 6.144V  1 bit = 3mV      0.1875mV (default)
 	ads.begin();
 
+	delay(400);
 	
 	Serial.println();
 	Serial.println(" END SETUP. ALL SETUP OK");
