@@ -152,7 +152,21 @@ byte masMenu[][6] = {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void nameIDserial(byte _ID){
+    Serial.print(_ID);
+    Serial.print(". ");
+    switch (_ID) {
 
+        case 1:
+        Serial.print(F("MENU"));
+        break;
+
+        case 2:
+        Serial.print(F("R4 LIGHT"));
+        break;
+
+        default:
+        Serial.print(_ID);
+    }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -160,15 +174,349 @@ void nameIDserial(byte _ID){
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void nameIDlcd(byte _ID){
+    switch (_ID) {
 
+        case 0:
+        lcd.print(F("0 menu"));
+        break;
+
+        case 1:
+        lcd.print(F("MENU"));
+        break;
+
+        case 2:
+        lcd.print(F("R4 LIGHT set"));
+        break;
+
+        case 3:
+        lcd.print(F("R4 mode"));
+        break;
+
+        case 4:
+        lcd.print(F("m2 DOSVET"));
+        break;
+
+        case 5:
+        lcd.print(F("1 on H"));
+        break;
+
+        case 6:
+        lcd.print(F("1 on M"));
+        break;
+
+        case 7:
+        lcd.print(F("1 off H"));
+        break;
+
+        case 8:
+        lcd.print(F("1 off M"));
+        break;
+
+        case 9:
+        lcd.print(F("2 on H"));
+        break;
+
+        case 10:
+        lcd.print(F("2 on M"));
+        break;
+
+        case 11:
+        lcd.print(F("2 off H"));
+        break;
+
+        case 12:
+        lcd.print(F("2 off M"));
+        break;
+
+        case 13:
+        lcd.print(F("m1 LIGHTCYCLE"));
+        break;
+
+        case 14:
+        lcd.print(F("on Hour"));
+        break;
+
+        case 15:
+        lcd.print(F("on Minute"));
+        break;
+
+        case 16:
+        lcd.print(F("off Hour"));
+        break;
+
+        case 17:
+        lcd.print(F("off Minute"));
+        break;
+
+        case 18:
+        lcd.print(F("R3 WATER set"));
+        break;
+
+        case 19:
+        lcd.print(F("R3 mode"));
+        break;
+
+        case 20:
+        lcd.print(F("m3 SOIL SENSOR"));
+        break;
+
+        case 21:
+        lcd.print(F("sensor type"));
+        break;
+
+        case 22:
+        lcd.print(F("thrshld"));
+        break;
+
+        case 23:
+        lcd.print(F("m2 ON TIME"));
+        break;
+
+        case 24:
+        lcd.print(F("1 on H"));
+        break;
+
+        case 25:
+        lcd.print(F("1 on M"));
+        break;
+
+        case 26:
+        lcd.print(F("2 on H"));
+        break;
+
+        case 27:
+        lcd.print(F("2 on M"));
+        break;
+
+        case 28:
+        lcd.print(F("3 on H"));
+        break;
+
+        case 29:
+        lcd.print(F("3 on M"));
+        break;
+
+        case 30:
+        lcd.print(F("wrk time H"));
+        break;
+
+        case 31:
+        lcd.print(F("wrk time M"));
+        break;
+
+        case 32:
+        lcd.print(F("m1 CYCLE"));
+        break;
+
+        case 33:
+        lcd.print(F("btw time H"));
+        break;
+
+        case 34:
+        lcd.print(F("btw time M"));
+        break;
+
+        case 35:
+        lcd.print(F("wrk time H"));
+        break;
+
+        case 36:
+        lcd.print(F("wrk time M"));
+        break;
+
+        case 37:
+        lcd.print(F("R2 TEMP set"));
+        break;
+
+        case 38:
+        lcd.print(F("R2 mode"));
+        break;
+
+        case 39:
+        lcd.print(F("m3 CUSTOMIZE"));
+        break;
+
+        case 40:
+        lcd.print(F("on temp"));
+        break;
+
+        case 41:
+        lcd.print(F("off temp"));
+        break;
+
+        case 42:
+        lcd.print(F("m2 HEAT"));
+        break;
+
+        case 43:
+        lcd.print(F("targt temp"));
+        break;
+
+        case 44:
+        lcd.print(F("hysteresis"));
+        break;
+
+        case 45:
+        lcd.print(F("m1 COOLING"));
+        break;
+
+        case 46:
+        lcd.print(F("targt temp"));
+        break;
+
+        case 47:
+        lcd.print(F("hysteresis"));
+        break;
+
+        case 48:
+        lcd.print(F("R1 HUMIDTY set"));
+        break;
+
+        case 49:
+        lcd.print(F("R1 mode"));
+        break;
+
+        case 50:
+        lcd.print(F("m3 CUSTOMIZE"));
+        break;
+
+        case 51:
+        lcd.print(F("on hmdt"));
+        break;
+
+        case 52:
+        lcd.print(F("off hmdt"));
+        break;
+
+        case 53:
+        lcd.print(F("m2 MOISTURIZNG"));
+        break;
+
+        case 54:
+        lcd.print(F("targt hmdt"));
+        break;
+
+        case 55:
+        lcd.print(F("hysteresis"));
+        break;
+
+        case 56:
+        lcd.print(F("m1 DRYING"));
+        break;
+
+        case 57:
+        lcd.print(F("targt hmdt"));
+        break;
+
+        case 58:
+        lcd.print(F("hysteresis"));
+        break;
+
+        case 59:
+        lcd.print(F("MANUAL CONTROL"));
+        break;
+
+        case 60:
+        lcd.print(F("r4 lght SW"));
+        break;
+
+        case 61:
+        lcd.print(F("r3 wtrg SW"));
+        break;
+
+        case 62:
+        lcd.print(F("r2 temp SW"));
+        break;
+
+        case 63:
+        lcd.print(F("r1 hmdt SW"));
+        break;
+
+        case 64:
+        lcd.print(F("SCRN LGHT"));
+        break;
+
+        case 65:
+        lcd.print(F("CLOCK SET"));
+        break;
+
+        case 66:
+        lcd.print(F("Year"));
+        break;
+
+        case 67:
+        lcd.print(F("Month"));
+        break;
+
+        case 68:
+        lcd.print(F("Day"));
+        break;
+
+        case 69:
+        lcd.print(F("Day of Week"));
+        break;
+
+        case 70:
+        lcd.print(F("Hour"));
+        break;
+
+        case 71:
+        lcd.print(F("Minute"));
+        break;
+
+        case 72:
+        lcd.print(F("Second"));
+        break;
+
+        case 73:
+        lcd.print(F("SAVE TIME"));
+        break;
+
+        case 74:
+        lcd.print(F("CALIBRATION"));
+        break;
+
+        case 75:
+        lcd.print(F("temp"));
+        break;
+
+        case 76:
+        lcd.print(F("hmdt"));
+        break;
+
+        case 77:
+        lcd.print(F("EXIT"));
+        break;
+
+        case 78:
+        lcd.print(F(""));
+        break;
+
+        case 79:
+        lcd.print(F(""));
+        break;
+
+        default:
+        lcd.print(_ID);
+    }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void nameAndParentNimeIDlcd(byte _ID){
+void nameAndParentNimeIDlcd(byte _ID, byte chFlag = 0){
+    lcd.clear(); // очистить дисплей
 
+    nameIDlcd(masMenu[_ID - 1][1]);
+    if(chFlag == 0){lcd.setCursor(1, 1);}
+    else{lcd.setCursor(0, 1);}
+    
+
+    if(chFlag == 1){lcd.print(F(">"));}
+    else if(chFlag == 2){lcd.print(F("*"));}
+    
+    nameIDlcd(_ID);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -262,7 +610,17 @@ void setActualMenu(byte v, byte h) {
                 }
 
                 if (nochild) {                     // Если же потомков нет, воспринимаем как команду
-                    Serial.println("Executing command... " + (String)masMenu[actualIndex][0] + " OK"); // И здесь обрабатываем по своему усмотрению
+                    // serial
+                    Serial.print(F("Executing command... "));
+                    nameIDserial(masMenu[actualIndex][0]);
+                    Serial.println(F(" OK"));
+                    // lcd
+                    nameAndParentNimeIDlcd(masMenu[actualIndex][0], 2);
+                    lcd.print(F(" OK"));
+
+                    // И здесь обрабатываем команду по своему усмотрению:
+
+                    delay(1000);
                 }
             }
         }
@@ -289,24 +647,47 @@ void setActualMenu(byte v, byte h) {
 
   // Отображаем информацию в Serial
     if (isParamEditMode) {  // если в режиме редактирования
-        Serial.println(" > " + (String)masMenu[actualIndex][0] /*name*/ + ": " +  (String)tmpValue 
-        + "  min:" + (String)masMenu[actualIndex][4] + ", max:" + (String)masMenu[actualIndex][5]);
-        // ИЛИ
-        Serial.print(" > ");
-        Serial.print((String)masMenu[actualIndex][0] /*name*/);
-        Serial.print(": ");
-        Serial.print((String)tmpValue);
-        Serial.print("  min:");
-        Serial.print((String)masMenu[actualIndex][4]);
-        Serial.print(", max:");
-        Serial.println((String)masMenu[actualIndex][5]);
+        Serial.print(F(" > "));
+        nameIDserial(masMenu[actualIndex][0]);
+        Serial.print(F(": "));
+        Serial.print(tmpValue);
+        Serial.print(F("  "));
+        Serial.print(masMenu[actualIndex][4]);
+        Serial.print(F("-"));
+        Serial.println(masMenu[actualIndex][5]);
     }
     else {
         if (masMenu[actualIndex][2]) {
-            Serial.println((String)masMenu[actualIndex][0] /*name*/ + ": " + (String)masMenu[actualIndex][3]);
+            nameIDserial(masMenu[actualIndex][0]);
+            Serial.print(F(": "));
+            Serial.println(masMenu[actualIndex][3]);
         }
         else {
-            Serial.println((String)masMenu[actualIndex][0] /*name*/ );
+            nameIDserial(masMenu[actualIndex][0]);
+            Serial.println();
+        }
+    }
+
+    if(actualIndex == 0){
+        lcd.clear();
+        lcd.print(F("EXIT OK"));
+        return;
+    }
+    // Отображаем информацию в lcd
+    if (isParamEditMode) {  // если в режиме редактирования
+        lcd.print(F(">"));
+        nameAndParentNimeIDlcd(masMenu[actualIndex][0], 1);
+        lcd.print(F(": "));
+        lcd.print(tmpValue);
+    }
+    else {
+        if (masMenu[actualIndex][2]) {
+            nameAndParentNimeIDlcd(masMenu[actualIndex][0]);
+            lcd.print(F(": "));
+            lcd.print(masMenu[actualIndex][3]);
+        }
+        else {
+            nameAndParentNimeIDlcd(masMenu[actualIndex][0]);
         }
     }
 }

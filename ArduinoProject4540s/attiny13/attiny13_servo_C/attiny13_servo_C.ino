@@ -25,4 +25,6 @@ int main(void){
   OCR0B=CLOSE;       // установить серву в 0  закрыть
 
   while(1){}
+    
+  return 0;
 }

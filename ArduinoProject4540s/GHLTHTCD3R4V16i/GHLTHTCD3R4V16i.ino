@@ -842,6 +842,12 @@ void displayMainDateTime(){
 	lcd.clear();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void screenBrightnesF(byte _brght = 100){
+	if(_brght >= 100){digitalWrite(OUT_YARKOST_DISPLEYA_PWM_PIN, HIGH);}
+  	else if(_brght == 0){digitalWrite(OUT_YARKOST_DISPLEYA_PWM_PIN, LOW);}
+  	else{analogWrite(OUT_YARKOST_DISPLEYA_PWM_PIN, map(_brght, 0, 100, 0, 255));}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -893,9 +899,7 @@ void setup() {
   	lcd.clear(); // очистить дисплей
 
 	pinMode(OUT_YARKOST_DISPLEYA_PWM_PIN, OUTPUT);
-  	if(yarkostDispleya >= 100){digitalWrite(OUT_YARKOST_DISPLEYA_PWM_PIN, HIGH);}
-  	else if(yarkostDispleya == 0){digitalWrite(OUT_YARKOST_DISPLEYA_PWM_PIN, LOW);}
-  	else{analogWrite(OUT_YARKOST_DISPLEYA_PWM_PIN, map(yarkostDispleya, 0, 100, 0, 255));}
+	screenBrightnesF(yarkostDispleya);  // яркость экрана
 
   	lcd.print(F("  GROW HACKER"));
   	lcd.setCursor(0, 1);
@@ -956,6 +960,13 @@ void loop() {
 	// chekParam();            // управление реле
 
 	// displayMainDateTime();  // вывод даты и времени на экран
+
+	if(actualIndex == 63 && isParamEditMode){
+		screenBrightnesF(tmpValue);
+	}
+	else{
+		screenBrightnesF(masMenu[63][3]);
+	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
