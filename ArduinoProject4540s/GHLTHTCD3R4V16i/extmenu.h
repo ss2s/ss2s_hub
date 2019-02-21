@@ -2,6 +2,7 @@
 byte actualIndex = 0;
 bool isParamEditMode  = false;            // Флаг режима редактирования параметра
 int tmpValue          = 0;                // Временная переменная для хранения изменяемого параметра
+bool flagMenuState = 0;                   // флаг состояния меню 1 в меню, 0 нет
 
 
 // ОПИСАНИЕ МАСИВА С МЕНЮ:
@@ -18,7 +19,7 @@ int tmpValue          = 0;                // Временная переменн
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-byte punktovMenuVsego = 77;
+byte punktovMenuVsego = 78;
 
 byte masMenu[][6] = {
     {1,0,0,0,0,0},     // МЕНЮ (ВОЙТИ)
@@ -30,20 +31,20 @@ byte masMenu[][6] = {
 
     {4,2,0,0,0,0},                     // 2 РЕЖИМ ДОСВЕТКА (НАСТРОЙКА РЕЖИМА 2)
 
-    {5,4,1,5,1,24},                            // 1 ВКЛЮЧЕНИЕ В ЧАСОВ            ON 1 h
+    {5,4,1,5,0,23},                            // 1 ВКЛЮЧЕНИЕ В ЧАСОВ            ON 1 h
     {6,4,1,30,0,59},                           // 1 ВКЛЮЧЕНИЕ В МИНУТ            ON 1 m
-    {7,4,1,6,1,24},                            // 1 ВЫКЛЮЧЕНИЕ В ЧАСОВ          OFF 1 h 
+    {7,4,1,6,0,23},                            // 1 ВЫКЛЮЧЕНИЕ В ЧАСОВ          OFF 1 h 
     {8,4,1,30,0,59},                           // 1 ВЫКЛЮЧЕНИЕ В МИНУТ          OFF 1 m
-    {9,4,1,20,1,24},                           // 2 ВКЛЮЧЕНИЕ В ЧАСОВ            ON 2 h
+    {9,4,1,20,0,23},                           // 2 ВКЛЮЧЕНИЕ В ЧАСОВ            ON 2 h
     {10,4,1,30,0,59},                          // 2 ВКЛЮЧЕНИЕ В МИНУТ            ON 2 m
-    {11,4,1,22,1,24},                          // 2 ВЫКЛЮЧЕНИЕ В ЧАСОВ          OFF 2 h
+    {11,4,1,22,0,23},                          // 2 ВЫКЛЮЧЕНИЕ В ЧАСОВ          OFF 2 h
     {12,4,1,30,0,59},                          // 2 ВЫКЛЮЧЕНИЕ В МИНУТ          OFF 2 m
 
     {13,2,0,0,0,0},                    // 1 РЕЖИМ СВЕТОЦИКЛ (НАСТРОЙКА РЕЖИМА 1)
 
-    {14,13,1,5,1,24},                          // ВКЛЮЧЕНИЕ В ЧАСОВ                ON h
+    {14,13,1,5,0,23},                          // ВКЛЮЧЕНИЕ В ЧАСОВ                ON h
     {15,13,1,30,0,59},                         // ВКЛЮЧЕНИЕ В МИНУТ                ON m
-    {16,13,1,17,1,24},                         // ВЫКЛЮЧЕНИЕ В ЧАСОВ              OFF h
+    {16,13,1,17,0,23},                         // ВЫКЛЮЧЕНИЕ В ЧАСОВ              OFF h
     {17,13,1,30,0,59},                         // ВЫКЛЮЧЕНИЕ В МИНУТ              OFF m
 
 
@@ -59,20 +60,20 @@ byte masMenu[][6] = {
 
     {23,18,0,0,0,0},                   // 2 ПО ВРЕМЕНИ (НАСТРОЙКА РЕЖИМА)
 
-    {24,23,1,5,1,24},                          // 1 ВКЛЮЧЕНИЕ В ЧАСОВ            ON 1 h
+    {24,23,1,5,0,23},                          // 1 ВКЛЮЧЕНИЕ В ЧАСОВ            ON 1 h
     {25,23,1,15,0,59},                         // 1 ВКЛЮЧЕНИЕ В МИНУТ            ON 1 m
-    {26,23,1,12,1,24},                         // 2 ВКЛЮЧЕНИЕ В ЧАСОВ            ON 2 h
+    {26,23,1,12,0,23},                         // 2 ВКЛЮЧЕНИЕ В ЧАСОВ            ON 2 h
     {27,23,1,15,0,59},                         // 2 ВКЛЮЧЕНИЕ В МИНУТ            ON 2 m
-    {28,23,1,18,1,24},                         // 3 ВКЛЮЧЕНИЕ В ЧАСОВ            ON 3 h
+    {28,23,1,18,0,23},                         // 3 ВКЛЮЧЕНИЕ В ЧАСОВ            ON 3 h
     {29,23,1,15,0,59},                         // 3 ВКЛЮЧЕНИЕ В МИНУТ            ON 3 m
-    {30,23,1,0,0,24},                          // ВРЕМЯ РАБОТЫ ЧАСОВ         POWER ON h
+    {30,23,1,0,0,23},                          // ВРЕМЯ РАБОТЫ ЧАСОВ         POWER ON h
     {31,23,1,10,0,59},                         // ВРЕМЯ РАБОТЫ МИНУТ         POWER ON m
 
     {32,18,0,0,0,0},                   // 1 ЦИКЛИЧЕСКИЙ (НАСТРОЙКА РЕЖИМА)
 
-    {33,32,1,4,0,24},                          // МЕЖДУ ПОЛИВАМИ ЧАСОВ          DELAY h
+    {33,32,1,4,0,23},                          // МЕЖДУ ПОЛИВАМИ ЧАСОВ          DELAY h
     {34,32,1,0,0,59},                          // МЕЖДУ ПОЛИВАМИ МИНУТ          DELAY m
-    {35,32,1,0,0,24},                          // ВРЕМЯ РАБОТЫ ЧАСОВ         POWER ON h
+    {35,32,1,0,0,23},                          // ВРЕМЯ РАБОТЫ ЧАСОВ         POWER ON h
     {36,32,1,10,0,59},                         // ВРЕМЯ РАБОТЫ МИНУТ         POWER ON m
 
 
@@ -126,7 +127,7 @@ byte masMenu[][6] = {
     {62,59,0,0,0,0},                   // Р2 ТЕМПЕРАТУРА                         ON/OFF
     {63,59,0,0,0,0},                   // Р1 ВЛАЖНОСТЬ                           ON/OFF
 
-    {64,1,1,50,0,100},        // ЯРКОСТЬ ДИСПЛЕЯ
+    {64,1,1,100,0,100},        // ЯРКОСТЬ ДИСПЛЕЯ
 
     {65,1,0,0,0,0},            // НАСТРОЙКА ЧАСОВ
 
@@ -134,7 +135,7 @@ byte masMenu[][6] = {
     {67,65,1,3,1,12},                   // МЕСЯЦ
     {68,65,1,22,1,31},                  // ДЕНЬ
     {69,65,1,4,1,7},                    // ДЕНЬ НЕДЕЛИ
-    {70,65,1,12,1,23},                  // ЧАСЫ
+    {70,65,1,12,0,23},                  // ЧАСЫ
     {71,65,1,30,0,59},                  // МИНУТЫ
     {72,65,1,0,0,59},                   // СЕКУНДЫ
     {73,65,0,0,0,0},                    // СОХРАНИТЬ                                SAVE
@@ -144,356 +145,426 @@ byte masMenu[][6] = {
     {75,74,1,1,0,100},                   // ТЕМПЕРАТУРА
     {76,74,1,27,0,100},                  // ВЛАЖНОСТЬ
 
-    {77,1,0,0,0,0}             // EXIT
+    {77,1,1,0,0,1},             // LANGUAGE
+
+    {78,1,0,0,0,0}              // EXIT
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void nameIDserial(byte _ID){
-    Serial.print(_ID);
-    Serial.print(". ");
-    switch (_ID) {
-
-        case 1:
-        Serial.print(F("MENU"));
-        break;
-
-        case 2:
-        Serial.print(F("R4 LIGHT"));
-        break;
-
-        default:
-        Serial.print(_ID);
-    }
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void nameIDlcd(byte _ID){
+
+    langFlag = masMenu[76][3];
+
     switch (_ID) {
 
         case 0:
+        if(langFlag == 0){}  // ENG
+        else if(langFlag == 1){}  // РУС
         lcd.print(F("0 menu"));
         break;
 
         case 1:
-        lcd.print(F("MENU"));
+        if(langFlag == 0){lcd.print(F("MENU"));}  // ENG
+        else if(langFlag == 1){lcd.print(F("MEHY"));}  // РУС
         break;
 
         case 2:
-        lcd.print(F("R4 LIGHT set"));
+        if(langFlag == 0){lcd.print(F("R4 LIGHT"));}  // ENG
+        else if(langFlag == 1){lcd.print(F("P4 CBET"));}  // РУС
         break;
 
         case 3:
-        lcd.print(F("R4 mode"));
+        if(langFlag == 0){lcd.print(F("mode"));}  // ENG
+        else if(langFlag == 1){lcd.print(F("regim"));}  // РУС
         break;
 
         case 4:
-        lcd.print(F("m2 DOSVET"));
+        if(langFlag == 0){lcd.print(F("m2 DOSVET"));}  // ENG
+        else if(langFlag == 1){lcd.print(F("m2 DOCBET"));}  // РУС
         break;
 
         case 5:
-        lcd.print(F("1 on H"));
+        if(langFlag == 0){lcd.print(F("1 on H"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 6:
-        lcd.print(F("1 on M"));
+        if(langFlag == 0){lcd.print(F("1 on M"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 7:
-        lcd.print(F("1 off H"));
+        if(langFlag == 0){lcd.print(F("1 off H"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 8:
-        lcd.print(F("1 off M"));
+        if(langFlag == 0){lcd.print(F("1 off M"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 9:
-        lcd.print(F("2 on H"));
+        if(langFlag == 0){lcd.print(F("2 on H"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 10:
-        lcd.print(F("2 on M"));
+        if(langFlag == 0){lcd.print(F("2 on M"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 11:
-        lcd.print(F("2 off H"));
+        if(langFlag == 0){lcd.print(F("2 off H"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 12:
-        lcd.print(F("2 off M"));
+        if(langFlag == 0){lcd.print(F("2 off M"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 13:
-        lcd.print(F("m1 LIGHTCYCLE"));
+        if(langFlag == 0){lcd.print(F("m1 LIGHTCYCLE"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 14:
-        lcd.print(F("on Hour"));
+        if(langFlag == 0){lcd.print(F("on Hour"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 15:
-        lcd.print(F("on Minute"));
+        if(langFlag == 0){lcd.print(F("on Minute"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 16:
-        lcd.print(F("off Hour"));
+        if(langFlag == 0){lcd.print(F("off Hour"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 17:
-        lcd.print(F("off Minute"));
+        if(langFlag == 0){lcd.print(F("off Minute"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 18:
-        lcd.print(F("R3 WATER set"));
+        if(langFlag == 0){lcd.print(F("R3 WATER set"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 19:
-        lcd.print(F("R3 mode"));
+        if(langFlag == 0){lcd.print(F("R3 mode"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 20:
-        lcd.print(F("m3 SOIL SENSOR"));
+        if(langFlag == 0){lcd.print(F("m3 SOIL SENSOR"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 21:
-        lcd.print(F("sensor type"));
+        if(langFlag == 0){lcd.print(F("sensor type"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 22:
-        lcd.print(F("thrshld"));
+        if(langFlag == 0){lcd.print(F("thrshld"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 23:
-        lcd.print(F("m2 ON TIME"));
+        if(langFlag == 0){lcd.print(F("m2 ON TIME"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 24:
-        lcd.print(F("1 on H"));
+        if(langFlag == 0){lcd.print(F("1 on H"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 25:
-        lcd.print(F("1 on M"));
+        if(langFlag == 0){lcd.print(F("1 on M"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 26:
-        lcd.print(F("2 on H"));
+        if(langFlag == 0){lcd.print(F("2 on H"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 27:
-        lcd.print(F("2 on M"));
+        if(langFlag == 0){lcd.print(F("2 on M"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 28:
-        lcd.print(F("3 on H"));
+        if(langFlag == 0){lcd.print(F("3 on H"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 29:
-        lcd.print(F("3 on M"));
+        if(langFlag == 0){lcd.print(F("3 on M"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 30:
-        lcd.print(F("wrk time H"));
+        if(langFlag == 0){lcd.print(F("wrk time H"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 31:
-        lcd.print(F("wrk time M"));
+        if(langFlag == 0){lcd.print(F("wrk time M"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 32:
-        lcd.print(F("m1 CYCLE"));
+        if(langFlag == 0){lcd.print(F("m1 CYCLE"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 33:
-        lcd.print(F("btw time H"));
+        if(langFlag == 0){lcd.print(F("btw time H"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 34:
-        lcd.print(F("btw time M"));
+        if(langFlag == 0){lcd.print(F("btw time M"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 35:
-        lcd.print(F("wrk time H"));
+        if(langFlag == 0){lcd.print(F("wrk time H"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 36:
-        lcd.print(F("wrk time M"));
+        if(langFlag == 0){lcd.print(F("wrk time M"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 37:
-        lcd.print(F("R2 TEMP set"));
+        if(langFlag == 0){lcd.print(F("R2 TEMP set"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 38:
-        lcd.print(F("R2 mode"));
+        if(langFlag == 0){lcd.print(F("R2 mode"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 39:
-        lcd.print(F("m3 CUSTOMIZE"));
+        if(langFlag == 0){lcd.print(F("m3 CUSTOMIZE"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 40:
-        lcd.print(F("on temp"));
+        if(langFlag == 0){lcd.print(F("on temp"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 41:
-        lcd.print(F("off temp"));
+        if(langFlag == 0){lcd.print(F("off temp"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 42:
-        lcd.print(F("m2 HEAT"));
+        if(langFlag == 0){lcd.print(F("m2 HEAT"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 43:
-        lcd.print(F("targt temp"));
+        if(langFlag == 0){lcd.print(F("targt temp"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 44:
-        lcd.print(F("hysteresis"));
+        if(langFlag == 0){lcd.print(F("hysteresis"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 45:
-        lcd.print(F("m1 COOLING"));
+        if(langFlag == 0){lcd.print(F("m1 COOLING"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 46:
-        lcd.print(F("targt temp"));
+        if(langFlag == 0){lcd.print(F("targt temp"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 47:
-        lcd.print(F("hysteresis"));
+        if(langFlag == 0){lcd.print(F("hysteresis"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 48:
-        lcd.print(F("R1 HUMIDTY set"));
+        if(langFlag == 0){lcd.print(F("R1 HUMIDTY set"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 49:
-        lcd.print(F("R1 mode"));
+        if(langFlag == 0){lcd.print(F("R1 mode"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 50:
-        lcd.print(F("m3 CUSTOMIZE"));
+        if(langFlag == 0){lcd.print(F("m3 CUSTOMIZE"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 51:
-        lcd.print(F("on hmdt"));
+        if(langFlag == 0){lcd.print(F("on hmdt"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 52:
-        lcd.print(F("off hmdt"));
+        if(langFlag == 0){lcd.print(F("off hmdt"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 53:
-        lcd.print(F("m2 MOISTURIZNG"));
+        if(langFlag == 0){lcd.print(F("m2 MOISTURIZNG"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 54:
-        lcd.print(F("targt hmdt"));
+        if(langFlag == 0){lcd.print(F("targt hmdt"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 55:
-        lcd.print(F("hysteresis"));
+        if(langFlag == 0){lcd.print(F("hysteresis"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 56:
-        lcd.print(F("m1 DRYING"));
+        if(langFlag == 0){lcd.print(F("m1 DRYING"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 57:
-        lcd.print(F("targt hmdt"));
+        if(langFlag == 0){lcd.print(F("targt hmdt"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 58:
-        lcd.print(F("hysteresis"));
+        if(langFlag == 0){lcd.print(F("hysteresis"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 59:
-        lcd.print(F("MANUAL CONTROL"));
+        if(langFlag == 0){lcd.print(F("MANUAL CONTROL"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 60:
-        lcd.print(F("r4 lght SW"));
+        if(langFlag == 0){lcd.print(F("r4 lght SW"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 61:
-        lcd.print(F("r3 wtrg SW"));
+        if(langFlag == 0){lcd.print(F("r3 wtrg SW"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 62:
-        lcd.print(F("r2 temp SW"));
+        if(langFlag == 0){lcd.print(F("r2 temp SW"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 63:
-        lcd.print(F("r1 hmdt SW"));
+        if(langFlag == 0){lcd.print(F("r1 hmdt SW"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 64:
-        lcd.print(F("SCRN LGHT"));
+        if(langFlag == 0){lcd.print(F("SCRN LGHT"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 65:
-        lcd.print(F("CLOCK SET"));
+        if(langFlag == 0){lcd.print(F("CLOCK SET"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 66:
-        lcd.print(F("Year"));
+        if(langFlag == 0){lcd.print(F("Year"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 67:
-        lcd.print(F("Month"));
+        if(langFlag == 0){lcd.print(F("Month"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 68:
-        lcd.print(F("Day"));
+        if(langFlag == 0){lcd.print(F("Day"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 69:
-        lcd.print(F("Day of Week"));
+        if(langFlag == 0){lcd.print(F("Day of Week"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 70:
-        lcd.print(F("Hour"));
+        if(langFlag == 0){lcd.print(F("Hour"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 71:
-        lcd.print(F("Minute"));
+        if(langFlag == 0){lcd.print(F("Minute"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 72:
-        lcd.print(F("Second"));
+        if(langFlag == 0){lcd.print(F("Second"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 73:
-        lcd.print(F("SAVE TIME"));
+        if(langFlag == 0){lcd.print(F("SAVE TIME"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 74:
-        lcd.print(F("CALIBRATION"));
+        if(langFlag == 0){lcd.print(F("CALIBRATION"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 75:
-        lcd.print(F("temp"));
+        if(langFlag == 0){lcd.print(F("temp"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 76:
-        lcd.print(F("hmdt"));
+        if(langFlag == 0){lcd.print(F("hmdt"));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         case 77:
-        lcd.print(F("EXIT"));
+        if(langFlag == 0){lcd.print(F("LANGUAGE"));}  // ENG
+        else if(langFlag == 1){lcd.print(F("9l3blk"));}  // РУС
         break;
 
         case 78:
-        lcd.print(F(""));
+        if(langFlag == 0){lcd.print(F("EXIT"));}  // ENG
+        else if(langFlag == 1){lcd.print(F("BblXOD"));}  // РУС
         break;
 
         case 79:
-        lcd.print(F(""));
+        if(langFlag == 0){lcd.print(F(""));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
+        break;
+
+        case 80:
+        if(langFlag == 0){lcd.print(F(""));}  // ENG
+        else if(langFlag == 1){lcd.print(F(""));}  // РУС
         break;
 
         default:
@@ -610,17 +681,40 @@ void setActualMenu(byte v, byte h) {
                 }
 
                 if (nochild) {                     // Если же потомков нет, воспринимаем как команду
-                    // serial
-                    Serial.print(F("Executing command... "));
-                    nameIDserial(masMenu[actualIndex][0]);
-                    Serial.println(F(" OK"));
+
                     // lcd
                     nameAndParentNimeIDlcd(masMenu[actualIndex][0], 2);
                     lcd.print(F(" OK"));
 
-                    // И здесь обрабатываем команду по своему усмотрению:
 
-                    delay(1000);
+
+
+
+
+
+
+
+
+
+                    // COMAND:
+
+                    // И здесь обрабатываем команду по своему усмотрению:
+                    if(actualIndex == 78-1){  // EXIT
+                        actualIndex = 0;
+                    }
+
+
+
+
+
+
+
+
+
+
+
+
+                    delay(500);
                 }
             }
         }
@@ -633,46 +727,113 @@ void setActualMenu(byte v, byte h) {
             else if(h == 2){tmpValue --;}  // Изменяем его значение и ...
             // ... контроллируем, чтобы оно осталось в заданном диапазоне
             if (tmpValue > masMenu[actualIndex][5]) {
-                tmpValue = masMenu[actualIndex][5];
+                tmpValue = masMenu[actualIndex][4];
             }
 
             if (tmpValue < masMenu[actualIndex][4]) {
-                tmpValue = masMenu[actualIndex][4];
+                tmpValue = masMenu[actualIndex][5];
             }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            if(actualIndex == 77-1){  //----------------------->>
+                langFlag = tmpValue;
+            }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         }
         else {     // Если режим редактирования не активен, навигация среди потомков одного родителя
             actualIndex = getNearMenuIndexByID(masMenu[actualIndex][1], masMenu[actualIndex][0], h);
         }
     }
 
-  // Отображаем информацию в Serial
-    if (isParamEditMode) {  // если в режиме редактирования
-        Serial.print(F(" > "));
-        nameIDserial(masMenu[actualIndex][0]);
-        Serial.print(F(": "));
-        Serial.print(tmpValue);
-        Serial.print(F("  "));
-        Serial.print(masMenu[actualIndex][4]);
-        Serial.print(F("-"));
-        Serial.println(masMenu[actualIndex][5]);
-    }
-    else {
-        if (masMenu[actualIndex][2]) {
-            nameIDserial(masMenu[actualIndex][0]);
-            Serial.print(F(": "));
-            Serial.println(masMenu[actualIndex][3]);
-        }
-        else {
-            nameIDserial(masMenu[actualIndex][0]);
-            Serial.println();
-        }
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     if(actualIndex == 0){
         lcd.clear();
-        lcd.print(F("EXIT OK"));
+        lcd.setCursor(1,1);
+        lcd.print(F("*EXIT OK"));
+        delay(500);
+        lcd.clear();
+        flagMenuState = 0;
         return;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // Отображаем информацию в lcd
     if (isParamEditMode) {  // если в режиме редактирования
         lcd.print(F(">"));
@@ -706,60 +867,66 @@ void extMenuSetup(){
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void extMenuLoop(){
-    byte vmenu = 0;  // Переменная хранящая действие по вертикали 1 - вход в меню, 2 - выход из меню
-    byte hmenu = 0;             // Переменная хранящая действие по горизонтали 1 - вправо, 2 - влево
-
-    if (millis() - timeButtonDown > timeButtonPressed && isButtonDown) { // Время длительного удержания наступило
-        flagButtonLong = true;
+    bool menuRefresh = 1;
+    if(flagMenuState && actualIndex == 0){
+        actualIndex = 1;
     }
+    while(flagMenuState){
+        byte vmenu = 0;  // Переменная хранящая действие по вертикали 1 - вход в меню, 2 - выход из меню
+        byte hmenu = 0;             // Переменная хранящая действие по горизонтали 1 - вправо, 2 - влево
 
-    if (flagCW) {               // Шаг вращения по часовой стрелке
-        hmenu = 1;
-        // lcd.clear(); // очистить дисплей
-        // lcd.println("right");
-        //Serial.println("right");
-        flagCW = false;           // Действие обработано - сбрасываем флаг
-    }
-
-    if (flagCCW) {              // Шаг вращения против часовой стрелки
-        hmenu = 2;
-        // lcd.clear(); // очистить дисплей
-        // lcd.println("left");
-        //Serial.println("left");
-        flagCCW = false;          // Действие обработано - сбрасываем флаг
-    }
-
-    if (flagButton) {           // Кнопка нажата
-        vmenu = 1;                // По нажатию кнопки - переходим на уровень вниз
-        // lcd.clear(); // очистить дисплей
-        // lcd.println("button");
-        //Serial.println("button");
-        flagButton = false;       // Действие обработано - сбрасываем флаг
-    }
-
-    if (flagButtonLong && isButtonDown) {   // Кнопка удерживается
-        if (!digitalRead(pinButton) && millis() - timeButtonDown > timeButtonPressed) { // Защита от ложного срабатывания
-        // ...
-            vmenu = 2;             // По удержанию кнопки - возвращаемся на уровень вверх
-            // lcd.clear(); // очистить дисплей
-            // lcd.println("long_press");
-            //Serial.println("long_press");
+        if (millis() - timeButtonDown > timeButtonPressed && isButtonDown) { // Время длительного удержания наступило
+            flagButtonLong = true;
         }
-    
-        //================================= Настраиваем реакцию на долгое удержание кнопки =========
-        // Для того, чтобы изменить это поведение, измените настройки в блоке ENKODER V
-        #if LONG_PRESS_CONTINUES == 0
-        // при долгом удержании кнопки, событие long_press повторяется каждые 1,5 секунды
-        timeButtonDown = millis(); // Сбрасываем таймер
-        longPressReleased = true;  // Флаг удерж. чтоб отсечь обычное нажатие при отпускании кнопки
-        #else
-        // при долгом удержании кнопки, событие long_press повторялось 1 раз
-        isButtonDown = false;                   // Программно "отжимаем" кнопку
-        #endif
-        //==========================================================================================
 
-        flagButtonLong = false;               // Действие обработано - сбрасываем флаг
+        if (flagCW) {               // Шаг вращения по часовой стрелке
+            hmenu = 1;
+            flagCW = false;           // Действие обработано - сбрасываем флаг
+        }
+
+        if (flagCCW) {              // Шаг вращения против часовой стрелки
+            hmenu = 2;
+            flagCCW = false;          // Действие обработано - сбрасываем флаг
+        }
+
+        if (flagButton) {           // Кнопка нажата
+            vmenu = 1;                // По нажатию кнопки - переходим на уровень вниз
+            flagButton = false;       // Действие обработано - сбрасываем флаг
+        }
+
+        if (flagButtonLong && isButtonDown) {   // Кнопка удерживается
+            if (!digitalRead(pinButton) && millis() - timeButtonDown > timeButtonPressed) { // Защита от ложного срабатывания
+            // ...
+                vmenu = 2;             // По удержанию кнопки - возвращаемся на уровень вверх
+            }
+        
+            //================================= Настраиваем реакцию на долгое удержание кнопки =========
+            // Для того, чтобы изменить это поведение, измените настройки в блоке ENKODER V
+            #if LONG_PRESS_CONTINUES == 0
+            // при долгом удержании кнопки, событие long_press повторяется каждые 1,5 секунды
+            timeButtonDown = millis(); // Сбрасываем таймер
+            longPressReleased = true;  // Флаг удерж. чтоб отсечь обычное нажатие при отпускании кнопки
+            #else
+            // при долгом удержании кнопки, событие long_press повторялось 1 раз
+            isButtonDown = false;                   // Программно "отжимаем" кнопку
+            #endif
+            //==========================================================================================
+
+            flagButtonLong = false;               // Действие обработано - сбрасываем флаг
+        }
+        if (vmenu != 0 || hmenu != 0 || menuRefresh) setActualMenu(vmenu, hmenu); // Если было действие - реагируем на него
+
+        menuRefresh = 0;
+
+
+
+
+        if(actualIndex == 63 && isParamEditMode){
+            screenBrightnesF(tmpValue);
+        }
+        else{
+            screenBrightnesF(masMenu[63][3]);
+        }
     }
-    if (vmenu != 0 || hmenu != 0) setActualMenu(vmenu, hmenu); // Если было действие - реагируем на него
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

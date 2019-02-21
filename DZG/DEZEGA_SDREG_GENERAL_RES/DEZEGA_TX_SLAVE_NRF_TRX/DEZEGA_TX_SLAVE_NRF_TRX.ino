@@ -8,12 +8,16 @@
 // значение для возврата если сенсор запрещен
 #define SENS_DISABLEREAD_VAL 3000
 
-RF24 radio(9,10);  // nrf init CE, CSN  nrf init:  MISO:50, MOSI:51, SCK:52
+RF24 radio(9,10);  // nrf init CE:9, CSN:10, MOSI:11, MISO:12, SCK:13
 
 // nrf init:
 byte addressNRF[][6] = {"1Node", "2Node", "3Node", "4Node", "5Node", "6Node"}; //возможные номера труб
 
 char s_d; // переменная для хранения считывания управляющего байта символа
+
+bool operKeyFlag = 0;
+byte heartRate = 99;
+byte txBatLvl = 10;
 
 typedef struct transmiteStructure{
 	byte operationKeyTX = 0;
@@ -25,7 +29,7 @@ typedef struct transmiteStructure{
 	float val_Press_inh = SENS_DISABLEREAD_VAL;  // мин
 	float val_Press_exh = SENS_DISABLEREAD_VAL;  // макс
 	short minuteTest = 0;  // X>=<60  общее количество минут что идет тест
-	byte val_BatteryLevel_TX = 50;  // уровень заряда батареи в %
+	byte val_BatteryLevel_TX_HM = 50;  // уровень заряда батареи в %
 	byte flagZapisiAndColorTransmite = 0;  // если 1 то на флешку идет запись если 0 то нет
 };
 transmiteStructure txStrctVal;
@@ -58,12 +62,18 @@ void radioNrfSetup(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void sendNRFdataF(){
 	// отправляем значения за секунду по радио
-		txStrctVal.operationKeyTX = 1;
-		bool radioWriteOk = 0;
-		radio.stopListening();                   // перестаем слушать эфир, для передачи
-		radioWriteOk = radio.write(&txStrctVal, sizeof(txStrctVal));
-		radio.startListening();                  // начинаем слушать эфир, для приема
-		txStrctVal.operationKeyTX = 0;
+	if(operKeyFlag == 0){txStrctVal.operationKeyTX = 1;}
+	else{txStrctVal.operationKeyTX = 2;}
+	operKeyFlag = !operKeyFlag;
+	if(txStrctVal.operationKeyTX == 1){txStrctVal.val_BatteryLevel_TX_HM = txBatLvl;}
+	else if(txStrctVal.operationKeyTX == 2){txStrctVal.val_BatteryLevel_TX_HM = heartRate;}
+
+	txStrctVal.operationKeyTX = 1;
+	bool radioWriteOk = 0;
+	radio.stopListening();                   // перестаем слушать эфир, для передачи
+	radioWriteOk = radio.write(&txStrctVal, sizeof(txStrctVal));
+	radio.startListening();                  // начинаем слушать эфир, для приема
+	txStrctVal.operationKeyTX = 0;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -108,7 +118,8 @@ void loop(){
 				txStrctVal.val_Press_exh = Serial.parseFloat();  // float
 				txStrctVal.minuteTest = Serial.parseInt();  // short
 				// Serial.read();
-				txStrctVal.val_BatteryLevel_TX = Serial.parseInt();  // byte
+				// txStrctVal.val_BatteryLevel_TX_HM = Serial.parseInt();  // byte
+				txBatLvl = Serial.parseInt();  // byte
 				// Serial.read();
 				txStrctVal.flagZapisiAndColorTransmite = Serial.parseInt();  // byte
 

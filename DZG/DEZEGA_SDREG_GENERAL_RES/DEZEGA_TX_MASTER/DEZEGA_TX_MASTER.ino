@@ -27,7 +27,7 @@
 #define SDCHEK 0                 // 1 ЕСЛИ ФЛЕШКИ НЕТ ТО НЕ СТАРТОВАТЬ. 0 СТАРТОВАТЬ В ЛЮБОМ СЛУЧАЕ
 #define DEFMaxFileToSD 1000      // макс количество файлов на флешке. макс 65535
 
-#define EEPROM_WRITE_KEY 114     // код перезаписи EEPROM < 255. если изменить то EEPROM перезапишется из оперативки
+#define EEPROM_WRITE_KEY 116     // код перезаписи EEPROM < 255. если изменить то EEPROM перезапишется из оперативки
 #define EEPROM_WRITE_K_ADDR 200  // адрес кода перезаписи EEPROM . 200 <= x < 500
 
 #define BEEPER_FREQ 500  // частота аварийной пищалки в Герцах
@@ -140,12 +140,12 @@ float maxVal_CCO2 = 0;
 float maxVal_CO = 0;
 
 // калибровка всех датчиков. значения: inMin, inMax, outMin, outMax
-float calibr_O2_Mas[] = {1887436.8, 2726297.6, 0, 100};
-float calibr_T1_Mas[] = {20, 60, 20, 60};
-float calibr_T2_Mas[] = {20, 100, 20, 100};
-float calibr_CO2_Mas[] = {2133, 10666.6, 0, 5};
-float calibr_CO_Mas[] = {2133, 10666.6, 0, 2000};
-float calibr_Press_Mas[] = {5242880, 8388608, -9.99, 9.99};  // ok
+float calibr_O2_Mas[] = {1887436.75, 2726297.50, 0.00, 100.00};
+float calibr_T1_Mas[] = {23.50, 64.00, 27.20, 66.90};
+float calibr_T2_Mas[] = {27.00, 62.75, 26.80, 62.20};
+float calibr_CO2_Mas[] = {17.00, 11901.00, 0.00, 3.00};
+float calibr_CO_Mas[] = {713.00, 16031.00, 0.00, 1212.00};
+float calibr_Press_Mas[] = {98364.50, 7920784.00, -9.69, 6.74 };  // ok
 
 float pumpThresholdVal = -0.05;  // порог включения помпы на TX SLAVE PRESSURE
 bool pumpThresholdValWriteOkFlag = 0;  // флаг успешной отправки значения запуска помпы
@@ -190,8 +190,8 @@ File dataFile;               // переменная для работы с фл
 // EEPROM read write calibration F res
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // чтение из EEPROM 4 байта float
-float EEPROM_float_read(int addr){  
-	addr *= 4;  
+float EEPROM_float_read(int addr){ 
+	addr *= 4; 
 	byte raw[4];
 	for(byte i = 0; i < 4; i++) raw[i] = EEPROM.read(addr+i);
 	float &data = (float&)raw;
@@ -199,7 +199,7 @@ float EEPROM_float_read(int addr){
 }
 // запись в EEPROM 4 байта float
 void EEPROM_float_write(int addr, float data){
-	addr *= 4;
+	addr *= 4; 
 	if (EEPROM_float_read(addr) == data){return;}  // если сохраняемое неотличается от сохраненного, не сохранять
 	byte raw[4];
 	(float&)raw = data;
@@ -213,23 +213,23 @@ void eeSingleWriteOfRam(byte addrName){ // запись значений кал�
 		    case 0:
 			EEPROM_float_write(0+i, calibr_T1_Mas[i]);
 		    break;
-		    case 1:
-			EEPROM_float_write(1+i, calibr_T2_Mas[i]);
-		    break;
-		    case 2:
-			EEPROM_float_write(2+i, calibr_CO2_Mas[i]);
-		    break;
-		    case 3:
-			EEPROM_float_write(3+i, calibr_O2_Mas[i]);
-		    break;
 		    case 4:
-			EEPROM_float_write(4+i, calibr_CO_Mas[i]);
+			EEPROM_float_write(4+i, calibr_T2_Mas[i]);
 		    break;
-		    case 5:
-			EEPROM_float_write(5+i, calibr_Press_Mas[i]);
+		    case 8:
+			EEPROM_float_write(8+i, calibr_CO2_Mas[i]);
 		    break;
-		    case 6:
-			EEPROM_float_write(6, pumpThresholdVal);
+		    case 12:
+			EEPROM_float_write(12+i, calibr_O2_Mas[i]);
+		    break;
+		    case 16:
+			EEPROM_float_write(16+i, calibr_CO_Mas[i]);
+		    break;
+		    case 20:
+			EEPROM_float_write(20+i, calibr_Press_Mas[i]);
+		    break;
+		    case 24:
+			EEPROM_float_write(24, pumpThresholdVal);
 		    break;
 		}
 	}
@@ -238,29 +238,78 @@ void eeSingleWriteOfRam(byte addrName){ // запись значений кал�
 void eePackWrite(){ // запись всех значений калибровки в EEPROM
 	for(int i=0; i<4; i++){
 	    EEPROM_float_write(0+i, calibr_T1_Mas[i]);
-	    EEPROM_float_write(1+i, calibr_T2_Mas[i]);
-	    EEPROM_float_write(2+i, calibr_CO2_Mas[i]);
-	    EEPROM_float_write(3+i, calibr_O2_Mas[i]);
-	    EEPROM_float_write(4+i, calibr_CO_Mas[i]);
-	    EEPROM_float_write(5+i, calibr_Press_Mas[i]);
+	    EEPROM_float_write(4+i, calibr_T2_Mas[i]);
+	    EEPROM_float_write(8+i, calibr_CO2_Mas[i]);
+	    EEPROM_float_write(12+i, calibr_O2_Mas[i]);
+	    EEPROM_float_write(16+i, calibr_CO_Mas[i]);
+	    EEPROM_float_write(20+i, calibr_Press_Mas[i]);
 	}
-	EEPROM_float_write(6, pumpThresholdVal);
+	EEPROM_float_write(24, pumpThresholdVal);
 }
 void eePackRead(){ // чтение всех значений калибровки из EEPROM
 	for(int i=0; i<4; i++){
 	    calibr_T1_Mas[i] = EEPROM_float_read(0+i);
-	    calibr_T2_Mas[i] = EEPROM_float_read(1+i);
-	    calibr_CO2_Mas[i] = EEPROM_float_read(2+i);
-	    calibr_O2_Mas[i] = EEPROM_float_read(3+i);
-	    calibr_CO_Mas[i] = EEPROM_float_read(4+i);
-	    calibr_Press_Mas[i] = EEPROM_float_read(5+i);
+	    calibr_T2_Mas[i] = EEPROM_float_read(4+i);
+	    calibr_CO2_Mas[i] = EEPROM_float_read(8+i);
+	    calibr_O2_Mas[i] = EEPROM_float_read(12+i);
+	    calibr_CO_Mas[i] = EEPROM_float_read(16+i);
+	    calibr_Press_Mas[i] = EEPROM_float_read(20+i);
 	}
-	pumpThresholdVal = EEPROM_float_read(6);
+	pumpThresholdVal = EEPROM_float_read(24);
 }
 void eePackOneInitWrite(){ // запись всех значений калибровки в EEPROM (ОДНОРАЗОВАЯ ФУНКЦИЯ ДЛЯ ЗАПИСИ EEPROM ПРИ 1 ПРОШИВКЕ)
 	if(EEPROM.read(EEPROM_WRITE_K_ADDR) == EEPROM_WRITE_KEY){return;}  // если код перезаписи совпадает то не перезаписывать
 	eePackWrite();
 	EEPROM.write(EEPROM_WRITE_K_ADDR, EEPROM_WRITE_KEY);
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void serCalValPrinter(){
+	Serial.println("setup calibration val:");
+
+	Serial.print("O2 ");
+	for(int i=0; i<4; i++){
+	    Serial.print(calibr_O2_Mas[i]);
+	    Serial.print(" ");
+	}
+	Serial.println("");
+
+	Serial.print("T1 ");
+	for(int i=0; i<4; i++){
+	    Serial.print(calibr_T1_Mas[i]);
+	    Serial.print(" ");
+	}
+	Serial.println("");
+
+	Serial.print("T2 ");
+	for(int i=0; i<4; i++){
+	    Serial.print(calibr_T2_Mas[i]);
+	    Serial.print(" ");
+	}
+	Serial.println("");
+	
+	Serial.print("CO2 ");
+	for(int i=0; i<4; i++){
+	    Serial.print(calibr_CO2_Mas[i]);
+	    Serial.print(" ");
+	}
+	Serial.println("");
+
+	Serial.print("CO ");
+	for(int i=0; i<4; i++){
+	    Serial.print(calibr_CO_Mas[i]);
+	    Serial.print(" ");
+	}
+	Serial.println("");
+
+	Serial.print("PRESS ");
+	for(int i=0; i<4; i++){
+	    Serial.print(calibr_Press_Mas[i]);
+	    Serial.print(" ");
+	}
+	Serial.println("");
+
+	Serial.print("pump threshold ");
+	Serial.println(pumpThresholdVal);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -362,7 +411,9 @@ static float poolO2(){  // 0 - 100 (0.1) 0v - 1.6v  (9-13mV)
 	txStrctVal.val_O2 = adc64;
 	hx711Obj.power_down();			        // put the ADC in sleep mode
 	Serial.print("O2  V ");
-	Serial.println(voltageO2, 7);
+	Serial.print(voltageO2, 7);
+	Serial.print("  ADC   ");
+	Serial.println(txStrctVal.val_O2);
 
 	return txStrctVal.val_O2;
 }
@@ -455,7 +506,9 @@ float poolPressure(){  // -9.99 - 9.99 (0.01) 50mv - 80mv
 	// if(txStrctVal.val_Press_inh = 8388608){Serial2.print('r');}
 	voltagePressure = flap(txStrctVal.val_Press_exh, -8388608, 8388608, -0.08, 0.08);
 	Serial.print("Press V ");
-	Serial.println(voltagePressure, 7);
+	Serial.print(voltagePressure, 7);
+	Serial.print("  ADC   ");
+	Serial.println((txStrctVal.val_Press_inh + txStrctVal.val_Press_exh) / 2);
 	return (txStrctVal.val_Press_inh + txStrctVal.val_Press_exh) / 2;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -464,11 +517,11 @@ float poolCO2(){  // 0 - 5 (0.01) 0v - 4v
 	// resive and convert CO2 values
 	adc1_CO2 = ads.readADC_SingleEnded(PORT_1_CO2_ADS1);
 	voltageCO2 = adc1_CO2 * multiplierADS / 1000.0;  // Volt
-	// txStrctVal.val_CCO2 = adc1_CO2 * multiplierADS / 1000.0;  // Volt
-	Serial.print("CO2 V ");
-	Serial.println(voltageCO2, 7);
-	// txStrctVal.val_CCO2 = flap(voltageCO2, 0.4, 2, 0, 5);          // %
 	txStrctVal.val_CCO2 = adc1_CO2;
+	Serial.print("CO2 V ");
+	Serial.print(voltageCO2, 7);
+	Serial.print("  ADC   ");
+	Serial.println(txStrctVal.val_CCO2);
 	return txStrctVal.val_CCO2;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -477,10 +530,11 @@ static float poolCO(){  // 2000 (1) 0v - 3v
 	// resive and convert CO values
 	adc2_CO = ads.readADC_SingleEnded(PORT_2_CO_ADS1);
 	voltageCO = adc2_CO * multiplierADS / 1000.0;  // Volt
+	txStrctVal.val_CO = adc2_CO;
 	Serial.print("CO  V ");
 	Serial.println(voltageCO, 7);
-	// txStrctVal.val_CO = flap(voltageCO, 0.4, 2, 0, 2000);       // ppm
-	txStrctVal.val_CO = adc2_CO;
+	Serial.print("  ADC   ");
+	Serial.println(txStrctVal.val_CO);
 	return txStrctVal.val_CO;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -872,6 +926,7 @@ void setup(){
 
 	eePackOneInitWrite();  // 1st EEPROM write all calibration val
 	eePackRead();   // EEPROM read all calibration val
+	serCalValPrinter();  // serial print calibration values
 
 	// ЧАСЫ: init
 	Wire.begin();
