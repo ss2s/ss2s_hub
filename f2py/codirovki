@@ -1,0 +1,16 @@
+# coding: utf8
+
+# Загружаем файл с кодировкай utf8
+text = open('file.txt','r').read()
+
+# Декодируем из utf8 в unicode - из внешней в рабочую
+text = text.decode('utf8')
+
+# Работаем с текстом
+text += text
+
+# Кодируем тест из unicode в utf8 - из рабочей во внешнюю
+text = text.encode('utf8')
+
+# Сохраняем в файл с кодировкий utf8
+open('file.txt','w').write(text)
