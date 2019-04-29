@@ -6,7 +6,7 @@ symb = ['►','☼','◙','↑','↓','→','←']
 beep = "♫•" # alt+7
 bel = "\a"
 
-# print(bel,bel,bel)
+print(bel,bel,bel)
 print(beep,beep,beep)
 
 print()

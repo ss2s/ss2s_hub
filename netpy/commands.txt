@@ -1,0 +1,1 @@
+sudo python /home/netpy/PyScripts/gps_distance_v2.py  // py run
