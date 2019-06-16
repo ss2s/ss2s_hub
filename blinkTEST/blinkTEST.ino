@@ -9,8 +9,8 @@ void setup() {
 	pinMode(13, OUTPUT);
 }
 
-unsigned long delTimeH = 50;
-unsigned long delTimeL = 1;
+unsigned long delTimeH = 1;
+unsigned long delTimeL = 142;
 
 void loop() {
 	if (Serial.available() > 0) {
@@ -24,47 +24,50 @@ void loop() {
 	digitalWrite(8, HIGH);
 	delay(delTimeH);
 	digitalWrite(8, LOW);
-	delay(delTimeL);
+
 	digitalWrite(9, HIGH);
 	delay(delTimeH);
 	digitalWrite(9, LOW);
-	delay(delTimeL);
+
 	digitalWrite(10, HIGH);
 	delay(delTimeH);
 	digitalWrite(10, LOW);
-	delay(delTimeL);
+
 	digitalWrite(11, HIGH);
 	delay(delTimeH);
 	digitalWrite(11, LOW);
-	delay(delTimeL);
+
 	digitalWrite(12, HIGH);
 	delay(delTimeH);
 	digitalWrite(12, LOW);
-	delay(delTimeL);
+	
 	digitalWrite(13, HIGH);
 	delay(delTimeH);
 	digitalWrite(13, LOW);
-	delay(delTimeL);
+	// delay(delTimeL);
+
 	// digitalWrite(13, HIGH);
 	// delay(delTimeH);
 	// digitalWrite(13, LOW);
 	// delay(delTimeL);
-	digitalWrite(12, HIGH);
-	delay(delTimeH);
-	digitalWrite(12, LOW);
-	delay(delTimeL);
-	digitalWrite(11, HIGH);
-	delay(delTimeH);
-	digitalWrite(11, LOW);
-	delay(delTimeL);
-	digitalWrite(10, HIGH);
-	delay(delTimeH);
-	digitalWrite(10, LOW);
-	delay(delTimeL);
-	digitalWrite(9, HIGH);
-	delay(delTimeH);
-	digitalWrite(9, LOW);
-	delay(delTimeL);
+
+	// digitalWrite(12, HIGH);
+	// delay(delTimeH);
+	// digitalWrite(12, LOW);
+	// delay(delTimeL);
+	// digitalWrite(11, HIGH);
+	// delay(delTimeH);
+	// digitalWrite(11, LOW);
+	// delay(delTimeL);
+	// digitalWrite(10, HIGH);
+	// delay(delTimeH);
+	// digitalWrite(10, LOW);
+	// delay(delTimeL);
+	// digitalWrite(9, HIGH);
+	// delay(delTimeH);
+	// digitalWrite(9, LOW);
+	// delay(delTimeL);
+
 	// digitalWrite(8, HIGH);
 	// delay(delTimeH);
 	// digitalWrite(8, LOW);

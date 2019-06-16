@@ -1,0 +1,11 @@
+{
+    "board@Arduino_STM32-master": "Generic STM32F103C series", 
+    "option_CPU Speed(MHz)@Generic STM32F103C series": "72Mhz (Normal)", 
+    "option_Optimize@Generic STM32F103C series": "Smallest (default)", 
+    "option_Upload method@Generic STM32F103C series": "STM32duino bootloader", 
+    "option_Variant@Generic STM32F103C series": "STM32F103C8 (20k RAM. 64k Flash)", 
+    "package": "Sketchbook", 
+    "platform": "Arduino_STM32-master", 
+    "programmer": "USBasp", 
+    "version": "STM32F1"
+}

@@ -24,8 +24,8 @@
 #define BUTTON_GET_SMS "0"
 
 // номера телефонов с которых будет принимать звонок
-String whiteListPhones = "+380955478117, +380xxxxxxxxx, +380xxxxxxxxx"; // Белый список телефонов
-String alarmMasterPhones = "+380955478117"; // мастер телефон для сигнализации
+String whiteListPhones = "+380xxxxxxxxx, +380xxxxxxxxx, +380xxxxxxxxx"; // Белый список телефонов
+String alarmMasterPhones = "+380xxxxxxxxx"; // мастер телефон для сигнализации
 
 // задержки
 uint32_t timeOutMotionDetector = 1000;  // 1s
@@ -233,13 +233,35 @@ void sendSMS(String phone, String message)
 	sendATCommand(message + "\r\n" + (String)((char)26), true);   // После текста отправляем перенос строки и Ctrl+Z
 }
 
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+// void outgoingCall (String phNum)
+// {  // сервисная функция исходящий вызов
+// 	// phNum = masterPhones;
+// 	String _call = "ATD" + phNum + ";";
+// 	_response = sendATCommand(_call, true);
+// }
+
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// void sendSMS(String phone, String message)
+// {  // сервисная функция отправки СМС
+// 	sendATCommand("AT+CMGF=1", true);  // Включаем текстовый режима SMS (Text mode)
+// 	sendATCommand("AT+VTS=\"9,0\"", true);              // Переходим в режим ввода текстового сообщения
+// 	delay(700);
+// 	sendATCommand("AT+CMGS=\"" + phone + "\"", true);             // Переходим в режим ввода текстового сообщения
+// 	sendATCommand(message + "\r\n" + (String)((char)26), true);   // После текста отправляем перенос строки и Ctrl+Z
+// }
+
+// ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void gsmModemStart()
 {
 	ComPort.println("");
 	ComPort.print("sys: ");
 	ComPort.println("Start system");
 
-	// sendATCommand("AT", true);                // Автонастройка скорости
+	// sendATCommand("AT", true);               // Автонастройка скорости
 	// sendATCommand("ATV1", true);                // Автонастройка скорости
 	uint32_t blinkSetupTimeStart = millis();
 	do {
@@ -250,7 +272,7 @@ void gsmModemStart()
     		digitalWrite(13, !digitalRead(13));
     		blinkSetupTimeStart = millis();
     	}
-	} while (_response != "OK");              // Не пускать дальше, пока модем не вернет ОК
+	} while (_response != "OK");                // Не пускать дальше, пока модем не вернет ОК
 	digitalWrite(13, LOW);
 	ComPort.println("sys: GSM modem is ready!");
 
@@ -259,14 +281,14 @@ void gsmModemStart()
 	_response = sendATCommand("AT+DDET=1", true);  // Включаем DTMF
 	_response = sendATCommand("AT+CMGF=1;&W", true); // Включаем текстовый режима SMS (Text mode) и сразу сохраняем значение (AT&W)!
 	// _response = sendATCommand("AT+CMGF=1", true);         // Включить TextMode для SMS
-	// sendATCommand("AT+CLVL?", true);          // Запрашиваем громкость динамика
+	// sendATCommand("AT+CLVL?", true);            // Запрашиваем громкость динамика
 
 	do {
     	_response = sendATCommand("AT+CLIP=1", true);  // Включаем АОН
-    	_response.trim();                       // Убираем пробельные символы в начале и конце
-	} while (_response != "OK");              // Не пускать дальше, пока модем не вернет ОК
+    	_response.trim();                          // Убираем пробельные символы в начале и конце
+	} while (_response != "OK");                   // Не пускать дальше, пока модем не вернет ОК
 
-	ComPort.println("Opredelenie nomera VKL");            // Информируем, что АОН включен
+	ComPort.println("Opredelenie nomera VKL");     // Информируем, что АОН включен
 	// Проверка пройдена, модем сообщил о готовности, можно запускать основной цикл...
 
 	sendATCommand("AT+CMGDA=\"DEL ALL\"", true); // Удалить все сообщения, чтобы не забивали память модуля
