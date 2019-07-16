@@ -49,7 +49,7 @@ void setup()
 	delay(100);
 	lcd.createChar(0, customChar0);  // create a new custom character
 	delay(100);
-	lcd.backlight();  // Turn on the blacklight and print a message.
+	lcd.backlight();  // Turn on the blacklight
 	lcd.clear();
 	lcd.print("    luxmetr");
 

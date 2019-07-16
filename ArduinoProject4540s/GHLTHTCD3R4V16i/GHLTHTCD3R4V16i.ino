@@ -339,13 +339,15 @@ byte bcdToDec(byte val){
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void setDateDs1307(byte second,        // 0-59
-                   byte minute,        // 0-59
-                   byte hour,          // 1-23
-                   byte dayOfWeek,     // 1-7
-                   byte dayOfMonth,    // 1-28/29/30/31
-                   byte month,         // 1-12
-                   byte year)          // 0-99
+void setDateDs1307(
+	byte second,        // 0-59
+	byte minute,        // 0-59
+	byte hour,          // 0-23
+	byte dayOfWeek,     // 1-7
+	byte dayOfMonth,    // 1-28/29/30/31
+	byte month,         // 1-12
+	byte year           // 0-99
+)
 {
    	Wire.beginTransmission(0x68);
    	Wire.write(0);
@@ -505,7 +507,8 @@ void getDhtDataByte(void){
 //                                                                
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+uint8_t display_type = 1;
+uint8_t max_display_type = 2;
 void chekMenuLoop(unsigned int count = 1){
 
 	horizontalStep = 0;
@@ -523,6 +526,11 @@ void chekMenuLoop(unsigned int count = 1){
 	 		i = count;
 	 		menuLoop();
 	 	}
+	 	if(horizontalStep > 0){display_type ++;}
+	 	else if(horizontalStep < 0){display_type --;}
+	 	if(display_type > max_display_type){display_type = 1;}
+	 	else if(display_type < 1){display_type = max_display_type;}
+	 	if(horizontalStep != 0){lcd.clear();}
 	}
 
 	// cli();                                      // Запрещаем обработку прерываний, чтобы не отвлекаться
@@ -682,16 +690,27 @@ void animationReleDelayLinear(unsigned int delMsek){
 		flagAnimaciiReleStateCounter ++;
 		if(flagAnimaciiReleStateCounter > 4){flagAnimaciiReleStateCounter = 1;}
 
+		lcd.setCursor(0, 1);
+  		lcd.print(F("l"));
 	  	animAtom(1, 1, OUT_SVETTIMER_RELE_PIN);
+
+	  	lcd.setCursor(4, 1);
+  		lcd.print(F("w"));
 	  	animAtom(5, 1, OUT_POLIVTIMER_RELE_PIN);
+
+	  	lcd.setCursor(8, 1);
+  		lcd.print(F("t"));
 	  	animAtom(9, 1, OUT_TEMPERATURA_RELE_PIN);
+
+	  	lcd.setCursor(12, 1);
+  		lcd.print(F("h"));
 	  	animAtom(13, 1, OUT_VLAJNOST_RELE_PIN);
 
 	  	delay(thsLOpDel);
 	}
 }
 
-void displayMain(unsigned int thsLOpDel = 1000){
+void displayMaiin(unsigned int thsLOpDel = 1000){
 
 	getDateDs1307(&second, &minute, &hour, &dayOfWeek, &dayOfMonth, &month, &year);  // запрос текущего времени
   	getDhtData(&TEMP, &HMDT);  // запрос текущей температуры и влажности
@@ -722,16 +741,16 @@ void displayMain(unsigned int thsLOpDel = 1000){
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void displayMainLight(){}
+void displayMaiinLight(){}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void displayMainTemp(){}
+void displayMaiinTemp(){}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void displayMainHumidity(){}
+void displayMaiinHumidity(){}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void displayMainTimer(){}
+void displayMaiinTimer(){}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 String zwf(byte chislo){
 	String retstr = "";
@@ -740,22 +759,26 @@ String zwf(byte chislo){
 	return retstr;
 }
 
-void displayMainDateTime(){
+void displayMaiinDateTime(unsigned int thsLOpDel = 1000){
 	getDateDs1307(&second, &minute, &hour, &dayOfWeek, &dayOfMonth, &month, &year);  // запрос текущего времени
-	lcd.clear();
+	// lcd.clear();
 	lcd.setCursor(0, 0);
-	lcd.print(zwf(dayOfMonth));lcd.print(F("."));lcd.print(zwf(month));lcd.print(F("."));lcd.print(zwf(year));
-	lcd.setCursor(10, 0);
 	lcd.print(zwf(hour));lcd.print(F(":"));lcd.print(zwf(minute));/*lcd.print(F(":"));lcd.print(zwf(second));*/
+	lcd.setCursor(7, 0);
+	lcd.print(zwf(dayOfMonth));lcd.print(F("."));lcd.print(zwf(month));lcd.print(F("."));lcd.print(zwf(year));
 	// delay(3000);
-	animationReleDelayLinear(5000);
-	lcd.clear();
+	animationReleDelayLinear(thsLOpDel);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void screenBrightnesF(byte _brght = 100){
 	if(_brght >= 100){digitalWrite(OUT_YARKOST_DISPLEYA_PWM_PIN, HIGH);}
   	else if(_brght == 0){digitalWrite(OUT_YARKOST_DISPLEYA_PWM_PIN, LOW);}
   	else{analogWrite(OUT_YARKOST_DISPLEYA_PWM_PIN, map(_brght, 0, 100, 0, 255));}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void generalDisplayDisplay(){
+	if(display_type == 1){displayMaiin(100);}      // основной дисплей
+	else if(display_type == 2){displayMaiinDateTime(100);}  // вывод даты и времени на экран
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -843,7 +866,7 @@ void setup() {
 
   	lcd.clear();
 
-  	displayMain(1000);
+  	displayMaiin(1000);
 
   	// extMenuSetup();  // --------------------------->>>
 
@@ -864,11 +887,10 @@ void loop() {
  
 	chekParam();            // управление реле
 
-	displayMain(100);      // основной дисплей
+	generalDisplayDisplay();
 
 	chekParam();            // управление реле
 
-	// displayMainDateTime();  // вывод даты и времени на экран
 
 	if(actualIndex == 63 && isParamEditMode){
 		screenBrightnesF(tmpValue);

@@ -169,7 +169,7 @@ void nameIDlcd(byte _ID){
 
         case 1:
         if(langFlag == 0){lcd.print(F("MENU"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("MEH*"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("MEH*"));}  // РУС МЕНЮ
         break;
 
         case 2:
@@ -179,57 +179,57 @@ void nameIDlcd(byte _ID){
 
         case 3:
         if(langFlag == 0){lcd.print(F("mode"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("pe*um"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("pe*um"));}  // РУС РЕЖИМ
         break;
 
         case 4:
         if(langFlag == 0){lcd.print(F("m2 DOSVET"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("m2 *OCBET"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("m2 *OCBET"));}  // РУС ДОСВЕТ
         break;
 
         case 5:
-        if(langFlag == 0){lcd.print(F("1 on H"));}  // ENG
+        if(langFlag == 0){lcd.print(F("t1 on H"));}  // ENG
         else if(langFlag == 1){lcd.print(F("1 on H"));}  // РУС
         break;
 
         case 6:
-        if(langFlag == 0){lcd.print(F("1 on M"));}  // ENG
+        if(langFlag == 0){lcd.print(F("t1 on M"));}  // ENG
         else if(langFlag == 1){lcd.print(F("1 on M"));}  // РУС
         break;
 
         case 7:
-        if(langFlag == 0){lcd.print(F("1 off H"));}  // ENG
+        if(langFlag == 0){lcd.print(F("t1 off H"));}  // ENG
         else if(langFlag == 1){lcd.print(F("1 off H"));}  // РУС
         break;
 
         case 8:
-        if(langFlag == 0){lcd.print(F("1 off M"));}  // ENG
+        if(langFlag == 0){lcd.print(F("t1 off M"));}  // ENG
         else if(langFlag == 1){lcd.print(F("1 off M"));}  // РУС
         break;
 
         case 9:
-        if(langFlag == 0){lcd.print(F("2 on H"));}  // ENG
+        if(langFlag == 0){lcd.print(F("t2 on H"));}  // ENG
         else if(langFlag == 1){lcd.print(F("2 on H"));}  // РУС
         break;
 
         case 10:
-        if(langFlag == 0){lcd.print(F("2 on M"));}  // ENG
+        if(langFlag == 0){lcd.print(F("t2 on M"));}  // ENG
         else if(langFlag == 1){lcd.print(F("2 on M"));}  // РУС
         break;
 
         case 11:
-        if(langFlag == 0){lcd.print(F("2 off H"));}  // ENG
+        if(langFlag == 0){lcd.print(F("t2 off H"));}  // ENG
         else if(langFlag == 1){lcd.print(F("2 off H"));}  // РУС
         break;
 
         case 12:
-        if(langFlag == 0){lcd.print(F("2 off M"));}  // ENG
+        if(langFlag == 0){lcd.print(F("t2 off M"));}  // ENG
         else if(langFlag == 1){lcd.print(F("2 off M"));}  // РУС
         break;
 
         case 13:
         if(langFlag == 0){lcd.print(F("m1 LIGHTCYCLE"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("m1 CBETO**K*"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("m1 CBETO**K*"));}  // РУС СВЕТОЦИКЛ
         break;
 
         case 14:
@@ -254,27 +254,27 @@ void nameIDlcd(byte _ID){
 
         case 18:
         if(langFlag == 0){lcd.print(F("R3 WATER set"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("P3 *O**B"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("P3 *O**B"));}  // РУС ПОЛИВ
         break;
 
         case 19:
         if(langFlag == 0){lcd.print(F("R3 mode"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("P3 pe*um"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("P3 pe*um"));}  // РУС РЕЖИМ
         break;
 
         case 20:
         if(langFlag == 0){lcd.print(F("m3 SOIL SENSOR"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("m3 *AT**K *O*B*"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("m3 *AT**K *O*B*"));}  // РУС ДОТЧИК ПОЧВЫ
         break;
 
         case 21:
         if(langFlag == 0){lcd.print(F("sensor type"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("Tun ce*copa"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("Tun ce*copa"));}  // РУС ТИП СЕНСОРА
         break;
 
         case 22:
         if(langFlag == 0){lcd.print(F("thrshld"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("*opo*"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("*opo*"));}  // РУС ПОРОГ
         break;
 
         case 23:
@@ -349,17 +349,17 @@ void nameIDlcd(byte _ID){
 
         case 37:
         if(langFlag == 0){lcd.print(F("R2 TEMP set"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("P2 TEM*EPAT*PA"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("P2 TEM*EPAT*PA"));}  // РУС ТЕМПЕРАТУРА
         break;
 
         case 38:
         if(langFlag == 0){lcd.print(F("R2 mode"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("P2 pe*um"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("P2 pe*um"));}  // РУС РЕЖИМ
         break;
 
         case 39:
         if(langFlag == 0){lcd.print(F("m3 CUSTOMIZE"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("m3 HACTPA*BAEMbI*"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("m3 HACTPA*BAEMbI*"));}  // РУС НАСТРАИВАЕМЫЕ
         break;
 
         case 40:
@@ -374,47 +374,47 @@ void nameIDlcd(byte _ID){
 
         case 42:
         if(langFlag == 0){lcd.print(F("m2 HEAT"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("m2 HA*PEB"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("m2 HA*PEB"));}  // РУС НАГРЕВ
         break;
 
         case 43:
         if(langFlag == 0){lcd.print(F("targt temp"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("*e*e*a* *e**epa*ypa"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("*e*e*a* *e**epa*ypa"));}  // РУС ЖЕЛАЕМАЯ ТЕМПЕРАТУРА ?
         break;
 
         case 44:
         if(langFlag == 0){lcd.print(F("hysteresis"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("**c*epe**c"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("**c*epe**c"));}  // РУС ГИСТЕРЕЗИС
         break;
 
         case 45:
         if(langFlag == 0){lcd.print(F("m1 COOLING"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("m1 OX*A**EH*E"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("m1 OX*A**EH*E"));}  // РУС ОХЛАЖДЕНИЕ
         break;
 
         case 46:
         if(langFlag == 0){lcd.print(F("targt temp"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("*e*e*a* *e**epa*ypa"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("*e*e*a* *e**epa*ypa"));}  // РУС ЖЕЛАЕМАЯ ТЕМПЕРАТУРА ?
         break;
 
         case 47:
         if(langFlag == 0){lcd.print(F("hysteresis"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("**c*epe**c"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("**c*epe**c"));}  // РУС ГИСТЕРЕЗИС
         break;
 
         case 48:
         if(langFlag == 0){lcd.print(F("R1 HUMIDTY set"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("P1 B*A*HOCTb"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("P1 B*A*HOCTb"));}  // РУС ВЛАЖНОСТЬ
         break;
 
         case 49:
         if(langFlag == 0){lcd.print(F("R1 mode"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("P1 pe***"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("P1 pe***"));}  // РУС РЕЖИМ
         break;
 
         case 50:
         if(langFlag == 0){lcd.print(F("m3 CUSTOMIZE"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("m3 HACTPA*BAEMbI*"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("m3 HACTPA*BAEMbI*"));}  // РУС НАСТРАИВАЕМЫЕ
         break;
 
         case 51:
@@ -429,132 +429,132 @@ void nameIDlcd(byte _ID){
 
         case 53:
         if(langFlag == 0){lcd.print(F("m2 MOISTURIZNG"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("m2 C**KA"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("m2 C**KA"));}  // РУС СУШКА
         break;
 
         case 54:
         if(langFlag == 0){lcd.print(F("targt hmdt"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("*e*e*a* **a*hoc*b"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("*e*e*a* **a*hoc*b"));}  // РУС ЖЕЛАЕМАЯ ВЛАЖНОСТЬ ?
         break;
 
         case 55:
         if(langFlag == 0){lcd.print(F("hysteresis"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("**c*epe**c"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("**c*epe**c"));}  // РУС ГИСТЕРЕЗИС
         break;
 
         case 56:
         if(langFlag == 0){lcd.print(F("m1 DRYING"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("m1 *B*A*HEH*E"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("m1 *B*A*HEH*E"));}  // РУС УВЛАЖНЕНИЕ
         break;
 
         case 57:
         if(langFlag == 0){lcd.print(F("targt hmdt"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("*e*e*a* **a*hoc*b"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("*e*e*a* **a*hoc*b"));}  // РУС ЖЕЛАЕМАЯ ВЛАЖНОСТЬ ?
         break;
 
         case 58:
         if(langFlag == 0){lcd.print(F("hysteresis"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("**c*epe**c"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("**c*epe**c"));}  // РУС ГИСТЕРЕЗИС
         break;
 
         case 59:
         if(langFlag == 0){lcd.print(F("MANUAL CONTROL"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("P**HOE **PAB*EH*E"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("P**HOE **PAB*EH*E"));}  // РУС РУЧНОЕ УПРАВЛЕНИЕ
         break;
 
         case 60:
         if(langFlag == 0){lcd.print(F("r4 lght SW"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("p4 CBET BK"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("p4 CBET BK"));}  // РУС СВЕТ ВКЛ/ВЫКЛ
         break;
 
         case 61:
         if(langFlag == 0){lcd.print(F("r3 wtrg SW"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("p3 *O**B BK"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("p3 *O**B BK"));}  // РУС ПОЛИВ ВКЛ/ВЫКЛ
         break;
 
         case 62:
         if(langFlag == 0){lcd.print(F("r2 temp SW"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("p2 TEM*EPAT*PA"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("p2 TEM*EPAT*PA"));}  // РУС ТЕМПЕРАТУРА ВКЛ/ВЫКЛ
         break;
 
         case 63:
         if(langFlag == 0){lcd.print(F("r1 hmdt SW"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("p1 B*A*HOCTb BK"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("p1 B*A*HOCTb BK"));}  // РУС ВЛАЖНОСТЬ ВКЛ/ВЫКЛ
         break;
 
         case 64:
         if(langFlag == 0){lcd.print(F("SCRN LGHT"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("*PKOCTb EKPAHA"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("*PKOCTb EKP"));}  // РУС ЯРКОСТЬ ЭКРАНА
         break;
 
         case 65:
         if(langFlag == 0){lcd.print(F("CLOCK SET"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("HACTP *ACOB"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("HACTP *ACOB"));}  // РУС НАСТРОЙКА ЧАСОВ
         break;
 
         case 66:
         if(langFlag == 0){lcd.print(F("Year"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("*o*"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("*o*"));}  // РУС ГОД
         break;
 
         case 67:
         if(langFlag == 0){lcd.print(F("Month"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("Mec**"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("Mec**"));}  // РУС МЕСЯЦ
         break;
 
         case 68:
         if(langFlag == 0){lcd.print(F("Day"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("*e**"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("*e**"));}  // РУС ДЕНЬ
         break;
 
         case 69:
         if(langFlag == 0){lcd.print(F("Day of Week"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("*e** *e*e**"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("*e** *e*e**"));}  // РУС ДЕНЬ НЕДЕЛИ
         break;
 
         case 70:
         if(langFlag == 0){lcd.print(F("Hour"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("*ac"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("*ac"));}  // РУС ЧАС
         break;
 
         case 71:
         if(langFlag == 0){lcd.print(F("Minute"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("M**y*a"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("M**y*a"));}  // РУС МИНУТА
         break;
 
         case 72:
         if(langFlag == 0){lcd.print(F("Second"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("Ceky**a"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("Ceky**a"));}  // РУС СЕКУНДА
         break;
 
         case 73:
         if(langFlag == 0){lcd.print(F("SAVE TIME"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("COXP BPEM*"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("COXP BPEM*"));}  // РУС СОХРАНИТЬ ВРЕМЯ
         break;
 
         case 74:
         if(langFlag == 0){lcd.print(F("CALIBRATION"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("KA***POBKA"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("KA***POBKA"));}  // РУС КАЛИБРОВКА
         break;
 
         case 75:
         if(langFlag == 0){lcd.print(F("temp"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("*e*nepa*ypa"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("*e*nepa*ypa"));}  // РУС ТЕМПЕРАТУРА
         break;
 
         case 76:
         if(langFlag == 0){lcd.print(F("hmdt"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("**a**oc**"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("**a**oc**"));}  // РУС ВЛАЖНОСТЬ
         break;
 
         case 77:
         if(langFlag == 0){lcd.print(F("LANGUAGE"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("***K"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("***K"));}  // РУС ЯЗЫК
         break;
 
         case 78:
         if(langFlag == 0){lcd.print(F("EXIT"));}  // ENG
-        else if(langFlag == 1){lcd.print(F("B*XO*"));}  // РУС
+        else if(langFlag == 1){lcd.print(F("B*XO*"));}  // РУС ВЫХОД
         break;
 
         case 79:
@@ -807,9 +807,9 @@ void setActualMenu(byte v, byte h) {
 
     if(actualIndex == 0){
         lcd.clear();
-        lcd.setCursor(1,1);
-        lcd.print(F("*EXIT OK"));
-        delay(500);
+        lcd.setCursor(0,1);
+        lcd.print(F("<MAIN DISPLAY>"));
+        delay(1000);
         lcd.clear();
         flagMenuState = 0;
         return;
@@ -858,7 +858,7 @@ void setActualMenu(byte v, byte h) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void extMenuSetup(){
-    actualIndex = getMenuIndexByID(0);    // Main - актуальный элемент меню
+    actualIndex = getMenuIndexByID(0);    // MaiIn - актуальный элемент меню
     setActualMenu(0, 0);                  // Выводим в Serial актуальный элемент меню
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -926,6 +926,124 @@ void extMenuLoop(){
         }
         else{
             screenBrightnesF(masMenu[63][3]);
+        }
+    }
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// вывод кирилических символов на LCD 16*2 дисплей
+void lcdLatCirilicPrint(String _source_string){
+    uint8_t _source_string_lenght = _source_string.length();
+    char _curent_char;
+    for(int i=0; i<_source_string_lenght; i++){
+        _curent_char = _source_string[i];
+        switch (_curent_char) {
+        case 'Й':
+            // do something
+            break;
+        case 'Ц':
+            // do something
+            break;
+        case 'У':
+            // do something
+            break;
+        case 'Г':
+            // do something
+            break;
+        case 'Ш':
+            // do something
+            break;
+        case 'Щ':
+            // do something
+            break;
+         case 'З':
+            // do something
+            break;
+        case 'Ъ':
+            // do something
+            break;
+        case 'Ф':
+            // do something
+            break;
+        case 'Ы':
+            // do something
+            break;
+        case 'П':
+            // do something
+            break;
+        case 'Л':
+            // do something
+            break;
+        case 'Д':
+            // do something
+            break;
+        case 'Ж':
+            // do something
+            break;
+         case 'Э':
+            // do something
+            break;
+        case 'Я':
+            // do something
+            break;
+        case 'Ч':
+            // do something
+            break;
+        case 'И':
+            // do something
+            break;
+        case 'Ь':
+            // do something
+            break;
+        case 'Б':
+            // do something
+            break;
+        case 'Ю':
+            // do something
+            break;
+
+
+
+        case 'К':
+            // do something
+            break;
+         case 'Е':
+            // do something
+            break;
+        case 'Н':
+            // do something
+            break;
+        case 'Х':
+            // do something
+            break;
+        case 'В':
+            // do something
+            break;
+        case 'А':
+            // do something
+            break;
+        case 'Р':
+            // do something
+            break;
+        case 'О':
+            // do something
+            break;
+        case 'С':
+            // do something
+            break;
+         case 'М':
+            // do something
+            break;
+        case 'Т':
+            // do something
+            break;
+        default:
+            // do something
+            lcd.print(_curent_char);
+            break;
         }
     }
 }

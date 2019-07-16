@@ -1,0 +1,8 @@
+{
+    "board@arduino": "Arduino Nano", 
+    "option_Processor@Arduino Nano": "ATmega328", 
+    "package": "Arduino IDE", 
+    "platform": "arduino", 
+    "programmer": "USBasp", 
+    "version": "avr"
+}

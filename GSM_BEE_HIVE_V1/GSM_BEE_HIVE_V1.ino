@@ -1,4 +1,3 @@
-
 //  РАСПИНОВКА:
 #define RESET_MODEM_PIN 9  // RESET sim800
 #define RELE_PIN 8  // РЕЛЕ
@@ -95,7 +94,7 @@ bool VAL_INNER_MOTION_DETECT = 0;
 bool VAL_RAIN_DETECT = 0;
 bool VAL_RAIN_GENERAL_FLAG = 0;
 
-int VAL_WEIGHT = 0;
+uint32_t VAL_WEIGHT = 0;
 
 int VAL_TEMP = 0;
 int VAL_HMDT = 0;
@@ -146,9 +145,9 @@ int getWeight()
 	scale.power_up();
 	delay(500);
 	ComPort.print("Weight: ");
-	units =+ scale.get_units(10);
+	units = scale.get_units(10);  //..................?
 	ounces = units * 0.035274;    // переводим унции в граммы
-	ounces -= 6065.00;            // отнимаем тару
+	ounces -= minus_tare_factor;            // отнимаем тару
 	ComPort.print(ounces);         // отправляем в монитор порта
 	ComPort.print(" grams");  
 	ComPort.println();

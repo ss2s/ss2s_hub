@@ -1,0 +1,8 @@
+{
+    "board@arduino": "Arduino Pro or Pro Mini", 
+    "option_Processor@Arduino Pro or Pro Mini": "ATmega328 (5V, 16 MHz)", 
+    "package": "Arduino IDE", 
+    "platform": "arduino", 
+    "programmer": "USBasp", 
+    "version": "avr"
+}

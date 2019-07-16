@@ -12,7 +12,7 @@
 
 // эта опция нужна, для внесения изменений в EEPROM при перепрошивке
 // если изменить число то EEPROM перезапишется при перепрошивке
-#define EEPROM_WRITE_KEY 123  // любое трехзначное число
+#define EEPROM_WRITE_KEY 123  // любое трехзначное число не больше 254
 
 // настройка параметров двигателя
 float degresInStep = 1.8;                // градусов в одном шаге(характеристики двигателя) 1.8 = 200 шагов на оборот
@@ -96,7 +96,7 @@ void saveToMemory(int fAddr, unsigned int fVal){
 inline void stepRuner(){
 
 	digitalWrite(DIR_PIN, dirVal);
-	//if(0x1b7740<millis())for(;;);
+	//if(0x1b7740<millis())for(;;);//30m
 	for(int i = 0; i < stepPerSector;  i ++){
 
 		digitalWrite(STEP_PIN, HIGH);
