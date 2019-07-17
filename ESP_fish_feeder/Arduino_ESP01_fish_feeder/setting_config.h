@@ -18,6 +18,11 @@
 // char ssid[] = "YourNetworkName";  // имя точки доступа "SSID"
 // char pass[] = "YourPassword";  // пароль точки доступа
 
+char auth[] = "75a9ab7e2fcb44df8648220eb68a07a2";  // MEGA 1
+// char auth[] = "26f4917526a541d7a551fb8aa12c44af";  // MEGA 2
+
+char ssid[] = "AndroidAP8";
+char pass[] = "gkyd8206";
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -88,6 +93,7 @@ uint16_t servo_close_angle = 90;
 #define CALIBRATION_WEIGHT_ADDR 24
 #define FEED_BUNKER_CONDITION_ADDR 28
 #define OLD_DAY_ADDR 32
+#define FED_FOR_TODAY_ADDR 36
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 

@@ -71,17 +71,17 @@ int16_t v_feeding_button_state;  // состояние виртуальной к
 int16_t v_reset_bunker_button_state;  // состояние виртуальной кнопки сброс
 
 // переменные часов
-uint8_t ds_second, ds_minute = 61, ds_hour, ds_dayOfWeek, ds_day, ds_month, ds_year;
-uint8_t old_ds_day;
+uint8_t ds_second, ds_minute = 61, ds_hour, ds_dayOfWeek, ds_day, ds_month, ds_year;  // переменные часов
+uint8_t old_ds_day;  // переменная для отслеживания переключения дня
 // переменные весов
-int32_t val_weight = 0;
+int32_t val_weight = 0;  // текущий вес на веах
 int32_t previous_bunker_weight = 0;  // остаточный вес при ошибке пустой бункер
-int32_t cloud_weight = 0;
+int32_t cloud_weight = 0;  // вес из облака
 
 
 uint32_t feeding_stepper_timer = 0;
 
-uint32_t fed_for_today = 0;
+uint32_t fed_for_today = 0;  // скормлено за сегодня
 
 uint8_t feeding_state = 0;  // состояние кормления: 1-кормление подготовка. 2-подготовка пройдена. 0-ожидание
 bool feeder_responce = 1;  // 1-weight limit, 0-time limit
@@ -106,6 +106,7 @@ bool cloud_flag = 0;  // откуда берем параметры кормле
 Servo servo;  // create servo object to control a servo
 Utimer timer1(10000);   // t1 init 10s
 HX711 scale(HX711_DOUT_PIN, HX711_PD_SCK_PIN);
+LiquidCrystal_I2C lcd(0x27, 16, 2); // установка адреса 0x27 и разрешения 16/2 дисплея
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -138,6 +139,7 @@ void eeSetup(){  // write and reed EEPROM setup settings...
 		EEPROM.put(CALIBRATION_FACTOR_ADDR, calibration_factor);
 		EEPROM.put(CALIBRATION_WEIGHT_ADDR, calibration_Weight);
 		EEPROM.put(FEED_BUNKER_CONDITION_ADDR, feed_bunker_condition);
+		EEPROM.put(FED_FOR_TODAY_ADDR, fed_for_today);
 	}
 
 	// reed
@@ -147,6 +149,7 @@ void eeSetup(){  // write and reed EEPROM setup settings...
 	EEPROM.get(CALIBRATION_FACTOR_ADDR, calibration_factor);
 	EEPROM.get(CALIBRATION_WEIGHT_ADDR, calibration_Weight);
 	EEPROM.get(FEED_BUNKER_CONDITION_ADDR, feed_bunker_condition);
+	EEPROM.get(FED_FOR_TODAY_ADDR, fed_for_today);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // сохранить в EEPROM
@@ -165,9 +168,16 @@ void changeDayControlSetup(){
 		general_control_day += 1;
 		saveToMemoryDay();
 		old_ds_day = ds_day;
+
+		fed_for_today = 0;
+		EEPROM.put(FED_FOR_TODAY_ADDR, fed_for_today);
 	}else if(general_control_day == 0){
+		saveToMemoryOldDay();
 		general_control_day += 1;
 		saveToMemoryDay();
+
+		fed_for_today = 0;
+		EEPROM.put(FED_FOR_TODAY_ADDR, fed_for_today);
 	}
 }
 void changeDayControl(){
@@ -177,16 +187,18 @@ void changeDayControl(){
 	if(ds_day != old_ds_day){
 		old_ds_day = ds_day;
 
-		if(general_control_day != 0){
-			general_control_day += 1;
-			saveToMemoryDay();
-			saveToMemoryOldDay();
-		}
+		general_control_day += 1;
+		saveToMemoryDay();
+		saveToMemoryOldDay();
+
 		if(general_control_day > MAX_GENERAL_CONTROL_DAY){
 			general_control_day = 0;
 			saveToMemoryDay();
 			saveToMemoryOldDay();
 		}
+
+		fed_for_today = 0;
+		EEPROM.put(FED_FOR_TODAY_ADDR, fed_for_today);
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -348,6 +360,7 @@ void feedingParamUpdate(){
 	EEPROM.get(PREV_WEIGHT_ADDR, previous_bunker_weight);  // предыдущий вес бункера, при ошибке питающий бункер
 
 	uint8_t fed_for_today_counter = 0;
+
 	if((feeding_time_1) && feeding_time_1 <= ds_hour){fed_for_today_counter ++;}
 	if((feeding_time_2) && feeding_time_2 <= ds_hour){fed_for_today_counter ++;}
 	if((feeding_time_3) && feeding_time_3 <= ds_hour){fed_for_today_counter ++;}
@@ -741,6 +754,15 @@ void generalFeedingSetup(){
 	// setDateDs3231(set_second, set_minute, set_hour, set_day, set_month, set_year);
 	#endif
 
+
+	lcd.begin(); // иниализация дисплея LCD 16/2
+  	lcd.clear(); // очистить дисплей
+  	lcd.print(F("  FISH FEEDER"));
+  	lcd.setCursor(0, 1);
+  	lcd.print(F("    V_1.0.1"));
+  	delay(2000);
+
+
 	scale.set_scale(calibration_factor);  //Применяем калибровку
 	scale.tare(); 
 	delay(50);
@@ -760,6 +782,16 @@ void generalFeedingSetup(){
 
 	changeDayControlSetup();
 	eeSetup();
+
+  	lcd.clear(); // очистить дисплей
+  	lcd.print(F("FN# "));
+  	lcd.print(FEEDER_INDEX_NUMBER);
+  	lcd.setCursor(9, 0);
+  	lcd.print(F("dAY "));
+  	lcd.print(general_control_day);
+  	lcd.setCursor(0, 1);
+  	lcd.print(F("Total feed  "));
+  	lcd.print(fed_for_today);
 
 	String ds_time_string = "";
 	if(ds_minute < 10){ds_time_string = "\nds time: " + String(ds_hour) + ":0" + String(ds_minute) + "       " + String(ds_day) + "." + String(ds_month) + ".20" + String(ds_year) + "\n\n\n";}
