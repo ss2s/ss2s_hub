@@ -24,7 +24,6 @@ http://help.blynk.cc/hardware-and-libraries/arduino/esp8266-with-at-firmware
 #include <WidgetRTC.h>
 
 // #include "setting_config.h"  // файл с настройками
-#include "feeding_control.h" // файл с алгоритмом управления кормлением
 
 // Hardware Serial on Mega, Leonardo, Micro...
 #define EspSerial Serial1
@@ -52,7 +51,20 @@ bool set_ds3231_inet_time_en = 1;
 bool flag_blynk_connected = 0;
 // us
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Blynk objects
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+WidgetLED B_LED_bunkerCondition(V21);  // blynk led widget состояние питающего бункера
+WidgetRTC B_rtc;
 ESP8266 wifi(&EspSerial);
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+#include "feeding_control.h" // файл с алгоритмом управления кормлением
+
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // us F
@@ -126,12 +138,6 @@ void setClockFromInternetTime(){  // установка часов из инте
 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Blynk objects
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-WidgetLED B_LED_bunkerCondition(V21);  // blynk led widget состояние питающего бункера
-WidgetRTC B_rtc;
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -160,9 +166,9 @@ void fbLedBunkerConditionAndButtonColor(){  // функция зажигает �
 		Blynk.setProperty(V21, "color", "#FF0000");  // установить RED цвет светодиода, пустой питающий бункер
 		Blynk.setProperty(V21, "label", "  пустой бункер");  // установить заголовок светодиода
 
-		if(feeding_state == 1){
-		Blynk.setProperty(V21, "color", "#FFFF00");  // установить YELOW цвет светодиода, кормление
-		}
+		// if(feeding_state == 1){
+		// Blynk.setProperty(V21, "color", "#FFFF00");  // установить YELOW цвет светодиода, кормление
+		// }
 
 		// Blynk.setProperty(V30, "offBackColor", "#D3435C");  // установить RED цвет кнопки, кормление
 		// Blynk.setProperty(V30, "onBackColor", "#23C48E");   // установить GREN цвет кнопки, кормление
@@ -238,12 +244,12 @@ BLYNK_WRITE(V31){  // блинк передает значения с телеф
 
 		if(feed_bunker_condition == 0){
 			feed_bunker_condition = 1;
-			// stepperRun(200, !forward_dir);
+			EEPROM.put(FEED_BUNKER_CONDITION_ADDR, feed_bunker_condition);
+			// stepperRun(50, !forward_dir);
 		}
-		else if(feed_bunker_condition == 1){
-			feed_bunker_condition = 0;
-			// stepperRun(200, forward_dir);
-		}
+		// else if(feed_bunker_condition == 1){
+		// 	feed_bunker_condition = 0;
+		// }
 		fbLedBunkerConditionAndButtonColor();
 		ledState();
 	}
@@ -299,7 +305,7 @@ void paramDisplay(){
 	// delay(10);
 	Blynk.virtualWrite(V12, String(feeding_portion));  // вес 1 кормления
 	// delay(10);
-	Blynk.virtualWrite(V10, String(feeding_portion));  // вес 1 кормления +-
+	Blynk.virtualWrite(V10, String(cloud_feed_weight));  // вес 1 кормления +-
 
 	weightUpdate();
 	Blynk.virtualWrite(V1, String(val_weight));  // вес
