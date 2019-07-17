@@ -359,15 +359,14 @@ void feedingParamUpdate(){
 
 	EEPROM.get(PREV_WEIGHT_ADDR, previous_bunker_weight);  // предыдущий вес бункера, при ошибке питающий бункер
 
-	uint8_t fed_for_today_counter = 0;
-
-	if((feeding_time_1) && feeding_time_1 <= ds_hour){fed_for_today_counter ++;}
-	if((feeding_time_2) && feeding_time_2 <= ds_hour){fed_for_today_counter ++;}
-	if((feeding_time_3) && feeding_time_3 <= ds_hour){fed_for_today_counter ++;}
-	if((feeding_time_4) && feeding_time_4 <= ds_hour){fed_for_today_counter ++;}
-	if((feeding_time_5) && feeding_time_5 <= ds_hour){fed_for_today_counter ++;}
-	if((feeding_time_6) && feeding_time_6 <= ds_hour){fed_for_today_counter ++;}
-	fed_for_today = feeding_portion * fed_for_today_counter;
+	// uint8_t fed_for_today_counter = 0;
+	// if((feeding_time_1) && feeding_time_1 <= ds_hour){fed_for_today_counter ++;}
+	// if((feeding_time_2) && feeding_time_2 <= ds_hour){fed_for_today_counter ++;}
+	// if((feeding_time_3) && feeding_time_3 <= ds_hour){fed_for_today_counter ++;}
+	// if((feeding_time_4) && feeding_time_4 <= ds_hour){fed_for_today_counter ++;}
+	// if((feeding_time_5) && feeding_time_5 <= ds_hour){fed_for_today_counter ++;}
+	// if((feeding_time_6) && feeding_time_6 <= ds_hour){fed_for_today_counter ++;}
+	// fed_for_today = feeding_portion * fed_for_today_counter;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 float getWeight(){
@@ -635,6 +634,8 @@ bool feedingProcessing(){
 	    // send val weight to cloud...
 	}
 	Serial.print("\nFEEDING END\n");
+	fed_for_today += val_weight;
+	EEPROM.put(FED_FOR_TODAY_ADDR, fed_for_today);
 	return _in_feeder_responce;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
