@@ -640,6 +640,7 @@ bool feedingProcessing(){
 			    lcd.print(F("WEIGHT GAINED"));
 			    lcd.setCursor(0, 1);
   				lcd.print(val_weight);
+			    lcd.print(F(" feeding..."));
 			    break;
 		    }
 		}
@@ -704,6 +705,15 @@ bool feedingProcessing(){
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void lcdDisplay(){
+	if(feed_bunker_condition == 0){
+		lcd.setCursor(0, 0);
+		lcd.print(F(" EMPTY FEED !!!"));
+  		lcd.setCursor(0, 1);
+  		lcd.print(F("last weight  "));
+  		lcd.print(remaining_bunker_weight);
+		return;
+	}
+
 	lcd.setCursor(0, 0);
 	lcd.print(F("FeedN "));
   	lcd.print(FEEDER_INDEX_NUMBER);
