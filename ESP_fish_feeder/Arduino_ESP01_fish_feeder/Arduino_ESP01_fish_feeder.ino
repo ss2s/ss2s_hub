@@ -58,6 +58,8 @@ bool flag_blynk_connected = 0;
 WidgetLED B_LED_bunkerCondition(V21);  // blynk led widget состояние питающего бункера
 WidgetRTC B_rtc;
 ESP8266 wifi(&EspSerial);
+BlynkTimer timersynctime;
+BlynkTimer timergfedlop;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -260,11 +262,6 @@ BLYNK_WRITE(V31){  // блинк передает значения с телеф
 // end methods
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-BlynkTimer timersynctime;
-
-BlynkTimer timergfedlop;
-
 void timergfedlopEvent()
 {	
 	generalFeedingLoop();  //...
@@ -292,20 +289,18 @@ void paramDisplay(){
 
 	
 	Blynk.virtualWrite(V17, currentTime);  // время и дата
-	// delay(10);
 	Blynk.virtualWrite(V11, String(general_control_day));  // день контроллера
-	// delay(10);
 	Blynk.virtualWrite(V14, String(just_a_day));  // всего корма за день из таблицы
-	// delay(10);
 	Blynk.virtualWrite(V15, String(just_a_day));  // расчетная норма корма за день
-	// delay(10);
 	Blynk.virtualWrite(V13, String(number_of_feedings));  // количество кормлений
-	// delay(10);
 	Blynk.virtualWrite(V16, String(fed_for_today));  // скормлено за сегодня
-	// delay(10);
 	Blynk.virtualWrite(V12, String(feeding_portion));  // вес 1 кормления
-	// delay(10);
 	Blynk.virtualWrite(V10, String(cloud_feed_weight));  // вес 1 кормления +-
+
+	if(old_cloud_feed_weight != cloud_feed_weight){
+		old_cloud_feed_weight = cloud_feed_weight;
+		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
+	}
 
 	weightUpdate();
 	Blynk.virtualWrite(V1, String(val_weight));  // вес
@@ -340,8 +335,8 @@ void setup(){
 
 	setSyncInterval(TIME_SYNC_MINUTE_VAL * 60); // Sync interval in seconds () 30*60(30 minutes)
 
-	timersynctime.setInterval(1000L, paramDisplay);
-	timergfedlop.setInterval(31000L, timergfedlopEvent);
+	timersynctime.setInterval(1100L, paramDisplay);
+	timergfedlop.setInterval(1000L, timergfedlopEvent);
 }
 
 void loop(){
@@ -387,8 +382,6 @@ void loop(){
 	// generalFeedingLoop();  //...
 	timergfedlop.run();
 	timersynctime.run();
-
-	// digitalWrite(13, !digitalRead(13));
 
 	delay(1000);
 }

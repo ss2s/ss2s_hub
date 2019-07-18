@@ -82,6 +82,7 @@ uint8_t old_ds_day;  // переменная для отслеживания п�
 int32_t val_weight = 0;  // текущий вес на веах
 int32_t previous_bunker_weight = 0;  // остаточный вес при ошибке пустой бункер
 int32_t cloud_feed_weight = 0;  // вес из облака
+int32_t old_cloud_feed_weight = 0;  // предыдущий вес из облака
 
 
 uint32_t feeding_stepper_timer = 0;
@@ -100,9 +101,6 @@ bool flag_feed_3_OK = 0;
 bool flag_feed_4_OK = 0;
 bool flag_feed_5_OK = 0;
 bool flag_feed_6_OK = 0;
-
-bool cloud_flag = 0;  // откуда берем параметры кормления, 1 из облака, 0 из таблицы
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -181,6 +179,7 @@ void changeDayControlSetup(){
 
 		feedingParamUpdate();
 		cloud_feed_weight = feeding_portion;
+		old_cloud_feed_weight = cloud_feed_weight;
 		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
 
 	}else if(general_control_day == 0){
@@ -193,6 +192,7 @@ void changeDayControlSetup(){
 
 		feedingParamUpdate();
 		cloud_feed_weight = feeding_portion;
+		old_cloud_feed_weight = cloud_feed_weight;
 		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
 	}
 }
@@ -218,6 +218,7 @@ void changeDayControl(){
 
 		feedingParamUpdate();
 		cloud_feed_weight = feeding_portion;
+		old_cloud_feed_weight = cloud_feed_weight;
 		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
 	}
 }
@@ -370,13 +371,6 @@ void feedingParamUpdate(){
 	
 	feeding_portion = just_a_day / number_of_feedings;  // 1 порция кормления из таблицы
 
-	if(cloud_feed_weight != feeding_portion && cloud_flag == 0){
-		cloud_flag = 1;
-	}
-	else{
-	cloud_flag = 0;
-	}
-
 	EEPROM.get(PREV_WEIGHT_ADDR, previous_bunker_weight);  // предыдущий вес бункера, при ошибке питающий бункер
 
 	// uint8_t fed_for_today_counter = 0;
@@ -393,7 +387,7 @@ float getWeight(){
 	scale.power_up();  // включить весы	
 	delay(10);
 	int32_t _val_weight;
-	_val_weight = scale.get_units(MEASURE_NUM);
+	_val_weight = scale.get_units(MEASURE_QUANTITY);
 	scale.power_down();  // выключить весы
 	return _val_weight;
 }
@@ -593,7 +587,7 @@ bool feedingProcessing(){
 
 	Serial.print(F("\nSTART FEEDING\n"));
 
-	if(cloud_flag == 1){
+	if(cloud_feed_weight != feeding_portion){
 		_this_feeding_portion = cloud_feed_weight;
 		Serial.print(F("\ncloud feed weight  "));
 		Serial.print(_this_feeding_portion);
@@ -674,10 +668,10 @@ bool feedingProcessing(){
 bool feedTimeDetector(){
 	timeUpdate();
 	changeDayControl();
-	String ds_time_string = "";
-	if(ds_minute < 10){ds_time_string = "\nds time: " + String(ds_hour) + ":0" + String(ds_minute) + "       " + String(ds_day) + "." + String(ds_month) + ".20" + String(ds_year) + "\n\n\n";}
-	else{ds_time_string = "\nds time: " + String(ds_hour) + ":" + String(ds_minute) + "       " + String(ds_day) + "." + String(ds_month) + ".20" + String(ds_year) + "\n\n\n";}
-	Serial.print(ds_time_string);
+	String _ds_time_string = "";
+	if(ds_minute < 10){_ds_time_string = "\nds time: " + String(ds_hour) + ":0" + String(ds_minute) + "       " + String(ds_day) + "." + String(ds_month) + ".20" + String(ds_year) + "\n\n\n";}
+	else{_ds_time_string = "\nds time: " + String(ds_hour) + ":" + String(ds_minute) + "       " + String(ds_day) + "." + String(ds_month) + ".20" + String(ds_year) + "\n\n\n";}
+	Serial.print(_ds_time_string);
 
 	if(ds_minute > 30 && flag_feeding_time_en == 0){
 	    flag_feeding_time_en = 1;
@@ -685,12 +679,22 @@ bool feedTimeDetector(){
 	if(flag_feeding_time_en == 0){
 		return 0;
 	}
-	if((ds_hour == feeding_time_1) && (ds_minute < 30) 
-	|| (ds_hour == feeding_time_2) && (ds_minute < 30) 
-	|| (ds_hour == feeding_time_3) && (ds_minute < 30) 
-	|| (ds_hour == feeding_time_4) && (ds_minute < 30) 
-	|| (ds_hour == feeding_time_5) && (ds_minute < 30) 
-	|| (ds_hour == feeding_time_6) && (ds_minute < 30)){
+	if(
+	((ds_hour == feeding_time_1) && (ds_minute < 30)) 
+	|| ((ds_hour == feeding_time_2) && (ds_minute < 30)) 
+	|| ((ds_hour == feeding_time_3) && (ds_minute < 30)) 
+	|| ((ds_hour == feeding_time_4) && (ds_minute < 30)) 
+	|| ((ds_hour == feeding_time_5) && (ds_minute < 30)) 
+	|| ((ds_hour == feeding_time_6) && (ds_minute < 30))
+	|| ((ds_hour == 0) && (
+							feeding_time_1 == 24 
+							|| feeding_time_2 == 24 
+							|| feeding_time_3 == 24 
+							|| feeding_time_4 == 24 
+							|| feeding_time_5 == 24 
+							|| feeding_time_6 == 24 
+							) && (ds_minute < 30))
+	){
 		flag_feeding_time_en = 0;
 		return 1;
 	}
@@ -878,14 +882,14 @@ void generalFeedingSetup(){
   	lcd.print(F("Total feed  "));
   	lcd.print(fed_for_today);
 
-	String ds_time_string = "";
-	if(ds_minute < 10){ds_time_string = "\nds time: " + String(ds_hour) + ":0" + String(ds_minute) + "       " + String(ds_day) + "." + String(ds_month) + ".20" + String(ds_year) + "\n\n\n";}
-	else{ds_time_string = "\nds time: " + String(ds_hour) + ":" + String(ds_minute) + "       " + String(ds_day) + "." + String(ds_month) + ".20" + String(ds_year) + "\n\n\n";}
-	Serial.print(ds_time_string);
+	String _ds_time_string = "";
+	if(ds_minute < 10){_ds_time_string = "\nds time: " + String(ds_hour) + ":0" + String(ds_minute) + "       " + String(ds_day) + "." + String(ds_month) + ".20" + String(ds_year) + "\n\n\n";}
+	else{_ds_time_string = "\nds time: " + String(ds_hour) + ":" + String(ds_minute) + "       " + String(ds_day) + "." + String(ds_month) + ".20" + String(ds_year) + "\n\n\n";}
+	Serial.print(_ds_time_string);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void generalFeedingLoop(){
-	if(timer1.over(60000)){  // каждые 60 сек
+	if(timer1.over(61000)){  // каждые 61 сек
 		Serial.print("\n\n\nFeed time scan\n");
 		if(feedTimeDetector()){
 			Serial.print("\n\n\nFeed time DETECTED. Feeding now\n\n\n");
