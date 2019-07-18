@@ -87,7 +87,7 @@ uint16_t servo_close_angle = 90;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define EEPROM_SETUP_KEY_ADDR 0
 #define GENERAL_CONTROL_DAY_ADDR 4
-#define PREV_WEIGHT_ADDR 8
+#define REMAINING_WEIGHT_ADDR 8
 #define CLOUD_FEED_WEIGHT_ADDR 16
 #define CALIBRATION_FACTOR_ADDR 20
 #define CALIBRATION_WEIGHT_ADDR 24

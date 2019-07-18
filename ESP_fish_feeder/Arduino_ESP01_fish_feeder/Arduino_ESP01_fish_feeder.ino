@@ -199,7 +199,8 @@ BLYNK_CONNECTED(){
 
 	// запросить информацию о состоянии виртуальных пинов Vx
 	Blynk.syncVirtual(V30);  // виртуальная кнопка покормить
-	Blynk.syncVirtual(V31);  // виртуальная кнопка покормить
+	Blynk.syncVirtual(V31);  // виртуальная кнопка возобновить
+	Blynk.syncVirtual(V10);  // вес из облака
 
 	// синхронизация времени при подключении
 	B_rtc.begin();
@@ -256,6 +257,9 @@ BLYNK_WRITE(V31){  // блинк передает значения с телеф
 		ledState();
 	}
 }
+BLYNK_WRITE(V10){  // блинк передает значения с телефона на ардуино, вес из облака
+	cloud_feed_weight = param.asInt();
+}
 ///////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -294,19 +298,25 @@ void paramDisplay(){
 	Blynk.virtualWrite(V15, String(just_a_day));  // расчетная норма корма за день
 	Blynk.virtualWrite(V13, String(number_of_feedings));  // количество кормлений
 	Blynk.virtualWrite(V16, String(fed_for_today));  // скормлено за сегодня
+	// Blynk.virtualWrite(V16, String(77));  // скормлено за сегодня
 	Blynk.virtualWrite(V12, String(feeding_portion));  // вес 1 кормления
+
+	delay(1000);
+
+	Blynk.virtualWrite(V2, String(99));  // test
+	Blynk.virtualWrite(V18, "10");  // test 2
+
 	Blynk.virtualWrite(V10, String(cloud_feed_weight));  // вес 1 кормления +-
 
-	if(old_cloud_feed_weight != cloud_feed_weight){
-		old_cloud_feed_weight = cloud_feed_weight;
-		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
-	}
+	// if(old_cloud_feed_weight != cloud_feed_weight){
+	// 	old_cloud_feed_weight = cloud_feed_weight;
+	// 	EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
+	// }
 
 	weightUpdate();
 	Blynk.virtualWrite(V1, String(val_weight));  // вес
 	// Blynk.virtualWrite(V0, String(val_weight));  // вес
 
-	// Blynk.virtualWrite(V14, "10");  // всего за день из таблицы
 
 	fbLedBunkerConditionAndButtonColor();
 }

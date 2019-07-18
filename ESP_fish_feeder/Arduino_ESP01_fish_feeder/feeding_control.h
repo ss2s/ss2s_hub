@@ -66,6 +66,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void feedingParamUpdate();
+void lcdDisplay();
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -80,9 +81,9 @@ uint8_t ds_second, ds_minute = 61, ds_hour, ds_dayOfWeek, ds_day, ds_month, ds_y
 uint8_t old_ds_day;  // переменная для отслеживания переключения дня
 // переменные весов
 int32_t val_weight = 0;  // текущий вес на веах
-int32_t previous_bunker_weight = 0;  // остаточный вес при ошибке пустой бункер
-int32_t cloud_feed_weight = 0;  // вес из облака
-int32_t old_cloud_feed_weight = 0;  // предыдущий вес из облака
+int32_t remaining_bunker_weight = 0;  // остаточный вес при ошибке пустой бункер
+int32_t cloud_feed_weight = 22;  // вес из облака
+int32_t old_cloud_feed_weight = 22;  // предыдущий вес из облака
 
 
 uint32_t feeding_stepper_timer = 0;
@@ -137,7 +138,7 @@ void eeSetup(){  // write and reed EEPROM setup settings...
 		EEPROM.put(EEPROM_SETUP_KEY_ADDR, EEPROM_SETUP_KEY);
 
 		EEPROM.put(GENERAL_CONTROL_DAY_ADDR, general_control_day);
-		EEPROM.put(PREV_WEIGHT_ADDR, previous_bunker_weight);
+		EEPROM.put(REMAINING_WEIGHT_ADDR, remaining_bunker_weight);
 		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
 		EEPROM.put(CALIBRATION_FACTOR_ADDR, calibration_factor);
 		EEPROM.put(CALIBRATION_WEIGHT_ADDR, calibration_Weight);
@@ -147,7 +148,7 @@ void eeSetup(){  // write and reed EEPROM setup settings...
 
 	// reed
 	EEPROM.get(GENERAL_CONTROL_DAY_ADDR, general_control_day);
-	EEPROM.get(PREV_WEIGHT_ADDR, previous_bunker_weight);
+	EEPROM.get(REMAINING_WEIGHT_ADDR, remaining_bunker_weight);
 	EEPROM.get(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
 	EEPROM.get(CALIBRATION_FACTOR_ADDR, calibration_factor);
 	EEPROM.get(CALIBRATION_WEIGHT_ADDR, calibration_Weight);
@@ -169,10 +170,10 @@ void changeDayControlSetup(){
 	// timeUpdate();
 	EEPROM.get(OLD_DAY_ADDR, old_ds_day);
 	if(ds_day != old_ds_day){
-		saveToMemoryOldDay();
 		general_control_day += 1;
 		saveToMemoryDay();
 		old_ds_day = ds_day;
+		saveToMemoryOldDay();
 
 		fed_for_today = 0;
 		EEPROM.put(FED_FOR_TODAY_ADDR, fed_for_today);
@@ -183,9 +184,10 @@ void changeDayControlSetup(){
 		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
 
 	}else if(general_control_day == 0){
-		saveToMemoryOldDay();
 		general_control_day += 1;
 		saveToMemoryDay();
+		old_ds_day = ds_day;
+		saveToMemoryOldDay();
 
 		fed_for_today = 0;
 		EEPROM.put(FED_FOR_TODAY_ADDR, fed_for_today);
@@ -221,6 +223,11 @@ void changeDayControl(){
 		old_cloud_feed_weight = cloud_feed_weight;
 		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
 	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void setAndSaveDayVal(uint8_t _day_val = 1){
+	general_control_day = _day_val;
+	EEPROM.put(GENERAL_CONTROL_DAY_ADDR, general_control_day);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // часы DS3231 ..
@@ -349,16 +356,12 @@ void timeUpdate(){
 	getDateDs3231(&ds_second, &ds_minute, &ds_hour, &ds_dayOfWeek, &ds_day, &ds_month, &ds_year);  // запрос текущего времени
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void setAndSaveDayVal(uint8_t _day_val = 1){
-	general_control_day = _day_val;
-	EEPROM.put(GENERAL_CONTROL_DAY_ADDR, general_control_day);
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void feedingParamUpdate(){
 
 	timeUpdate();
 
 	// general_control_day = 
+	// EEPROM.get(GENERAL_CONTROL_DAY_ADDR, general_control_day);
 
 	just_a_day = basic_feeding_table[general_control_day];  // всего за день из таблицы
 
@@ -371,7 +374,7 @@ void feedingParamUpdate(){
 	
 	feeding_portion = just_a_day / number_of_feedings;  // 1 порция кормления из таблицы
 
-	EEPROM.get(PREV_WEIGHT_ADDR, previous_bunker_weight);  // предыдущий вес бункера, при ошибке питающий бункер
+	EEPROM.get(REMAINING_WEIGHT_ADDR, remaining_bunker_weight);  // предыдущий вес бункера, при ошибке питающий бункер
 
 	// uint8_t fed_for_today_counter = 0;
 	// if((feeding_time_1) && feeding_time_1 <= ds_hour){fed_for_today_counter ++;}
@@ -577,10 +580,11 @@ void stepperRun(int16_t _steps = STEPS_WITHOUT_WEIGHT, bool _dir = forward_dir){
 bool feedingProcessing(){
 	if(feed_bunker_condition == 0){
 		Serial.print("\npustoy bunker. feeding disable\n");
-		return;
+		return 0;
 	}
 
 	feedingParamUpdate();  //обновить параметры кормления
+
 
 	bool _in_feeder_responce;  // 1-weight limit, 0-time limit
 	uint16_t _this_feeding_portion;
@@ -600,38 +604,55 @@ bool feedingProcessing(){
 		Serial.print(F("\n"));
 	}
 	
-	scale.power_up();      // включить весы
-	// scale.tare();          // тара
 	weightUpdate();
-	scale.power_down();    // выключить весы
+
+	lcd.clear(); // очистить дисплей
+	if(cloud_feed_weight != feeding_portion){lcd.print(F("cloud w "));}
+	else{lcd.print(F("table w "));}
+  	lcd.print(_this_feeding_portion);
+  	lcd.setCursor(0, 1);
+  	lcd.print(F("curent w "));
+  	lcd.setCursor(9, 1);
+  	lcd.print(val_weight);
+
 	feeding_stepper_timer = millis();
 	while(1){
 		stepperRun(STEPS_WITHOUT_WEIGHT, forward_dir);
 		weightUpdate();
+		lcd.setCursor(9, 1);
+		lcd.print(F("      "));
+		lcd.setCursor(9, 1);
+  		lcd.print(val_weight);
+		
 		if(val_weight >= _this_feeding_portion){
 		    delay(100);
 		    weightUpdate();
+		    lcd.setCursor(9, 1);
+			lcd.print(F("      "));
+			lcd.setCursor(9, 1);
+  			lcd.print(val_weight);
+
 		    if(val_weight >= _this_feeding_portion){
-			    scale.power_down();  // выключить весы
+			    // вес набран
 			    _in_feeder_responce = 1;  // вес набран
-			    Serial.print("\nVES NABRAN\n");
+			    Serial.print("\nWEIGHT GAINED\n");
+			    lcd.clear();
+			    lcd.print(F("WEIGHT GAINED"));
+			    lcd.setCursor(0, 1);
+  				lcd.print(val_weight);
 			    break;
 		    }
 		}
-		if(millis() - feeding_stepper_timer >= stepper_rotation_time){
-			scale.power_down();  // выключить весы
+		else if(millis() - feeding_stepper_timer >= stepper_rotation_time){
 			// пустой питающий бункер
-
-			// feed_bunker_condition = 0;
-			EEPROM.put(FEED_BUNKER_CONDITION_ADDR, feed_bunker_condition);
-
 			_in_feeder_responce = 0;  // время вышло
-			previous_bunker_weight = val_weight;
-			EEPROM.put(PREV_WEIGHT_ADDR, previous_bunker_weight);
-			Serial.print("\nEND TIME\n");
+			Serial.print("\nTIME IS OWER\n");
+			lcd.clear();
+			lcd.print(F("TIME IS OWER"));
 			break;
 		}
 	}
+
 	if(_in_feeder_responce > 0){  // сли вес набран RUN SPREADER
 
 	    delay(AC_DELAY_TIME);
@@ -646,28 +667,67 @@ bool feedingProcessing(){
 	    digitalWrite(RELE_VIBRATOR_PIN, RELE_LOW);
 	    servo.write(servo_close_angle);
 	    // send val weight to cloud...
-	}
-	Serial.print("\nFEEDING END\n");
-	fed_for_today += val_weight;
-	EEPROM.put(FED_FOR_TODAY_ADDR, fed_for_today);
 
-	if(_in_feeder_responce == 1){
+		// scale.power_up();      // включить весы
+		// scale.tare();          // тара
+		// scale.power_down();    // выключить весы
+	}
+
+	if(_in_feeder_responce > 0){
 		// вес набран, все нормально, отправить вес в облако
+		fed_for_today += val_weight;
+		EEPROM.put(FED_FOR_TODAY_ADDR, fed_for_today);
 	}
 	else{
-		// пустой питающий бункер, отправить уведомление в облако
+		// пустой питающий бункер
+		feed_bunker_condition = 0;
+		EEPROM.put(FEED_BUNKER_CONDITION_ADDR, feed_bunker_condition);
+		remaining_bunker_weight = val_weight;
+		EEPROM.put(REMAINING_WEIGHT_ADDR, remaining_bunker_weight);
+		// отправить уведомление в облако
 		Blynk.notify("ПУСТОЙ БУНКЕР\nкормушка номер " + String(FEEDER_INDEX_NUMBER));
 		Blynk.setProperty(V21, "color", "#FF0000");  // установить RED цвет светодиода, пустой питающий бункер
 		Blynk.setProperty(V21, "label", "  пустой бункер");  // установить заголовок светодиода
 		B_LED_bunkerCondition.on();
+		delay(3000);
 	}
+
+	Serial.print("\nFEEDING END\n");
+	lcd.clear(); // очистить дисплей
+	lcdDisplay();
 
 	return _in_feeder_responce;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void lcdDisplay(){
+	lcd.setCursor(0, 0);
+	lcd.print(F("FeedN "));
+  	lcd.print(FEEDER_INDEX_NUMBER);
+  	lcd.setCursor(9, 0);
+  	lcd.print(F("dAY "));
+  	lcd.print(general_control_day);
+  	lcd.setCursor(0, 1);
+  	lcd.print(F("Total feed  "));
+  	lcd.print(fed_for_today);
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool feedTimeDetector(){
+	if(old_cloud_feed_weight != cloud_feed_weight){
+		old_cloud_feed_weight = cloud_feed_weight;
+		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
+	}
+	
 	timeUpdate();
 	changeDayControl();
+	lcdDisplay();
 	String _ds_time_string = "";
 	if(ds_minute < 10){_ds_time_string = "\nds time: " + String(ds_hour) + ":0" + String(ds_minute) + "       " + String(ds_day) + "." + String(ds_month) + ".20" + String(ds_year) + "\n\n\n";}
 	else{_ds_time_string = "\nds time: " + String(ds_hour) + ":" + String(ds_minute) + "       " + String(ds_day) + "." + String(ds_month) + ".20" + String(ds_year) + "\n\n\n";}
@@ -865,22 +925,17 @@ void generalFeedingSetup(){
 
 	ledState();
 
-	feedingParamUpdate();
+	// feedingParamUpdate();
 
 	timeUpdate();
 
-	changeDayControlSetup();
 	eeSetup();
+	changeDayControlSetup();
+
+	feedingParamUpdate();
 
   	lcd.clear(); // очистить дисплей
-  	lcd.print(F("FN# "));
-  	lcd.print(FEEDER_INDEX_NUMBER);
-  	lcd.setCursor(9, 0);
-  	lcd.print(F("dAY "));
-  	lcd.print(general_control_day);
-  	lcd.setCursor(0, 1);
-  	lcd.print(F("Total feed  "));
-  	lcd.print(fed_for_today);
+  	lcdDisplay();
 
 	String _ds_time_string = "";
 	if(ds_minute < 10){_ds_time_string = "\nds time: " + String(ds_hour) + ":0" + String(ds_minute) + "       " + String(ds_day) + "." + String(ds_month) + ".20" + String(ds_year) + "\n\n\n";}
