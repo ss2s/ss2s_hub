@@ -650,6 +650,8 @@ bool feedingProcessing(){
 			Serial.print("\nTIME IS OWER\n");
 			lcd.clear();
 			lcd.print(F("TIME IS OWER"));
+			lcd.setCursor(0, 1);
+			lcd.print(F(" EMPTY FEED !!!"));
 			break;
 		}
 	}
@@ -690,6 +692,7 @@ bool feedingProcessing(){
 		Blynk.setProperty(V21, "color", "#FF0000");  // установить RED цвет светодиода, пустой питающий бункер
 		Blynk.setProperty(V21, "label", "  пустой бункер");  // установить заголовок светодиода
 		B_LED_bunkerCondition.on();
+		ledState();
 		delay(3000);
 	}
 
@@ -851,6 +854,8 @@ void checkButtonForLoop(){  // обработка кнопок в цикле, п
 		if(!digitalRead(RESUME_BUTTON_PIN)){  // если до сих пор нажата физическая кнопка возобновить
 			feed_bunker_condition = 1;
 			EEPROM.put(FEED_BUNKER_CONDITION_ADDR, feed_bunker_condition);
+			ledState();
+			lcdDisplay();
 		}
 	}
 }
@@ -895,6 +900,8 @@ void generalFeedingSetup(){
 	digitalWrite(GREEN_LED_PIN, LOW);
 	digitalWrite(RED_LED_PIN, LOW);
 
+	eeSetup();
+
 	checkButtonResetDayForSetup();
 
 	Wire.begin();
@@ -933,16 +940,16 @@ void generalFeedingSetup(){
 
 	checkButtonCalibrationScaleForSetup();
 
-	ledState();
 
 	// feedingParamUpdate();
 
 	timeUpdate();
 
-	eeSetup();
 	changeDayControlSetup();
 
 	feedingParamUpdate();
+
+	ledState();
 
   	lcd.clear(); // очистить дисплей
   	lcdDisplay();

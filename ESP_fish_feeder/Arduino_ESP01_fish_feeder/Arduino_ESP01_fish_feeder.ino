@@ -255,6 +255,7 @@ BLYNK_WRITE(V31){  // блинк передает значения с телеф
 		// }
 		fbLedBunkerConditionAndButtonColor();
 		ledState();
+		lcdDisplay();
 	}
 }
 BLYNK_WRITE(V10){  // блинк передает значения с телефона на ардуино, вес из облака
