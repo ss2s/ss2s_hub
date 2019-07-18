@@ -58,7 +58,6 @@
 #define RED_LED_PIN 45
 
 // физические кнопки
-// #define DAY_COUNT_RESET_BUTTON_PIN 9      // кнопка сбросить счетчик дней
 #define FEED_BUTTON_PIN 46                // кнопка покормить
 #define RESUME_BUTTON_PIN 47              // кнопка возобновления работы после аварийной остановки
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -431,27 +430,6 @@ void redLed1s2blink(uint8_t _blink_sec = 3){
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void autoCalibrationScale(uint32_t _calibration_weight = calibration_Weight){
-	digitalWrite(RED_LED_PIN, HIGH);
-	digitalWrite(GREEN_LED_PIN, HIGH);
-	scale.set_scale();
-	scale.tare();
-	delay(5000);
-	while(1){
-		if(!digitalRead(FEED_BUTTON_PIN)){
-			float _temporaryScale;
-			float _temporaryRatio;
-			_temporaryScale = scale.get_units(10);
-			_temporaryRatio = _temporaryScale/calibration_Weight;
-			scale.set_scale(_temporaryRatio);
-			EEPROM.put(CALIBRATION_WEIGHT_ADDR, _temporaryRatio);
-			digitalWrite(RED_LED_PIN, LOW);
-			digitalWrite(GREEN_LED_PIN, LOW);
-			greenLed1s2blink();
-		}
-	}
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void ledState(){
 	if(feed_bunker_condition == 1){
 		digitalWrite(GREEN_LED_PIN, HIGH);
@@ -610,7 +588,9 @@ bool feedingProcessing(){
 
 	feedingParamUpdate();  //обновить параметры кормления
 
+	bool _in_feeder_responce;  // 1-weight limit, 0-time limit
 	uint16_t _this_feeding_portion;
+
 	Serial.print(F("\nSTART FEEDING\n"));
 
 	if(cloud_flag == 1){
@@ -626,7 +606,6 @@ bool feedingProcessing(){
 		Serial.print(F("\n"));
 	}
 	
-	bool _in_feeder_responce;  // 1-weight limit, 0-time limit
 	scale.power_up();      // включить весы
 	// scale.tare();          // тара
 	weightUpdate();
@@ -677,6 +656,18 @@ bool feedingProcessing(){
 	Serial.print("\nFEEDING END\n");
 	fed_for_today += val_weight;
 	EEPROM.put(FED_FOR_TODAY_ADDR, fed_for_today);
+
+	if(_in_feeder_responce == 1){
+		// вес набран, все нормально, отправить вес в облако
+	}
+	else{
+		// пустой питающий бункер, отправить уведомление в облако
+		Blynk.notify("ПУСТОЙ БУНКЕР\nкормушка номер " + String(FEEDER_INDEX_NUMBER));
+		Blynk.setProperty(V21, "color", "#FF0000");  // установить RED цвет светодиода, пустой питающий бункер
+		Blynk.setProperty(V21, "label", "  пустой бункер");  // установить заголовок светодиода
+		B_LED_bunkerCondition.on();
+	}
+
 	return _in_feeder_responce;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -707,6 +698,34 @@ bool feedTimeDetector(){
 	return 0;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// button
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void autoCalibrationScale(uint32_t _calibration_weight = calibration_Weight){
+	digitalWrite(RED_LED_PIN, HIGH);
+	digitalWrite(GREEN_LED_PIN, HIGH);
+	scale.set_scale();
+	scale.tare();
+	delay(5000);
+	while(1){
+		if(!digitalRead(FEED_BUTTON_PIN)){
+			float _temporaryScale;
+			float _temporaryRatio;
+			_temporaryScale = scale.get_units(10);
+			_temporaryRatio = _temporaryScale/calibration_Weight;
+			scale.set_scale(_temporaryRatio);
+			EEPROM.put(CALIBRATION_WEIGHT_ADDR, _temporaryRatio);
+			digitalWrite(RED_LED_PIN, LOW);
+			digitalWrite(GREEN_LED_PIN, LOW);
+			greenLed1s2blink();
+		}
+	}
+}
 void checkButtonResetDayForSetup(){  // обработка кнопок при старте, сбросить день
 	if(!digitalRead(FEED_BUTTON_PIN)){  // если нажата физическая кнопка покормить
 		delay(HOLD_BUTTON_RESET_DAY_DELAY);
@@ -724,6 +743,7 @@ void checkButtonCalibrationScaleForSetup(){  // обработка кнопок 
 	    	digitalWrite(RED_LED_PIN, LOW);
 	    	delay(5000);
 	    	// запустить авто калибровку весов...
+	    	autoCalibrationScale();
 		}
 		else{
 			digitalWrite(GREEN_LED_PIN, HIGH);
@@ -731,17 +751,40 @@ void checkButtonCalibrationScaleForSetup(){  // обработка кнопок 
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void checkButtonForSetup(){  // обработка кнопок при старте, настроить день контроллера, калибровка весов
+	if(!digitalRead(FEED_BUTTON_PIN)){  // если нажата физическая кнопка покормить
+		delay(500);  // задержка пол секунды
+		// автокалибровка весов
+	}
+	if(!digitalRead(RESUME_BUTTON_PIN)){  // если нажата физическая кнопка возобновить
+		delay(500);  // задержка пол секунды
+	}
+	if((!digitalRead(FEED_BUTTON_PIN)) && (!digitalRead(RESUME_BUTTON_PIN))){  // если нажаты кнопки покормить и возобновить
+		delay(500);  // задержка пол секунды
+		// настроить день контроллера
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void checkButtonForLoop(){  // обработка кнопок в цикле, покормить и сбросить пустой бункер
 	if(!digitalRead(FEED_BUTTON_PIN)){  // если нажата физическая кнопка покормить
-		if(feed_bunker_condition == 1){
+		delay(500);  // задержка пол секунды
+		if(!digitalRead(FEED_BUTTON_PIN)){  // если до сих пор нажата физическая кнопка покормить
 	    	feedingProcessing();
 		}
-		else{
+	}
+	if(!digitalRead(RESUME_BUTTON_PIN)){  // если нажата физическая кнопка возобновить
+		delay(500);  // задержка пол секунды
+		if(!digitalRead(RESUME_BUTTON_PIN)){  // если до сих пор нажата физическая кнопка возобновить
 			feed_bunker_condition = 1;
 			EEPROM.put(FEED_BUNKER_CONDITION_ADDR, feed_bunker_condition);
 		}
 	}
 }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void generalFeedingSetup(){
 
@@ -771,8 +814,7 @@ void generalFeedingSetup(){
 	digitalWrite(RELE_VIBRATOR_PIN, RELE_LOW);
 
 	pinMode(FEED_BUTTON_PIN, INPUT_PULLUP);
-	// pinMode(RESUME_BUTTON_PIN, INPUT_PULLUP);
-	// pinMode(DAY_COUNT_RESET_BUTTON_PIN, INPUT_PULLUP);
+	pinMode(RESUME_BUTTON_PIN, INPUT_PULLUP);
 
 	pinMode(GREEN_LED_PIN, OUTPUT);
 	pinMode(RED_LED_PIN, OUTPUT);
@@ -848,16 +890,6 @@ void generalFeedingLoop(){
 		if(feedTimeDetector()){
 			Serial.print("\n\n\nFeed time DETECTED. Feeding now\n\n\n");
 			feeder_responce = feedingProcessing();
-			if(feeder_responce == 1){
-				// вес набран, все нормально, отправить вес в облако
-			}
-			else{
-				// пустой питающий бункер, отправить уведомление в облако
-				Blynk.notify("ПУСТОЙ БУНКЕР\nкормушка номер " + String(FEEDER_INDEX_NUMBER));
-				Blynk.setProperty(V21, "color", "#FF0000");  // установить RED цвет светодиода, пустой питающий бункер
-				Blynk.setProperty(V21, "label", "  пустой бункер");  // установить заголовок светодиода
-				B_LED_bunkerCondition.on();
-			}
 		}
 	}
 
