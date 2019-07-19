@@ -226,10 +226,11 @@ BLYNK_CONNECTED(){
 // button
 ///////////////////////////////////////////////////////////
 // этот метод будет вызван после ответа сервера BLYNK_CONNECTED
-BLYNK_WRITE(V30){  // блинк передает значения с телефона на ардуино
-	v_feeding_button_state = param.asInt();
-	if(v_feeding_button_state == 1){
-		v_feeding_button_state = 0;
+BLYNK_WRITE(V30){  // блинк передает значения с телефона на ардуино (feeding)
+	int16_t _v_feeding_button_state;  // состояние виртуальной кнопки покормить
+	_v_feeding_button_state = param.asInt();
+	if(_v_feeding_button_state == 1){
+		_v_feeding_button_state = 0;
 		Blynk.virtualWrite(V30, LOW);
 		Blynk.setProperty(V21, "color", "#FFFF00");  // установить YELOW цвет светодиода, кормление
 		if(feed_bunker_condition == 1){Blynk.setProperty(V21, "label", "       кормление");}
@@ -239,10 +240,11 @@ BLYNK_WRITE(V30){  // блинк передает значения с телеф
 		Blynk.virtualWrite(V0, _resp_string);
 	}
 }
-BLYNK_WRITE(V31){  // блинк передает значения с телефона на ардуино
-	v_reset_bunker_button_state = param.asInt();
-	if(v_reset_bunker_button_state == 1){
-		v_reset_bunker_button_state = 0;
+BLYNK_WRITE(V31){  // блинк передает значения с телефона на ардуино (resume)
+	int16_t _v_reset_bunker_button_state;  // состояние виртуальной кнопки сброс
+	_v_reset_bunker_button_state = param.asInt();
+	if(_v_reset_bunker_button_state == 1){
+		_v_reset_bunker_button_state = 0;
 		Blynk.virtualWrite(V31, LOW);
 
 		if(feed_bunker_condition == 0){
@@ -257,6 +259,15 @@ BLYNK_WRITE(V31){  // блинк передает значения с телеф
 		ledState();
 		lcd.clear(); // очистить дисплей
 		lcdDisplay();
+	}
+}
+BLYNK_WRITE(V32){  // блинк передает значения с телефона на ардуино (ping)
+	int16_t _v_ping_button_state;  // состояние виртуальной кнопки покормить
+	_v_ping_button_state = param.asInt();
+		if(_v_ping_button_state == 1){
+		_v_ping_button_state = 0;
+		Blynk.setProperty(V32, "offLabel", "online");
+		Blynk.virtualWrite(V32, LOW);
 	}
 }
 BLYNK_WRITE(V10){  // блинк передает значения с телефона на ардуино, вес из облака
@@ -303,12 +314,13 @@ void paramDisplay(){
 	// Blynk.virtualWrite(V16, String(77));  // скормлено за сегодня
 	Blynk.virtualWrite(V12, String(feeding_portion));  // вес 1 кормления
 
+	Blynk.virtualWrite(V10, String(cloud_feed_weight));  // вес 1 кормления +-
+
 	delay(1000);
 
-	Blynk.virtualWrite(V2, String(99));  // test
+	Blynk.virtualWrite(V2, String(remaining_bunker_weight));  // test
 	Blynk.virtualWrite(V18, "10");  // test 2
 
-	Blynk.virtualWrite(V10, String(cloud_feed_weight));  // вес 1 кормления +-
 
 	// if(old_cloud_feed_weight != cloud_feed_weight){
 	// 	old_cloud_feed_weight = cloud_feed_weight;
@@ -321,6 +333,8 @@ void paramDisplay(){
 
 
 	fbLedBunkerConditionAndButtonColor();
+
+	// Blynk.setProperty(V32, "offLabel", "online ?");
 }
 
 

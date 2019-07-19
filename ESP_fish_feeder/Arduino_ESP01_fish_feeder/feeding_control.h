@@ -72,9 +72,6 @@ void lcdDisplay();
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// перменные блинк
-int16_t v_feeding_button_state;  // состояние виртуальной кнопки покормить
-int16_t v_reset_bunker_button_state;  // состояние виртуальной кнопки сброс
 
 // переменные часов
 uint8_t ds_second, ds_minute = 61, ds_hour, ds_dayOfWeek, ds_day, ds_month, ds_year;  // переменные часов
@@ -712,7 +709,7 @@ void lcdDisplay(){
 		lcd.setCursor(0, 0);
 		lcd.print(F(" EMPTY FEED !!!"));
   		lcd.setCursor(0, 1);
-  		lcd.print(F("last weight  "));
+  		lcd.print(F("last weight "));
   		lcd.print(remaining_bunker_weight);
 		return;
 	}
@@ -733,6 +730,7 @@ void lcdDisplay(){
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool feedTimeDetector(){
+	Blynk.setProperty(V32, "offLabel", "online ?");
 	if(old_cloud_feed_weight != cloud_feed_weight){
 		old_cloud_feed_weight = cloud_feed_weight;
 		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
@@ -874,7 +872,7 @@ void checkButtonForLoop(){  // обработка кнопок в цикле, п
 		if(!digitalRead(RESUME_BUTTON_PIN)){  // если до сих пор нажата физическая кнопка возобновить
 			lcd.clear(); // очистить дисплей
   			lcd.print(F("       OK"));
-  			
+
 			feed_bunker_condition = 1;
 			EEPROM.put(FEED_BUNKER_CONDITION_ADDR, feed_bunker_condition);
 
