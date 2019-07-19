@@ -851,7 +851,7 @@ void checkButtonForLoop(){  // обработка кнопок в цикле, п
 		if(!digitalRead(FEED_BUTTON_PIN)){  // если до сих пор нажата физическая кнопка покормить
 			lcd.clear(); // очистить дисплей
   			lcd.print(F("       OK"));
-  			delay(500);
+  			delay(1000);
 	    	feedingProcessing();
 		}
 		lcd.clear(); // очистить дисплей
@@ -874,11 +874,12 @@ void checkButtonForLoop(){  // обработка кнопок в цикле, п
 		if(!digitalRead(RESUME_BUTTON_PIN)){  // если до сих пор нажата физическая кнопка возобновить
 			lcd.clear(); // очистить дисплей
   			lcd.print(F("       OK"));
-  			delay(500);
+  			
 			feed_bunker_condition = 1;
 			EEPROM.put(FEED_BUNKER_CONDITION_ADDR, feed_bunker_condition);
 
 			ledState();
+  			delay(1000);
 		}
 		lcd.clear(); // очистить дисплей
 		lcdDisplay();
