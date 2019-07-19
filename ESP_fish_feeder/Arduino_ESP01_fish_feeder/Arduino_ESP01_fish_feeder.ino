@@ -204,6 +204,17 @@ BLYNK_CONNECTED(){
 
 	// синхронизация времени при подключении
 	B_rtc.begin();
+
+	// отправить уведомление в облако
+	if(notify_en == 1){
+		if(feed_bunker_condition == 0){
+			Blynk.notify("ПУСТОЙ БУНКЕР\nкормушка номер " + String(FEEDER_INDEX_NUMBER));
+			Blynk.setProperty(V21, "color", "#FF0000");  // установить RED цвет светодиода, пустой питающий бункер
+			Blynk.setProperty(V21, "label", "  пустой бункер");  // установить заголовок светодиода
+			B_LED_bunkerCondition.on();
+		}
+		notify_en = 0;
+	}
 }
 ///////////////////////////////////////////////////////////
 

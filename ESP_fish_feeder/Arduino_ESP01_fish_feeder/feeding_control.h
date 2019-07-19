@@ -90,7 +90,10 @@ uint32_t fed_for_today = 0;  // скормлено за сегодня
 uint8_t feeding_state = 0;  // состояние кормления: 1-кормление подготовка. 2-подготовка пройдена. 0-ожидание
 bool feeder_responce = 1;  // 1-weight limit, 0-time limit
 bool feed_bunker_condition = 1;  // 0-пустой бункер. 1-полный бункер
+
 // flags
+bool notify_en = 0;
+
 bool flag_feeding_time_en = 1;
 
 bool flag_feed_1_OK = 0;
@@ -685,10 +688,11 @@ bool feedingProcessing(){
 		remaining_bunker_weight = val_weight;
 		EEPROM.put(REMAINING_WEIGHT_ADDR, remaining_bunker_weight);
 		// отправить уведомление в облако
-		Blynk.notify("ПУСТОЙ БУНКЕР\nкормушка номер " + String(FEEDER_INDEX_NUMBER));
-		Blynk.setProperty(V21, "color", "#FF0000");  // установить RED цвет светодиода, пустой питающий бункер
-		Blynk.setProperty(V21, "label", "  пустой бункер");  // установить заголовок светодиода
-		B_LED_bunkerCondition.on();
+		notify_en = 1;  // установить флаг отправки
+		// Blynk.notify("ПУСТОЙ БУНКЕР\nкормушка номер " + String(FEEDER_INDEX_NUMBER));
+		// Blynk.setProperty(V21, "color", "#FF0000");  // установить RED цвет светодиода, пустой питающий бункер
+		// Blynk.setProperty(V21, "label", "  пустой бункер");  // установить заголовок светодиода
+		// B_LED_bunkerCondition.on();
 		ledState();
 		delay(3000);
 	}
