@@ -255,6 +255,7 @@ BLYNK_WRITE(V31){  // блинк передает значения с телеф
 		// }
 		fbLedBunkerConditionAndButtonColor();
 		ledState();
+		lcd.clear(); // очистить дисплей
 		lcdDisplay();
 	}
 }

@@ -58,8 +58,12 @@ uint32_t stepper_rotation_time = 60000;  // общее время работы �
 #define SERVO_DELAY_TIME 5000
 #define SPREADER_RUNING_TIME 60000
 
+#define BUTTON_PRESS_DELAY 1000           // столько мс нужно удерживать кнопку 
+
+// ?
 #define HOLD_BUTTON_RESET_DAY_DELAY 5000           // столько мс нужно удерживать кнопку при старте чтоб сбросить день
 #define HOLD_BUTTON_CALIBRATION_SCALE_DELAY 15000  // > HOLD_BUTTON_RESET_DAY_DELAY + 4000. кнопка калибровки весов
+// ?
 
 uint16_t freq_stepper_speed = 100;  // скорость вращения шагового двигателя, шагов в секунду <DEL>
 

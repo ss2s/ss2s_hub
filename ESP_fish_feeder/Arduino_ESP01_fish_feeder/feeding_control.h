@@ -843,20 +843,45 @@ void checkButtonForSetup(){  // обработка кнопок при стар�
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void checkButtonForLoop(){  // обработка кнопок в цикле, покормить и сбросить пустой бункер
-	if(!digitalRead(FEED_BUTTON_PIN)){  // если нажата физическая кнопка покормить
-		delay(500);  // задержка пол секунды
+
+	if((!digitalRead(FEED_BUTTON_PIN)) && (feed_bunker_condition == 1)){  // если нажата физическая кнопка покормить
+		lcd.clear(); // очистить дисплей
+  		lcd.print(F("FEEDING ?"));
+		delay(BUTTON_PRESS_DELAY);  // задержка пол секунды
 		if(!digitalRead(FEED_BUTTON_PIN)){  // если до сих пор нажата физическая кнопка покормить
+			lcd.clear(); // очистить дисплей
+  			lcd.print(F("       OK"));
+  			delay(500);
 	    	feedingProcessing();
 		}
+		lcd.clear(); // очистить дисплей
+		lcdDisplay();
 	}
-	if(!digitalRead(RESUME_BUTTON_PIN)){  // если нажата физическая кнопка возобновить
-		delay(500);  // задержка пол секунды
+	else if(!digitalRead(FEED_BUTTON_PIN)){
+		lcd.clear(); // очистить дисплей
+  		lcd.print(F("first press the"));
+  		lcd.setCursor(0, 1);
+  		lcd.print(F("RESUME button"));
+  		delay(5000);
+  		lcd.clear(); // очистить дисплей
+		lcdDisplay();
+	}
+
+	if((!digitalRead(RESUME_BUTTON_PIN)) && (feed_bunker_condition == 0)){  // если нажата физическая кнопка возобновить
+		lcd.clear(); // очистить дисплей
+  		lcd.print(F("RESUME ?"));
+		delay(BUTTON_PRESS_DELAY);  // задержка пол секунды
 		if(!digitalRead(RESUME_BUTTON_PIN)){  // если до сих пор нажата физическая кнопка возобновить
+			lcd.clear(); // очистить дисплей
+  			lcd.print(F("       OK"));
+  			delay(500);
 			feed_bunker_condition = 1;
 			EEPROM.put(FEED_BUNKER_CONDITION_ADDR, feed_bunker_condition);
+
 			ledState();
-			lcdDisplay();
 		}
+		lcd.clear(); // очистить дисплей
+		lcdDisplay();
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -925,7 +950,7 @@ void generalFeedingSetup(){
   	lcd.clear(); // очистить дисплей
   	lcd.print(F("  FISH FEEDER"));
   	lcd.setCursor(0, 1);
-  	lcd.print(F("    V_1.0.1"));
+  	lcd.print(F("  V_1  ESP_01"));
   	delay(2000);
 
 
