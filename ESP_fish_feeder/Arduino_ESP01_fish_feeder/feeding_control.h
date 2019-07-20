@@ -780,6 +780,7 @@ bool feedTimeDetector(){
 	else if(old_cloud_feed_weight != cloud_feed_weight){
 		old_cloud_feed_weight = cloud_feed_weight;
 		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
+		// feedingParamUpdate();
 	}
 	
 	timeUpdate();

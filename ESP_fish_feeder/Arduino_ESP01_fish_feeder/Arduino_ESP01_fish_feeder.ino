@@ -204,6 +204,8 @@ BLYNK_CONNECTED(){
 		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
 		Blynk.virtualWrite(V10, String(cloud_feed_weight));  // вес 1 кормления +- cloud weight
 	}
+
+	// Blynk.virtualWrite(V10, String(cloud_feed_weight));  // вес 1 кормления +- cloud weight
 }
 ///////////////////////////////////////////////////////////
 
@@ -273,6 +275,8 @@ BLYNK_WRITE(V32){  // блинк передает значения с телеф
 }
 BLYNK_WRITE(V10){  // блинк передает значения с телефона на ардуино, вес из облака
 	cloud_feed_weight = param.asInt();
+	feedingParamUpdate();
+	// Blynk.virtualWrite(V10, String(cloud_feed_weight));  // вес 1 кормления +- cloud weight
 }
 ///////////////////////////////////////////////////////////
 
