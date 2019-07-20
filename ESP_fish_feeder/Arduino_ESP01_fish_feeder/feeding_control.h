@@ -65,6 +65,24 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// EEPROM adres (хватит примерно на 45 лет, желательно заменить через 40 лет, к каждому адресу добавить последний адрес + 4)
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#define EEPROM_SETUP_KEY_ADDR 0           // ключ перезаписи
+#define GENERAL_CONTROL_DAY_ADDR 4        // день контроллера
+#define REMAINING_WEIGHT_ADDR 8           // остаточный вес в бункере при ошибке пустой бункер
+#define CLOUD_FEED_WEIGHT_ADDR 16         // вес одного кормления из облака
+#define CALIBRATION_FACTOR_ADDR 20        // калибровочный фактор для весов
+#define CALIBRATION_WEIGHT_ADDR 24        // калибровочный вес для автокалибровки
+#define FEED_BUNKER_CONDITION_ADDR 28     // состояние бункера: 0-пустой, 1-полный
+#define OLD_DAY_ADDR 32                   // предыдущий день, для отслеживания изменения дня
+#define FED_FOR_TODAY_ADDR 36             // скормлено за сегодня
+#define TO_TABLE_CLOUD_WEIGHT_EN_ADDR 40  // разрешить взять вес из таблицы при изменении дня
+#define NOTIFY_EN_ADDR 44                 // разрешить отправку уведомления пустой бункер
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void feedingParamUpdate();
 void lcdDisplay();
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -76,25 +94,27 @@ void lcdDisplay();
 // переменные часов
 uint8_t ds_second, ds_minute = 61, ds_hour, ds_dayOfWeek, ds_day, ds_month, ds_year;  // переменные часов
 uint8_t old_ds_day;  // переменная для отслеживания переключения дня
+
 // переменные весов
-int32_t val_weight = 0;  // текущий вес на веах
+int32_t val_weight = 0;  // текущий вес на всеах + остаточный вес в фидере
+int32_t val_weight_no_remaining = 0;  // текущий вес на всеах без учета остаточного веса
+int32_t val_weight_signed = 0;  // текущий вес на всеах без учета остаточного веса со знаком
+
+// переменные фидера
 int32_t remaining_bunker_weight = 0;  // остаточный вес при ошибке пустой бункер
-int32_t cloud_feed_weight = 22;  // вес из облака
-int32_t old_cloud_feed_weight = 22;  // предыдущий вес из облака
-
-
-uint32_t feeding_stepper_timer = 0;
-
+int32_t cloud_feed_weight = 0;  // вес из облака
+int32_t old_cloud_feed_weight = 0;  // предыдущий вес из облака
+uint32_t feeding_stepper_timer = 0;  // старт таймера кормления
 uint32_t fed_for_today = 0;  // скормлено за сегодня
-
 uint8_t feeding_state = 0;  // состояние кормления: 1-кормление подготовка. 2-подготовка пройдена. 0-ожидание
-bool feeder_responce = 1;  // 1-weight limit, 0-time limit
-bool feed_bunker_condition = 1;  // 0-пустой бункер. 1-полный бункер
+uint8_t feeder_responce = 2;  // 1-weight limit, 0-time limit
+uint8_t feed_bunker_condition = 2;  // 0-пустой бункер. 1-полный бункер
 
 // flags
-bool notify_en = 0;
-
+bool notify_en = 1;
+bool to_table_cloud_weight_en = 0;
 bool flag_feeding_time_en = 1;
+bool flag_tare = 0;
 
 bool flag_feed_1_OK = 0;
 bool flag_feed_2_OK = 0;
@@ -129,7 +149,6 @@ LiquidCrystal_I2C lcd(0x27, 16, 2); // установка адреса 0x27 и �
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void eeSetup(){  // write and reed EEPROM setup settings...
-
 	// write
 	uint8_t _temp_ee_key;
 	EEPROM.get(EEPROM_SETUP_KEY_ADDR, _temp_ee_key);
@@ -144,6 +163,8 @@ void eeSetup(){  // write and reed EEPROM setup settings...
 		EEPROM.put(CALIBRATION_WEIGHT_ADDR, calibration_Weight);
 		EEPROM.put(FEED_BUNKER_CONDITION_ADDR, feed_bunker_condition);
 		EEPROM.put(FED_FOR_TODAY_ADDR, fed_for_today);
+		EEPROM.put(TO_TABLE_CLOUD_WEIGHT_EN_ADDR, to_table_cloud_weight_en);
+		EEPROM.put(NOTIFY_EN_ADDR, notify_en);
 	}
 
 	// reed
@@ -154,65 +175,24 @@ void eeSetup(){  // write and reed EEPROM setup settings...
 	EEPROM.get(CALIBRATION_WEIGHT_ADDR, calibration_Weight);
 	EEPROM.get(FEED_BUNKER_CONDITION_ADDR, feed_bunker_condition);
 	EEPROM.get(FED_FOR_TODAY_ADDR, fed_for_today);
+	EEPROM.get(TO_TABLE_CLOUD_WEIGHT_EN_ADDR, to_table_cloud_weight_en);
+	EEPROM.get(NOTIFY_EN_ADDR, notify_en);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // КОНТРОЛЬ ДНЕЙ
-
-// сохранить в EEPROM
-void saveToMemoryDay(){
-	EEPROM.put(GENERAL_CONTROL_DAY_ADDR, general_control_day);
-}
-void saveToMemoryOldDay(){
-	EEPROM.put(OLD_DAY_ADDR, ds_day);
-}
-
 void changeDayControlSetup(){
 	// timeUpdate();
 	EEPROM.get(OLD_DAY_ADDR, old_ds_day);
 	if(ds_day != old_ds_day){
-		general_control_day += 1;
-		saveToMemoryDay();
 		old_ds_day = ds_day;
-		saveToMemoryOldDay();
-
-		fed_for_today = 0;
-		EEPROM.put(FED_FOR_TODAY_ADDR, fed_for_today);
-
-		feedingParamUpdate();
-		cloud_feed_weight = feeding_portion;
-		old_cloud_feed_weight = cloud_feed_weight;
-		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
-
-	}else if(general_control_day == 0){
 		general_control_day += 1;
-		saveToMemoryDay();
-		old_ds_day = ds_day;
-		saveToMemoryOldDay();
-
-		fed_for_today = 0;
-		EEPROM.put(FED_FOR_TODAY_ADDR, fed_for_today);
-
-		feedingParamUpdate();
-		cloud_feed_weight = feeding_portion;
-		old_cloud_feed_weight = cloud_feed_weight;
-		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
-	}
-}
-void changeDayControl(){
-	// timeUpdate();  //...
-	if(general_control_day == 0){return;}
-
-	if(ds_day != old_ds_day){
-		old_ds_day = ds_day;
-
-		general_control_day += 1;
-		saveToMemoryDay();
-		saveToMemoryOldDay();
+		EEPROM.put(GENERAL_CONTROL_DAY_ADDR, general_control_day);
+		EEPROM.put(OLD_DAY_ADDR, ds_day);
 
 		if(general_control_day > MAX_GENERAL_CONTROL_DAY){
 			general_control_day = 0;
-			saveToMemoryDay();
-			saveToMemoryOldDay();
+			EEPROM.put(GENERAL_CONTROL_DAY_ADDR, general_control_day);
+			EEPROM.put(OLD_DAY_ADDR, ds_day);
 		}
 
 		fed_for_today = 0;
@@ -222,6 +202,51 @@ void changeDayControl(){
 		cloud_feed_weight = feeding_portion;
 		old_cloud_feed_weight = cloud_feed_weight;
 		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
+		to_table_cloud_weight_en = 1;
+		EEPROM.put(TO_TABLE_CLOUD_WEIGHT_EN_ADDR, to_table_cloud_weight_en);
+
+	}else if(general_control_day == 0){
+		general_control_day += 1;
+		EEPROM.put(GENERAL_CONTROL_DAY_ADDR, general_control_day);
+		old_ds_day = ds_day;
+		EEPROM.put(OLD_DAY_ADDR, ds_day);
+
+		fed_for_today = 0;
+		EEPROM.put(FED_FOR_TODAY_ADDR, fed_for_today);
+
+		feedingParamUpdate();
+		cloud_feed_weight = feeding_portion;
+		old_cloud_feed_weight = cloud_feed_weight;
+		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
+		to_table_cloud_weight_en = 1;
+		EEPROM.put(TO_TABLE_CLOUD_WEIGHT_EN_ADDR, to_table_cloud_weight_en);
+	}
+}
+void changeDayControl(){
+	// timeUpdate();  //...
+	if(general_control_day == 0){return;}
+
+	if(ds_day != old_ds_day){
+		old_ds_day = ds_day;
+		general_control_day += 1;
+		EEPROM.put(GENERAL_CONTROL_DAY_ADDR, general_control_day);
+		EEPROM.put(OLD_DAY_ADDR, ds_day);
+
+		if(general_control_day > MAX_GENERAL_CONTROL_DAY){
+			general_control_day = 0;
+			EEPROM.put(GENERAL_CONTROL_DAY_ADDR, general_control_day);
+			EEPROM.put(OLD_DAY_ADDR, ds_day);
+		}
+
+		fed_for_today = 0;
+		EEPROM.put(FED_FOR_TODAY_ADDR, fed_for_today);
+
+		feedingParamUpdate();
+		cloud_feed_weight = feeding_portion;
+		old_cloud_feed_weight = cloud_feed_weight;
+		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
+		to_table_cloud_weight_en = 1;
+		EEPROM.put(TO_TABLE_CLOUD_WEIGHT_EN_ADDR, to_table_cloud_weight_en);
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -356,6 +381,17 @@ void timeUpdate(){
 	getDateDs3231(&ds_second, &ds_minute, &ds_hour, &ds_dayOfWeek, &ds_day, &ds_month, &ds_year);  // запрос текущего времени
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void ledState(){
+	if(feed_bunker_condition == 1){
+		digitalWrite(GREEN_LED_PIN, HIGH);
+		digitalWrite(RED_LED_PIN, LOW);
+	}
+	else{
+		digitalWrite(RED_LED_PIN, HIGH);
+		digitalWrite(GREEN_LED_PIN, LOW);
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void feedingParamUpdate(){
 
 	timeUpdate();
@@ -374,7 +410,7 @@ void feedingParamUpdate(){
 	
 	feeding_portion = just_a_day / number_of_feedings;  // 1 порция кормления из таблицы
 
-	EEPROM.get(REMAINING_WEIGHT_ADDR, remaining_bunker_weight);  // предыдущий вес бункера, при ошибке питающий бункер
+	// EEPROM.get(REMAINING_WEIGHT_ADDR, remaining_bunker_weight);  // предыдущий вес бункера, при ошибке питающий бункер
 
 	// uint8_t fed_for_today_counter = 0;
 	// if((feeding_time_1) && feeding_time_1 <= ds_hour){fed_for_today_counter ++;}
@@ -386,7 +422,7 @@ void feedingParamUpdate(){
 	// fed_for_today = feeding_portion * fed_for_today_counter;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-float getWeight(){
+int32_t getWeight(){
 	scale.power_up();  // включить весы	
 	delay(10);
 	int32_t _val_weight;
@@ -395,47 +431,14 @@ float getWeight(){
 	return _val_weight;
 }
 ////////////////////////////////////////////////////////////
-float weightUpdate(){
+int32_t weightUpdate(){
 	val_weight = getWeight();
 	Serial.print("\nweight " + String(val_weight) + "\n");
+	val_weight_signed = val_weight;
+	if(val_weight < 0){val_weight = 0;}
+	val_weight_no_remaining = val_weight;
+	val_weight = val_weight + remaining_bunker_weight;
 	return val_weight;
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void greenLed1s2blink(uint8_t _blink_sec = 3){
-	for(int i=0; i<_blink_sec; i++){
-		digitalWrite(GREEN_LED_PIN, HIGH);
-		delay(250);
-		digitalWrite(GREEN_LED_PIN, LOW);
-		delay(250);
-		digitalWrite(GREEN_LED_PIN, HIGH);
-		delay(250);
-		digitalWrite(GREEN_LED_PIN, LOW);
-		delay(250);
-	}
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void redLed1s2blink(uint8_t _blink_sec = 3){
-	for(int i=0; i<_blink_sec; i++){
-		digitalWrite(RED_LED_PIN, HIGH);
-		delay(250);
-		digitalWrite(RED_LED_PIN, LOW);
-		delay(250);
-		digitalWrite(RED_LED_PIN, HIGH);
-		delay(250);
-		digitalWrite(RED_LED_PIN, LOW);
-		delay(250);
-	}
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void ledState(){
-	if(feed_bunker_condition == 1){
-		digitalWrite(GREEN_LED_PIN, HIGH);
-		digitalWrite(RED_LED_PIN, LOW);
-	}
-	else{
-		digitalWrite(RED_LED_PIN, HIGH);
-		digitalWrite(GREEN_LED_PIN, LOW);
-	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // cnc driwer
@@ -577,9 +580,43 @@ void stepperRun(int16_t _steps = STEPS_WITHOUT_WEIGHT, bool _dir = forward_dir){
 	#endif
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void runSpreader(){
+	delay(AC_DELAY_TIME);
+	digitalWrite(RELE_SPREADER_PIN, RELE_HIGH);
+	digitalWrite(RELE_VIBRATOR_PIN, RELE_HIGH);
+
+	delay(SERVO_DELAY_TIME);
+	servo.write(servo_open_angle);
+	 
+	delay(SPREADER_RUNING_TIME);
+	digitalWrite(RELE_SPREADER_PIN, RELE_LOW);
+	digitalWrite(RELE_VIBRATOR_PIN, RELE_LOW);
+	servo.write(servo_close_angle);
+
+	// вес набран, все нормально, отправить вес в облако
+	fed_for_today += remaining_bunker_weight;
+	EEPROM.put(FED_FOR_TODAY_ADDR, fed_for_today);
+
+	// сбросить остаточный вес
+	remaining_bunker_weight = 0;
+  	EEPROM.put(REMAINING_WEIGHT_ADDR, remaining_bunker_weight);
+	    
+	if(flag_tare == 1){
+	    delay(2000);
+		scale.power_up();      // включить весы
+		scale.tare();          // тара
+		scale.power_down();    // выключить весы
+		flag_tare = 0;
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool feedingProcessing(){
 	if(feed_bunker_condition == 0){
 		Serial.print("\npustoy bunker. feeding disable\n");
+
+		Serial.print("\nrun spreader\n");
+		runSpreader();
+
 		return 0;
 	}
 
@@ -606,6 +643,8 @@ bool feedingProcessing(){
 	
 	weightUpdate();
 
+	int32_t _previous_val_weight = val_weight;
+
 	lcd.clear(); // очистить дисплей
 	if(cloud_feed_weight != feeding_portion){lcd.print(F("cloud w "));}
 	else{lcd.print(F("table w "));}
@@ -615,17 +654,22 @@ bool feedingProcessing(){
   	lcd.setCursor(9, 1);
   	lcd.print(val_weight);
 
+  	uint8_t _first_steps = FIRST_STEPS_DEF;
+
 	feeding_stepper_timer = millis();
+
 	while(1){
 		stepperRun(STEPS_WITHOUT_WEIGHT, forward_dir);
 		weightUpdate();
+
 		lcd.setCursor(9, 1);
 		lcd.print(F("      "));
 		lcd.setCursor(9, 1);
   		lcd.print(val_weight);
+
 		
 		if(val_weight >= _this_feeding_portion){
-		    delay(100);
+		    delay(500);
 		    weightUpdate();
 		    lcd.setCursor(9, 1);
 			lcd.print(F("      "));
@@ -641,60 +685,46 @@ bool feedingProcessing(){
 			    lcd.setCursor(0, 1);
   				lcd.print(val_weight);
 			    lcd.print(F(" feeding..."));
+  				
+  				remaining_bunker_weight = val_weight;
+  				EEPROM.put(REMAINING_WEIGHT_ADDR, remaining_bunker_weight);
+
 			    break;
 		    }
 		}
 		else if(millis() - feeding_stepper_timer >= stepper_rotation_time){
-			// пустой питающий бункер
+			// время выщло // пустой питающий бункер
 			_in_feeder_responce = 0;  // время вышло
 			Serial.print("\nTIME IS OWER\n");
 			lcd.clear();
 			lcd.print(F("TIME IS OWER"));
 			lcd.setCursor(0, 1);
 			lcd.print(F(" EMPTY FEED !!!"));
+
+			feed_bunker_condition = 0;
+			EEPROM.put(FEED_BUNKER_CONDITION_ADDR, feed_bunker_condition);
+
+			remaining_bunker_weight = val_weight;
+  			EEPROM.put(REMAINING_WEIGHT_ADDR, remaining_bunker_weight);
+
+  			// отправить уведомление в облако
+			notify_en = 1;  // установить флаг отправки
+			EEPROM.put(NOTIFY_EN_ADDR, notify_en);
+			ledState();
+			delay(3000);
+
 			break;
 		}
+  		else if(val_weight < _previous_val_weight + WEIGHT_DIFFERENCE){
+  			if(_first_steps > 0){_first_steps --;}
+  			else{stepperRun(STEPS_WITHOUT_WEIGHT, !forward_dir);}
+  			
+  		}
 	}
 
-	if(_in_feeder_responce > 0){  // сли вес набран RUN SPREADER
-
-	    delay(AC_DELAY_TIME);
-	    digitalWrite(RELE_SPREADER_PIN, RELE_HIGH);
-	    digitalWrite(RELE_VIBRATOR_PIN, RELE_HIGH);
-
-	    delay(SERVO_DELAY_TIME);
-	    servo.write(servo_open_angle);
-	    
-	    delay(SPREADER_RUNING_TIME);
-	    digitalWrite(RELE_SPREADER_PIN, RELE_LOW);
-	    digitalWrite(RELE_VIBRATOR_PIN, RELE_LOW);
-	    servo.write(servo_close_angle);
-	    // send val weight to cloud...
-
-		// scale.power_up();      // включить весы
-		// scale.tare();          // тара
-		// scale.power_down();    // выключить весы
-	}
-
-	if(_in_feeder_responce > 0){
-		// вес набран, все нормально, отправить вес в облако
-		fed_for_today += val_weight;
-		EEPROM.put(FED_FOR_TODAY_ADDR, fed_for_today);
-	}
-	else{
-		// пустой питающий бункер
-		feed_bunker_condition = 0;
-		EEPROM.put(FEED_BUNKER_CONDITION_ADDR, feed_bunker_condition);
-		remaining_bunker_weight = val_weight;
-		EEPROM.put(REMAINING_WEIGHT_ADDR, remaining_bunker_weight);
-		// отправить уведомление в облако
-		notify_en = 1;  // установить флаг отправки
-		// Blynk.notify("ПУСТОЙ БУНКЕР\nкормушка номер " + String(FEEDER_INDEX_NUMBER));
-		// Blynk.setProperty(V21, "color", "#FF0000");  // установить RED цвет светодиода, пустой питающий бункер
-		// Blynk.setProperty(V21, "label", "  пустой бункер");  // установить заголовок светодиода
-		// B_LED_bunkerCondition.on();
-		ledState();
-		delay(3000);
+	if(_in_feeder_responce > 0){  // если вес набран RUN SPREADER
+		
+		runSpreader();
 	}
 
 	Serial.print("\nFEEDING END\n");
@@ -719,7 +749,7 @@ void lcdDisplay(){
 	}
 
 	lcd.setCursor(0, 0);
-	lcd.print(F("FeedN "));
+	lcd.print(F("Fdr_n "));
   	lcd.print(FEEDER_INDEX_NUMBER);
   	lcd.setCursor(9, 0);
   	lcd.print(F("dAY "));
@@ -735,7 +765,15 @@ void lcdDisplay(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool feedTimeDetector(){
 	Blynk.setProperty(V32, "offLabel", "online ?");
-	if(old_cloud_feed_weight != cloud_feed_weight){
+	if(to_table_cloud_weight_en == 1){
+		feedingParamUpdate();
+		cloud_feed_weight = feeding_portion;
+		old_cloud_feed_weight = cloud_feed_weight;
+		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
+		to_table_cloud_weight_en = 0;
+		EEPROM.put(TO_TABLE_CLOUD_WEIGHT_EN_ADDR, to_table_cloud_weight_en);
+	}
+	else if(old_cloud_feed_weight != cloud_feed_weight){
 		old_cloud_feed_weight = cloud_feed_weight;
 		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
 	}
@@ -748,27 +786,27 @@ bool feedTimeDetector(){
 	else{_ds_time_string = "\nds time: " + String(ds_hour) + ":" + String(ds_minute) + "       " + String(ds_day) + "." + String(ds_month) + ".20" + String(ds_year) + "\n\n\n";}
 	Serial.print(_ds_time_string);
 
-	if(ds_minute > 30 && flag_feeding_time_en == 0){
+	if(ds_minute > FEED_UP_TO && flag_feeding_time_en == 0){
 	    flag_feeding_time_en = 1;
 	}
 	if(flag_feeding_time_en == 0){
 		return 0;
 	}
 	if(
-	((ds_hour == feeding_time_1) && (ds_minute < 30)) 
-	|| ((ds_hour == feeding_time_2) && (ds_minute < 30)) 
-	|| ((ds_hour == feeding_time_3) && (ds_minute < 30)) 
-	|| ((ds_hour == feeding_time_4) && (ds_minute < 30)) 
-	|| ((ds_hour == feeding_time_5) && (ds_minute < 30)) 
-	|| ((ds_hour == feeding_time_6) && (ds_minute < 30))
+	   ((ds_hour == feeding_time_1) && (feeding_time_1 != 0) && (ds_minute < FEED_UP_TO)) 
+	|| ((ds_hour == feeding_time_2) && (feeding_time_2 != 0) && (ds_minute < FEED_UP_TO)) 
+	|| ((ds_hour == feeding_time_3) && (feeding_time_3 != 0) && (ds_minute < FEED_UP_TO)) 
+	|| ((ds_hour == feeding_time_4) && (feeding_time_4 != 0) && (ds_minute < FEED_UP_TO)) 
+	|| ((ds_hour == feeding_time_5) && (feeding_time_5 != 0) && (ds_minute < FEED_UP_TO)) 
+	|| ((ds_hour == feeding_time_6) && (feeding_time_6 != 0) && (ds_minute < FEED_UP_TO))
 	|| ((ds_hour == 0) && (
-							feeding_time_1 == 24 
+							   feeding_time_1 == 24 
 							|| feeding_time_2 == 24 
 							|| feeding_time_3 == 24 
 							|| feeding_time_4 == 24 
 							|| feeding_time_5 == 24 
 							|| feeding_time_6 == 24 
-							) && (ds_minute < 30))
+							) && (ds_minute < FEED_UP_TO))
 	){
 		flag_feeding_time_en = 0;
 		return 1;
@@ -801,7 +839,6 @@ void autoCalibrationScale(uint32_t _calibration_weight = calibration_Weight){
 			EEPROM.put(CALIBRATION_WEIGHT_ADDR, _temporaryRatio);
 			digitalWrite(RED_LED_PIN, LOW);
 			digitalWrite(GREEN_LED_PIN, LOW);
-			greenLed1s2blink();
 		}
 	}
 }
@@ -810,14 +847,13 @@ void checkButtonResetDayForSetup(){  // обработка кнопок при �
 		delay(HOLD_BUTTON_RESET_DAY_DELAY);
 		if(!digitalRead(FEED_BUTTON_PIN)){
 	    	setAndSaveDayVal(1);
-	    	greenLed1s2blink();
+	 
 		}
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void checkButtonCalibrationScaleForSetup(){  // обработка кнопок при старте, калибровка весов
 	if(!digitalRead(FEED_BUTTON_PIN)){  // если нажата физическая кнопка покормить
-		redLed1s2blink((HOLD_BUTTON_CALIBRATION_SCALE_DELAY - (HOLD_BUTTON_RESET_DAY_DELAY + 3000)) / 1000);
 		if(!digitalRead(FEED_BUTTON_PIN)){
 	    	digitalWrite(RED_LED_PIN, LOW);
 	    	delay(5000);
@@ -837,6 +873,7 @@ void checkButtonForSetup(){  // обработка кнопок при стар�
 	}
 	if(!digitalRead(RESUME_BUTTON_PIN)){  // если нажата физическая кнопка возобновить
 		delay(500);  // задержка пол секунды
+		// any function
 	}
 	if((!digitalRead(FEED_BUTTON_PIN)) && (!digitalRead(RESUME_BUTTON_PIN))){  // если нажаты кнопки покормить и возобновить
 		delay(500);  // задержка пол секунды
@@ -928,7 +965,15 @@ void generalFeedingSetup(){
 	digitalWrite(GREEN_LED_PIN, LOW);
 	digitalWrite(RED_LED_PIN, LOW);
 
+	// test
+
+	// test
+
 	eeSetup();
+
+	if(remaining_bunker_weight > 0){
+		flag_tare = 1;
+	}
 
 	checkButtonResetDayForSetup();
 
@@ -972,7 +1017,7 @@ void generalFeedingSetup(){
 	// feedingParamUpdate();
 
 	timeUpdate();
-
+	
 	changeDayControlSetup();
 
 	feedingParamUpdate();

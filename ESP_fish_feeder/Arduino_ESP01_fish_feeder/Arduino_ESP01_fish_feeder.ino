@@ -200,6 +200,7 @@ BLYNK_CONNECTED(){
 	// запросить информацию о состоянии виртуальных пинов Vx
 	Blynk.syncVirtual(V30);  // виртуальная кнопка покормить
 	Blynk.syncVirtual(V31);  // виртуальная кнопка возобновить
+	Blynk.syncVirtual(V32);  // виртуальная кнопка check oline
 	Blynk.syncVirtual(V10);  // вес из облака
 
 	// синхронизация времени при подключении
@@ -214,6 +215,17 @@ BLYNK_CONNECTED(){
 			B_LED_bunkerCondition.on();
 		}
 		notify_en = 0;
+		EEPROM.put(NOTIFY_EN_ADDR, notify_en);
+	}
+
+	if(to_table_cloud_weight_en == 1){
+		to_table_cloud_weight_en = 0;
+		EEPROM.put(TO_TABLE_CLOUD_WEIGHT_EN_ADDR, to_table_cloud_weight_en);
+		feedingParamUpdate();
+		cloud_feed_weight = feeding_portion;
+		old_cloud_feed_weight = cloud_feed_weight;
+		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
+		Blynk.virtualWrite(V10, String(cloud_feed_weight));  // вес 1 кормления +- cloud weight
 	}
 }
 ///////////////////////////////////////////////////////////
@@ -247,8 +259,8 @@ BLYNK_WRITE(V30){  // блинк передает значения с телеф
 		if(feed_bunker_condition == 1){Blynk.setProperty(V21, "label", "       кормление");}
 		B_LED_bunkerCondition.on();
 		feeder_responce = feedingProcessing();
-		String _resp_string = "ответ " + String(feeder_responce);
-		Blynk.virtualWrite(V0, _resp_string);
+		// String _resp_string = "ответ " + String(feeder_responce);
+		// Blynk.virtualWrite(V0, _resp_string);
 	}
 }
 BLYNK_WRITE(V31){  // блинк передает значения с телефона на ардуино (resume)
@@ -322,21 +334,24 @@ void paramDisplay(){
 	Blynk.virtualWrite(V15, String(just_a_day));  // расчетная норма корма за день
 	Blynk.virtualWrite(V13, String(number_of_feedings));  // количество кормлений
 	Blynk.virtualWrite(V16, String(fed_for_today));  // скормлено за сегодня
-	// Blynk.virtualWrite(V16, String(77));  // скормлено за сегодня
 	Blynk.virtualWrite(V12, String(feeding_portion));  // вес 1 кормления
 
-	Blynk.virtualWrite(V10, String(cloud_feed_weight));  // вес 1 кормления +-
+	Blynk.virtualWrite(V10, String(cloud_feed_weight));  // вес 1 кормления +- cloud weight
 
 	delay(1000);
 
-	Blynk.virtualWrite(V2, String(remaining_bunker_weight));  // test
-	Blynk.virtualWrite(V18, "10");  // test 2
+	String _resp_string = "ответ " + String(feeder_responce);
+	Blynk.virtualWrite(V0, _resp_string);
 
+	// V0
+	// Blynk.virtualWrite(V18, "10");  // test 2
 
 	// if(old_cloud_feed_weight != cloud_feed_weight){
 	// 	old_cloud_feed_weight = cloud_feed_weight;
 	// 	EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
 	// }
+
+	Blynk.virtualWrite(V2, String(remaining_bunker_weight));  // test
 
 	weightUpdate();
 	Blynk.virtualWrite(V1, String(val_weight));  // вес
