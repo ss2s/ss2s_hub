@@ -416,13 +416,14 @@ void feedingParamUpdate(){
 	estimated_weight_per_day = 0;
 
 	uint8_t _estimated_counter = number_of_feedings;
-	if(((feeding_time_1) && (feeding_time_1 > ds_hour)) || ((feeding_time_1) && (feeding_time_1 = ds_hour) && (ds_minute >= FEED_UP_TO))){_estimated_counter --;}
-	if(((feeding_time_2) && (feeding_time_2 > ds_hour)) || ((feeding_time_2) && (feeding_time_2 = ds_hour) && (ds_minute >= FEED_UP_TO))){_estimated_counter --;}
-	if(((feeding_time_3) && (feeding_time_3 > ds_hour)) || ((feeding_time_3) && (feeding_time_3 = ds_hour) && (ds_minute >= FEED_UP_TO))){_estimated_counter --;}
-	if(((feeding_time_4) && (feeding_time_4 > ds_hour)) || ((feeding_time_4) && (feeding_time_4 = ds_hour) && (ds_minute >= FEED_UP_TO))){_estimated_counter --;}
-	if(((feeding_time_5) && (feeding_time_5 > ds_hour)) || ((feeding_time_5) && (feeding_time_5 = ds_hour) && (ds_minute >= FEED_UP_TO))){_estimated_counter --;}
-	if(((feeding_time_6) && (feeding_time_6 > ds_hour)) || ((feeding_time_6) && (feeding_time_6 = ds_hour) && (ds_minute >= FEED_UP_TO))){_estimated_counter --;}
+	if(((feeding_time_1) && (feeding_time_1 < ds_hour)) || ((feeding_time_1) && (feeding_time_1 == ds_hour) && (ds_minute >= FEED_UP_TO))){_estimated_counter --;}
+	if(((feeding_time_2) && (feeding_time_2 < ds_hour)) || ((feeding_time_2) && (feeding_time_2 == ds_hour) && (ds_minute >= FEED_UP_TO))){_estimated_counter --;}
+	if(((feeding_time_3) && (feeding_time_3 < ds_hour)) || ((feeding_time_3) && (feeding_time_3 == ds_hour) && (ds_minute >= FEED_UP_TO))){_estimated_counter --;}
+	if(((feeding_time_4) && (feeding_time_4 < ds_hour)) || ((feeding_time_4) && (feeding_time_4 == ds_hour) && (ds_minute >= FEED_UP_TO))){_estimated_counter --;}
+	if(((feeding_time_5) && (feeding_time_5 < ds_hour)) || ((feeding_time_5) && (feeding_time_5 == ds_hour) && (ds_minute >= FEED_UP_TO))){_estimated_counter --;}
+	if(((feeding_time_6) && (feeding_time_6 < ds_hour)) || ((feeding_time_6) && (feeding_time_6 == ds_hour) && (ds_minute >= FEED_UP_TO))){_estimated_counter --;}
 	estimated_weight_per_day = fed_for_today + (cloud_feed_weight * _estimated_counter);
+	// estimated_weight_per_day = _estimated_counter;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int32_t getWeight(){
