@@ -109,6 +109,7 @@ uint32_t fed_for_today = 0;  // скормлено за сегодня
 uint8_t feeding_state = 0;  // состояние кормления: 1-кормление подготовка. 2-подготовка пройдена. 0-ожидание
 uint8_t feeder_responce = 2;  // 1-weight limit, 0-time limit
 uint8_t feed_bunker_condition = 2;  // 0-пустой бункер. 1-полный бункер
+uint32_t estimated_weight_per_day = 0;  // расчетный вес за день
 
 // flags
 bool notify_en = 1;
@@ -407,19 +408,21 @@ void feedingParamUpdate(){
 	+ bool(feeding_time_4)
 	+ bool(feeding_time_5)
 	+ bool(feeding_time_6);   // количество кормлеений из настроек
-	
+	if(number_of_feedings < 1){number_of_feedings = 1;}
+	else if(number_of_feedings > 6){number_of_feedings = 6;}
+
 	feeding_portion = just_a_day / number_of_feedings;  // 1 порция кормления из таблицы
 
-	// EEPROM.get(REMAINING_WEIGHT_ADDR, remaining_bunker_weight);  // предыдущий вес бункера, при ошибке питающий бункер
+	estimated_weight_per_day = 0;
 
-	// uint8_t fed_for_today_counter = 0;
-	// if((feeding_time_1) && feeding_time_1 <= ds_hour){fed_for_today_counter ++;}
-	// if((feeding_time_2) && feeding_time_2 <= ds_hour){fed_for_today_counter ++;}
-	// if((feeding_time_3) && feeding_time_3 <= ds_hour){fed_for_today_counter ++;}
-	// if((feeding_time_4) && feeding_time_4 <= ds_hour){fed_for_today_counter ++;}
-	// if((feeding_time_5) && feeding_time_5 <= ds_hour){fed_for_today_counter ++;}
-	// if((feeding_time_6) && feeding_time_6 <= ds_hour){fed_for_today_counter ++;}
-	// fed_for_today = feeding_portion * fed_for_today_counter;
+	uint8_t _estimated_counter = number_of_feedings;
+	if(((feeding_time_1) && (feeding_time_1 > ds_hour)) || ((feeding_time_1) && (feeding_time_1 = ds_hour) && (ds_minute >= FEED_UP_TO))){_estimated_counter --;}
+	if(((feeding_time_2) && (feeding_time_2 > ds_hour)) || ((feeding_time_2) && (feeding_time_2 = ds_hour) && (ds_minute >= FEED_UP_TO))){_estimated_counter --;}
+	if(((feeding_time_3) && (feeding_time_3 > ds_hour)) || ((feeding_time_3) && (feeding_time_3 = ds_hour) && (ds_minute >= FEED_UP_TO))){_estimated_counter --;}
+	if(((feeding_time_4) && (feeding_time_4 > ds_hour)) || ((feeding_time_4) && (feeding_time_4 = ds_hour) && (ds_minute >= FEED_UP_TO))){_estimated_counter --;}
+	if(((feeding_time_5) && (feeding_time_5 > ds_hour)) || ((feeding_time_5) && (feeding_time_5 = ds_hour) && (ds_minute >= FEED_UP_TO))){_estimated_counter --;}
+	if(((feeding_time_6) && (feeding_time_6 > ds_hour)) || ((feeding_time_6) && (feeding_time_6 = ds_hour) && (ds_minute >= FEED_UP_TO))){_estimated_counter --;}
+	estimated_weight_per_day = fed_for_today + (cloud_feed_weight * _estimated_counter);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int32_t getWeight(){
@@ -614,8 +617,8 @@ bool feedingProcessing(){
 	if(feed_bunker_condition == 0){
 		Serial.print("\npustoy bunker. feeding disable\n");
 
-		Serial.print("\nrun spreader\n");
-		runSpreader();
+		// Serial.print("\n\nrun spreader\n");
+		// runSpreader();
 
 		return 0;
 	}
@@ -723,7 +726,7 @@ bool feedingProcessing(){
 	}
 
 	if(_in_feeder_responce > 0){  // если вес набран RUN SPREADER
-		
+
 		runSpreader();
 	}
 
@@ -873,7 +876,7 @@ void checkButtonForSetup(){  // обработка кнопок при стар�
 	}
 	if(!digitalRead(RESUME_BUTTON_PIN)){  // если нажата физическая кнопка возобновить
 		delay(500);  // задержка пол секунды
-		// any function
+		// reset day
 	}
 	if((!digitalRead(FEED_BUTTON_PIN)) && (!digitalRead(RESUME_BUTTON_PIN))){  // если нажаты кнопки покормить и возобновить
 		delay(500);  // задержка пол секунды
