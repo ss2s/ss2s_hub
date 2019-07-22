@@ -182,6 +182,9 @@ void eeSetup(){  // write and reed EEPROM setup settings...
 		EEPROM.put(NOTIFY_EN_ADDR, notify_en);
 	}
 
+	// dev
+	EEPROM.put(CALIBRATION_FACTOR_ADDR, calibration_factor);
+
 	// reed
 	EEPROM.get(GENERAL_CONTROL_DAY_ADDR, general_control_day);
 	EEPROM.get(REMAINING_WEIGHT_ADDR, remaining_bunker_weight);
@@ -855,8 +858,13 @@ void autoCalibrationScale(uint32_t _calibration_weight = calibration_Weight){
 
 	digitalWrite(RED_LED_PIN, HIGH);
 	digitalWrite(GREEN_LED_PIN, HIGH);
+
+	scale.power_up();
+
 	scale.set_scale();
 	scale.tare();
+
+	scale.power_down();
 
 	lcd.clear();
 	lcd.print("put ");
@@ -865,26 +873,36 @@ void autoCalibrationScale(uint32_t _calibration_weight = calibration_Weight){
 	lcd.setCursor(0, 1);
 	lcd.print("and press FEED");
 
+	delay(5000);
+
 	while(1){
 		if(!digitalRead(FEED_BUTTON_PIN)){
 			float _temporaryScale;
-			float _temporaryRatio;
+
+			scale.power_up();
+
 			_temporaryScale = scale.get_units(MEASURE_QUANTITY);
-			_temporaryRatio = _temporaryScale/calibration_Weight;
-			calibration_factor = _temporaryRatio;
+			calibration_factor = _temporaryScale/calibration_Weight;
 			scale.set_scale(calibration_factor);
+
+			scale.power_down();
+
 			EEPROM.put(CALIBRATION_FACTOR_ADDR, calibration_factor);
 
+			delay(500);
 			digitalWrite(RED_LED_PIN, LOW);
 			digitalWrite(GREEN_LED_PIN, LOW);
+
+			weightUpdate();
 
 			lcd.clear();
 			lcd.print(" curent weight");
 			lcd.setCursor(0, 1);
-			weightUpdate();
 			lcd.print("     ");
 			lcd.print(val_weight);
+
 			delay(5000);
+
 			break;
 		}
 	}
@@ -932,9 +950,10 @@ void manualSetDay(){
 	lcd.clear();
 	lcd.print("    SET DAY");
 	lcd.setCursor(0, 1);
-	lcd.print("    R- ");
+	lcd.print("   R-  ");
 	lcd.print(general_control_day);
-	lcd.print(" +F  ");
+	lcd.print("  +F  ");
+	delay(2000);
 	uint32_t _start_time_msd = millis();
 	while(1){
 	    if(!digitalRead(RESUME_BUTTON_PIN)){  // -
@@ -942,11 +961,11 @@ void manualSetDay(){
 	    	if(general_control_day < 1){general_control_day = MAX_GENERAL_CONTROL_DAY;}
 
 	    	lcd.setCursor(0, 1);
-			lcd.print("    R- ");
+			lcd.print("   R-  ");
 			lcd.print(general_control_day);
-			lcd.print(" +F  ");
+			lcd.print("  +F  ");
 
-	    	delay(500);
+	    	delay(150);
 	    	_start_time_msd = millis();
 	    }
 	    else if(!digitalRead(FEED_BUTTON_PIN)){  // +
@@ -954,11 +973,11 @@ void manualSetDay(){
 	    	if(general_control_day > MAX_GENERAL_CONTROL_DAY){general_control_day = 1;}
 
 	    	lcd.setCursor(0, 1);
-			lcd.print("    R- ");
+			lcd.print("   R-  ");
 			lcd.print(general_control_day);
-			lcd.print(" +F  ");
-			
-	    	delay(500);
+			lcd.print("  +F  ");
+
+	    	delay(150);
 	    	_start_time_msd = millis();
 	    }
 	    else if(millis() - _start_time_msd >= 10000){  // delay 10s to auto save
@@ -1109,6 +1128,7 @@ void generalFeedingSetup(){
 	scale.tare(); 
 	delay(50);
 	scale.power_down();
+	// scale.power_up();
 
 	servo.attach(SERVO_PIN);
 	
