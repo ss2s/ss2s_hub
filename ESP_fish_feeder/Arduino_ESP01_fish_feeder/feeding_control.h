@@ -183,7 +183,7 @@ void eeSetup(){  // write and reed EEPROM setup settings...
 	}
 
 	// dev
-	EEPROM.put(CALIBRATION_FACTOR_ADDR, calibration_factor);
+	// EEPROM.put(CALIBRATION_FACTOR_ADDR, calibration_factor);
 
 	// reed
 	EEPROM.get(GENERAL_CONTROL_DAY_ADDR, general_control_day);
@@ -933,9 +933,18 @@ void resetDayTo1(uint8_t _day_val = 1){
 		lcd.setCursor(0, 1);
 		lcd.print("  DAY NO RESET");
 		delay(2000);
+		return;
 	}
-	// lcd.clear(); // очистить дисплей
-	// lcdDisplay();
+
+	fed_for_today = 0;
+	EEPROM.put(FED_FOR_TODAY_ADDR, fed_for_today);
+
+	feedingParamUpdate();
+	cloud_feed_weight = feeding_portion;
+	old_cloud_feed_weight = cloud_feed_weight;
+	EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
+	to_table_cloud_weight_en = 1;
+	EEPROM.put(TO_TABLE_CLOUD_WEIGHT_EN_ADDR, to_table_cloud_weight_en);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void manualSetDay(){
@@ -998,11 +1007,19 @@ void manualSetDay(){
 	    	lcd.clear();
 	    	lcd.print("     SAVED!");
 	    	delay(2000);
-	    	// lcd.clear(); // очистить дисплей
-  			// lcdDisplay();
   			break;
 	    }
 	}
+
+	fed_for_today = 0;
+	EEPROM.put(FED_FOR_TODAY_ADDR, fed_for_today);
+
+	feedingParamUpdate();
+	cloud_feed_weight = feeding_portion;
+	old_cloud_feed_weight = cloud_feed_weight;
+	EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
+	to_table_cloud_weight_en = 1;
+	EEPROM.put(TO_TABLE_CLOUD_WEIGHT_EN_ADDR, to_table_cloud_weight_en);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void checkButtonForSetup(){  // обработка кнопок при старте, настроить день контроллера, калибровка весов
