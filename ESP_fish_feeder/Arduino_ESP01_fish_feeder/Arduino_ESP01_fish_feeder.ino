@@ -188,10 +188,11 @@ BLYNK_CONNECTED(){
 		if(feed_bunker_condition == 0){
 
 			// отпрпавить уведомление
-			Blynk.notify("ПУСТОЙ БУНКЕР\nкормушка номер " + String(FEEDER_INDEX_NUMBER));
+			Blynk.notify("ПУСТОЙ БУНКЕР\nКормушка номер " + String(FEEDER_INDEX_NUMBER));
 
 			// отправить e-mail
-			Blynk.email(e_mail_addr, "ПУСТОЙ БУНКЕР\nкормушка номер " + String(FEEDER_INDEX_NUMBER), "ПУСТОЙ БУНКЕР\nкормушка номер " + String(FEEDER_INDEX_NUMBER));
+			// Blynk.email(e_mail_addr, "Кормушка номер " + String(FEEDER_INDEX_NUMBER), "ПУСТОЙ БУНКЕР\nКормушка номер " + String(FEEDER_INDEX_NUMBER));
+			Blynk.email("Кормушка номер " + String(FEEDER_INDEX_NUMBER), "ПУСТОЙ БУНКЕР\nКормушка номер " + String(FEEDER_INDEX_NUMBER));
 			// e_mail_addr
 
 			// установить индикацию пустой бункер в блинке
