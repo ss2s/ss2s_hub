@@ -186,10 +186,14 @@ BLYNK_CONNECTED(){
 	// отправить уведомление в облако
 	if(notify_en == 1){
 		if(feed_bunker_condition == 0){
+
 			// отпрпавить уведомление
 			Blynk.notify("ПУСТОЙ БУНКЕР\nкормушка номер " + String(FEEDER_INDEX_NUMBER));
+
 			// отправить e-mail
+			Blynk.email(e_mail_addr, "ПУСТОЙ БУНКЕР\nкормушка номер " + String(FEEDER_INDEX_NUMBER), "ПУСТОЙ БУНКЕР\nкормушка номер " + String(FEEDER_INDEX_NUMBER));
 			// e_mail_addr
+
 			// установить индикацию пустой бункер в блинке
 			Blynk.setProperty(V21, "color", "#FF0000");  // установить RED цвет светодиода, пустой питающий бункер
 			Blynk.setProperty(V21, "label", "  пустой бункер");  // установить заголовок светодиода
@@ -207,6 +211,7 @@ BLYNK_CONNECTED(){
 		old_cloud_feed_weight = cloud_feed_weight;
 		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
 		Blynk.virtualWrite(V10, String(cloud_feed_weight));  // вес 1 кормления +- cloud weight
+		feedingParamUpdate();
 	}
 
 	// Blynk.virtualWrite(V10, String(cloud_feed_weight));  // вес 1 кормления +- cloud weight

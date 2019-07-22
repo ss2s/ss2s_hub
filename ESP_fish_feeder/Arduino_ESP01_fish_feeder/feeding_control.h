@@ -86,6 +86,7 @@
 // DEF
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define SET_CLOK_FOR_PROG 0  // запускать часы при прошивке: 1 да, 0 нет. должен быть 0. <<1 при первой прошивке>>
+#define SYS_EMAIL "Your_email@example.com"  // системный адрес почты, для проверки введен ли адрес
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -222,7 +223,7 @@ void changeDayControlSetup(){
 		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
 		to_table_cloud_weight_en = 1;
 		EEPROM.put(TO_TABLE_CLOUD_WEIGHT_EN_ADDR, to_table_cloud_weight_en);
-
+		feedingParamUpdate();
 	}else if(general_control_day == 0){
 		general_control_day += 1;
 		EEPROM.put(GENERAL_CONTROL_DAY_ADDR, general_control_day);
@@ -238,6 +239,7 @@ void changeDayControlSetup(){
 		EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
 		to_table_cloud_weight_en = 1;
 		EEPROM.put(TO_TABLE_CLOUD_WEIGHT_EN_ADDR, to_table_cloud_weight_en);
+		feedingParamUpdate();
 	}
 }
 void changeDayControl(){
@@ -945,6 +947,7 @@ void resetDayTo1(uint8_t _day_val = 1){
 	EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
 	to_table_cloud_weight_en = 1;
 	EEPROM.put(TO_TABLE_CLOUD_WEIGHT_EN_ADDR, to_table_cloud_weight_en);
+	feedingParamUpdate();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void manualSetDay(){
@@ -1020,6 +1023,7 @@ void manualSetDay(){
 	EEPROM.put(CLOUD_FEED_WEIGHT_ADDR, cloud_feed_weight);
 	to_table_cloud_weight_en = 1;
 	EEPROM.put(TO_TABLE_CLOUD_WEIGHT_EN_ADDR, to_table_cloud_weight_en);
+	feedingParamUpdate();
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void checkButtonForSetup(){  // обработка кнопок при старте, настроить день контроллера, калибровка весов
