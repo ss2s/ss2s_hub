@@ -83,6 +83,14 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// DEF
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#define SET_CLOK_FOR_PROG 0  // запускать часы при прошивке: 1 да, 0 нет. должен быть 0. <<1 при первой прошивке>>
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void feedingParamUpdate();
 void lcdDisplay();
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -90,6 +98,8 @@ void lcdDisplay();
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+uint8_t general_control_day = GENERAL_CONTROL_DAY;  // упровляющий день контроллера
 
 // переменные часов
 uint8_t ds_second, ds_minute = 61, ds_hour, ds_dayOfWeek, ds_day, ds_month, ds_year;  // переменные часов
@@ -110,6 +120,10 @@ uint8_t feeding_state = 0;  // состояние кормления: 1-корм
 uint8_t feeder_responce = 2;  // 1-weight limit, 0-time limit
 uint8_t feed_bunker_condition = 2;  // 0-пустой бункер. 1-полный бункер
 uint32_t estimated_weight_per_day = 0;  // расчетный вес за день
+
+uint32_t just_a_day = 17500;  // всего за день
+uint8_t number_of_feedings = 6;   // количество кормлеений
+uint16_t feeding_portion = just_a_day / number_of_feedings;  // 1 порция кормления
 
 // flags
 bool notify_en = 1;
@@ -249,11 +263,6 @@ void changeDayControl(){
 		to_table_cloud_weight_en = 1;
 		EEPROM.put(TO_TABLE_CLOUD_WEIGHT_EN_ADDR, to_table_cloud_weight_en);
 	}
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void setAndSaveDayVal(uint8_t _day_val = 1){
-	general_control_day = _day_val;
-	EEPROM.put(GENERAL_CONTROL_DAY_ADDR, general_control_day);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // часы DS3231 ..
@@ -409,7 +418,6 @@ void feedingParamUpdate(){
 	+ bool(feeding_time_5)
 	+ bool(feeding_time_6);   // количество кормлеений из настроек
 	if(number_of_feedings < 1){number_of_feedings = 1;}
-	else if(number_of_feedings > 6){number_of_feedings = 6;}
 
 	feeding_portion = just_a_day / number_of_feedings;  // 1 порция кормления из таблицы
 
@@ -696,7 +704,7 @@ bool feedingProcessing(){
 			    break;
 		    }
 		}
-		else if(millis() - feeding_stepper_timer >= stepper_rotation_time){
+		else if(millis() - feeding_stepper_timer >= STEPPER_ROTATION_TIME){
 			// время выщло // пустой питающий бункер
 			_in_feeder_responce = 0;  // время вышло
 			Serial.print("\nTIME IS OWER\n");
@@ -826,63 +834,166 @@ bool feedTimeDetector(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // button
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void autoCalibrationScale(uint32_t _calibration_weight = calibration_Weight){
+	lcd.clear();
+	lcd.print("  CALIBRATION");
+	lcd.setCursor(0, 1);
+	lcd.print("    SCALE ?");
+	delay(BUTTON_PRESS_DELAY);
+	if((!digitalRead(FEED_BUTTON_PIN)) && (!digitalRead(RESUME_BUTTON_PIN))){  // если нажаты кнопки покормить и возобновить
+	}
+	else{
+		lcd.clear();
+		lcd.print("     ERROR");
+		lcd.setCursor(0, 1);
+		lcd.print("  SCALE NO SET");
+		delay(2000);
+		return;
+	}
+
 	digitalWrite(RED_LED_PIN, HIGH);
 	digitalWrite(GREEN_LED_PIN, HIGH);
 	scale.set_scale();
 	scale.tare();
-	delay(5000);
+
+	lcd.clear();
+	lcd.print("put ");
+	lcd.print(calibration_Weight);
+	lcd.print(" g");
+	lcd.setCursor(0, 1);
+	lcd.print("and press FEED");
+
 	while(1){
 		if(!digitalRead(FEED_BUTTON_PIN)){
 			float _temporaryScale;
 			float _temporaryRatio;
-			_temporaryScale = scale.get_units(10);
+			_temporaryScale = scale.get_units(MEASURE_QUANTITY);
 			_temporaryRatio = _temporaryScale/calibration_Weight;
-			scale.set_scale(_temporaryRatio);
-			EEPROM.put(CALIBRATION_WEIGHT_ADDR, _temporaryRatio);
+			calibration_factor = _temporaryRatio;
+			scale.set_scale(calibration_factor);
+			EEPROM.put(CALIBRATION_FACTOR_ADDR, calibration_factor);
+
 			digitalWrite(RED_LED_PIN, LOW);
 			digitalWrite(GREEN_LED_PIN, LOW);
-		}
-	}
-}
-void checkButtonResetDayForSetup(){  // обработка кнопок при старте, сбросить день
-	if(!digitalRead(FEED_BUTTON_PIN)){  // если нажата физическая кнопка покормить
-		delay(HOLD_BUTTON_RESET_DAY_DELAY);
-		if(!digitalRead(FEED_BUTTON_PIN)){
-	    	setAndSaveDayVal(1);
-	 
+
+			lcd.clear();
+			lcd.print(" curent weight");
+			lcd.setCursor(0, 1);
+			weightUpdate();
+			lcd.print("     ");
+			lcd.print(val_weight);
+			delay(5000);
+			break;
 		}
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void checkButtonCalibrationScaleForSetup(){  // обработка кнопок при старте, калибровка весов
+void resetDayTo1(uint8_t _day_val = 1){
+	lcd.clear();
+	lcd.print("  RESET DAY ?");
+	delay(BUTTON_PRESS_DELAY);
+	if(!digitalRead(RESUME_BUTTON_PIN)){  // если нажата физическая кнопка возобновить
+		general_control_day = _day_val;
+		EEPROM.put(GENERAL_CONTROL_DAY_ADDR, general_control_day);
+		lcd.clear();
+		lcd.print("       OK");
+		lcd.setCursor(0, 1);
+		lcd.print(" RESET DAY TO 1");
+		delay(2000);
+	}
+	else{
+		lcd.clear();
+		lcd.print("     ERROR");
+		lcd.setCursor(0, 1);
+		lcd.print("  DAY NO RESET");
+		delay(2000);
+	}
+	// lcd.clear(); // очистить дисплей
+	// lcdDisplay();
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void manualSetDay(){
+	lcd.clear();
+	lcd.print("   SET DAY ?");
+	delay(BUTTON_PRESS_DELAY);
 	if(!digitalRead(FEED_BUTTON_PIN)){  // если нажата физическая кнопка покормить
-		if(!digitalRead(FEED_BUTTON_PIN)){
-	    	digitalWrite(RED_LED_PIN, LOW);
-	    	delay(5000);
-	    	// запустить авто калибровку весов...
-	    	autoCalibrationScale();
-		}
-		else{
-			digitalWrite(GREEN_LED_PIN, HIGH);
-		}
+	}
+	else{
+		lcd.clear();
+		lcd.print("     ERROR");
+		lcd.setCursor(0, 1);
+		lcd.print("  DAY NO SET");
+		delay(2000);
+		return;
+	}
+
+	lcd.clear();
+	lcd.print("    SET DAY");
+	lcd.setCursor(0, 1);
+	lcd.print("    R- ");
+	lcd.print(general_control_day);
+	lcd.print(" +F  ");
+	uint32_t _start_time_msd = millis();
+	while(1){
+	    if(!digitalRead(RESUME_BUTTON_PIN)){  // -
+	    	general_control_day --;
+	    	if(general_control_day < 1){general_control_day = MAX_GENERAL_CONTROL_DAY;}
+
+	    	lcd.setCursor(0, 1);
+			lcd.print("    R- ");
+			lcd.print(general_control_day);
+			lcd.print(" +F  ");
+
+	    	delay(500);
+	    	_start_time_msd = millis();
+	    }
+	    else if(!digitalRead(FEED_BUTTON_PIN)){  // +
+	    	general_control_day ++;
+	    	if(general_control_day > MAX_GENERAL_CONTROL_DAY){general_control_day = 1;}
+
+	    	lcd.setCursor(0, 1);
+			lcd.print("    R- ");
+			lcd.print(general_control_day);
+			lcd.print(" +F  ");
+			
+	    	delay(500);
+	    	_start_time_msd = millis();
+	    }
+	    else if(millis() - _start_time_msd >= 10000){  // delay 10s to auto save
+	    	EEPROM.put(GENERAL_CONTROL_DAY_ADDR, general_control_day);
+	    	lcd.clear();
+	    	lcd.print("     SAVED!");
+	    	delay(2000);
+	    	// lcd.clear(); // очистить дисплей
+  			// lcdDisplay();
+  			break;
+	    }
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void checkButtonForSetup(){  // обработка кнопок при старте, настроить день контроллера, калибровка весов
-	if(!digitalRead(FEED_BUTTON_PIN)){  // если нажата физическая кнопка покормить
-		delay(500);  // задержка пол секунды
-		// автокалибровка весов
-	}
-	if(!digitalRead(RESUME_BUTTON_PIN)){  // если нажата физическая кнопка возобновить
-		delay(500);  // задержка пол секунды
-		// reset day
-	}
 	if((!digitalRead(FEED_BUTTON_PIN)) && (!digitalRead(RESUME_BUTTON_PIN))){  // если нажаты кнопки покормить и возобновить
-		delay(500);  // задержка пол секунды
+		// автокалибровка весов
+		delay(100);  // задержка пол секунды
+		if((!digitalRead(FEED_BUTTON_PIN)) && (!digitalRead(RESUME_BUTTON_PIN))){
+			autoCalibrationScale();
+		}
+	}
+	else if(!digitalRead(RESUME_BUTTON_PIN)){  // если нажата физическая кнопка возобновить
+		// reset day
+		delay(100);  // задержка пол секунды
+		if(!digitalRead(RESUME_BUTTON_PIN)){
+			resetDayTo1(1);
+		}
+	}
+	else if(!digitalRead(FEED_BUTTON_PIN)){  // если нажата физическая кнопка покормить
 		// настроить день контроллера
+		delay(100);  // задержка пол секунды
+		if(!digitalRead(FEED_BUTTON_PIN)){
+			manualSetDay();
+		}
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -911,7 +1022,7 @@ void checkButtonForLoop(){  // обработка кнопок в цикле, п
 		lcdDisplay();
 	}
 
-	if((!digitalRead(RESUME_BUTTON_PIN)) && (feed_bunker_condition == 0)){  // если нажата физическая кнопка возобновить
+	else if((!digitalRead(RESUME_BUTTON_PIN)) && (feed_bunker_condition == 0)){  // если нажата физическая кнопка возобновить
 		lcd.clear(); // очистить дисплей
   		lcd.print(F("RESUME ?"));
 		delay(BUTTON_PRESS_DELAY);  // задержка пол секунды
@@ -970,42 +1081,29 @@ void generalFeedingSetup(){
 	digitalWrite(GREEN_LED_PIN, LOW);
 	digitalWrite(RED_LED_PIN, LOW);
 
-	// test
-
-	// test
-
 	eeSetup();
 
 	if(remaining_bunker_weight > 0){
 		flag_tare = 1;
 	}
 
-	checkButtonResetDayForSetup();
-
 	Wire.begin();
-
 
 	// УСТАНОВКА ЧАСОВ:↓
 	#if SET_CLOK_FOR_PROG == 1
  	setDateDs3231(__DATE__, __TIME__);       // Устанавливаем время на часах, основываясь на времени компиляции скетча
  	
-	// byte set_second = 30;
-	// byte set_minute = 0;
-	// byte set_hour = 22;
-	// byte set_day = 9; // день
-	// byte set_month = 7;
-	// byte set_year = 19;
+	// byte set_second = 30, set_minute = 0, set_hour = 22, set_day = 9, set_month = 7, set_year = 19;
 	// setDateDs3231(set_second, set_minute, set_hour, set_day, set_month, set_year);
 	#endif
 
-
 	lcd.begin(); // иниализация дисплея LCD 16/2
+
+  	
   	lcd.clear(); // очистить дисплей
   	lcd.print(F("  FISH FEEDER"));
   	lcd.setCursor(0, 1);
   	lcd.print(F("  V_1  ESP_01"));
-  	delay(2000);
-
 
 	scale.set_scale(calibration_factor);  //Применяем калибровку
 	scale.tare(); 
@@ -1016,19 +1114,19 @@ void generalFeedingSetup(){
 	
 	servo.write(servo_close_angle);  // закрыть серво
 
-	checkButtonCalibrationScaleForSetup();
-
-
 	// feedingParamUpdate();
 
 	timeUpdate();
 	
 	changeDayControlSetup();
 
+	checkButtonForSetup();
+
 	feedingParamUpdate();
 
 	ledState();
 
+  	delay(1000);
   	lcd.clear(); // очистить дисплей
   	lcdDisplay();
 

@@ -186,7 +186,11 @@ BLYNK_CONNECTED(){
 	// отправить уведомление в облако
 	if(notify_en == 1){
 		if(feed_bunker_condition == 0){
+			// отпрпавить уведомление
 			Blynk.notify("ПУСТОЙ БУНКЕР\nкормушка номер " + String(FEEDER_INDEX_NUMBER));
+			// отправить e-mail
+			// e_mail_addr
+			// установить индикацию пустой бункер в блинке
 			Blynk.setProperty(V21, "color", "#FF0000");  // установить RED цвет светодиода, пустой питающий бункер
 			Blynk.setProperty(V21, "label", "  пустой бункер");  // установить заголовок светодиода
 			B_LED_bunkerCondition.on();
@@ -367,7 +371,7 @@ void setup(){
 	// Blynk.connectWiFi(ssid, pass);
 	// Blynk.connect()
 
-	setSyncInterval(TIME_SYNC_MINUTE_VAL * 60); // Sync interval in seconds () 30*60(30 minutes)
+	setSyncInterval(30 * 60); // Sync interval in seconds () 30*60(30 minutes)
 
 	timersynctime.setInterval(1100L, paramDisplay);
 	timergfedlop.setInterval(1000L, timergfedlopEvent);

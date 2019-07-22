@@ -18,11 +18,15 @@
 // char ssid[] = "YourNetworkName";  // имя точки доступа "SSID"
 // char pass[] = "YourPassword";  // пароль точки доступа
 
+// char e_mail_addr[] = "YourMail@example.com";  // почта для уведомления пустой бункер
+
 char auth[] = "75a9ab7e2fcb44df8648220eb68a07a2";  // MEGA 1
 // char auth[] = "26f4917526a541d7a551fb8aa12c44af";  // MEGA 2
 
 char ssid[] = "AndroidAP8";
 char pass[] = "gkyd8206";
+// char e_mail_addr[] = "YourMail@example.com";  // почта для уведомления пустой бункер
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -44,42 +48,28 @@ const bool forward_dir = 1;  // направление вперед 1 или 0. 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // other setting
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define TIME_SYNC_MINUTE_VAL 30  // синхронизация часов каждые x минут
-
-#define SET_CLOK_FOR_PROG 0  // запускать часы при прошивке: 1 да, 0 нет. должен быть 0. <<1 при первой прошивке>>
 
 // реконект блинка при отсутствии wi-fi
 #define MAX_RECONNECT_ATTEMP 100       // количество попыток перезагрузки, если 100 то бесконечное, если 0 то откл.
 #define RECONNECT_TIME 30000           // 30с
 
-uint8_t general_control_day = 1;  // упровляющий день контроллера
-uint32_t stepper_rotation_time = 60000;  // общее время работы шагового мотора при выдаче порции корма в миллисекундах
+#define GENERAL_CONTROL_DAY 1  // упровляющий день контроллера
+#define STEPPER_ROTATION_TIME 60000  // общее время работы шагового мотора при выдаче порции корма в миллисекундах
 #define AC_DELAY_TIME 5000
 #define SERVO_DELAY_TIME 5000
 #define SPREADER_RUNING_TIME 60000  // столько работает спредер мс (60000мс = 60с)
 
-#define BUTTON_PRESS_DELAY 1000  // столько мс нужно удерживать кнопку 
+#define BUTTON_PRESS_DELAY 5000  // столько мс нужно удерживать кнопку 
 
 #define FEED_UP_TO 5  // покормить до 5 минут часа кормления
 
 #define WEIGHT_DIFFERENCE 5  // разница веса в граммах для заднего хода шагового двигателя
 #define FIRST_STEPS_DEF 3    // столько первых проходов функция движения назад будет заблокирована
 
-// ?
-#define HOLD_BUTTON_RESET_DAY_DELAY 5000           // столько мс нужно удерживать кнопку при старте чтоб сбросить день
-#define HOLD_BUTTON_CALIBRATION_SCALE_DELAY 15000  // > HOLD_BUTTON_RESET_DAY_DELAY + 4000. кнопка калибровки весов
-// ?
-
-uint16_t freq_stepper_speed = 100;  // скорость вращения шагового двигателя, шагов в секунду <DEL>
-
 // настройка весов
 float calibration_factor = -225.2784271240;          // калибровка весов! известен из программы калибровки
 uint32_t calibration_Weight = 939;         // 1 кг. Калибровочный вес, такой вес ставить на веса при автокалибровке
 #define MEASURE_QUANTITY 20                               // количество измерений
-
-uint32_t just_a_day = 17500;  // всего за день
-uint8_t number_of_feedings = 6;   // количество кормлеений
-uint16_t feeding_portion = just_a_day / number_of_feedings;  // 1 порция кормления
 
 uint16_t servo_open_angle = 0;  // угол открытой серво
 uint16_t servo_close_angle = 90;  // угол закрытой серво
@@ -101,7 +91,7 @@ uint16_t servo_close_angle = 90;  // угол закрытой серво
 // расписание:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define MAX_GENERAL_CONTROL_DAY 200  // дней в таблице
-// настройка времени кормления
+// настройка времени кормления, часы кормления
 uint8_t feeding_time_1 = 5;   // 1 кормление
 uint8_t feeding_time_2 = 8;   // 2 кормление
 uint8_t feeding_time_3 = 11;  // 3 кормление
@@ -112,7 +102,7 @@ uint8_t feeding_time_6 = 20;  // 6 кормление
 // БАЗОВАЯ ТАБЛИЦА КОРМЛЕНИЯ
 ////////////////////////////////////////////////////////////
 uint16_t basic_feeding_table[MAX_GENERAL_CONTROL_DAY+1] = {
-/*0*/      0,        /*reserved*/
+/*0*/      0,        /*zero day, stop feedeng*/
 
 /*День   вес г*/
 
