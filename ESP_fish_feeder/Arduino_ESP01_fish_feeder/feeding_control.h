@@ -871,9 +871,15 @@ void autoCalibrationScale(uint32_t _calibration_weight = calibration_Weight){
 	lcd.print(calibration_Weight);
 	lcd.print(" g");
 	lcd.setCursor(0, 1);
-	lcd.print("and press FEED");
+	lcd.print("and press");
+	// lcd.print("and press FEED");
 
-	delay(5000);
+	while((!digitalRead(FEED_BUTTON_PIN)) || (!digitalRead(RESUME_BUTTON_PIN))){
+		delay(1000);
+	}
+
+	lcd.print(" FEED");
+	delay(1000);
 
 	while(1){
 		if(!digitalRead(FEED_BUTTON_PIN)){
@@ -948,12 +954,19 @@ void manualSetDay(){
 	}
 
 	lcd.clear();
+	lcd.print("       OK");
+
+	while(!digitalRead(FEED_BUTTON_PIN)){
+		delay(1000);
+	}
+
+	lcd.clear();
 	lcd.print("    SET DAY");
 	lcd.setCursor(0, 1);
 	lcd.print("   R-  ");
 	lcd.print(general_control_day);
 	lcd.print("  +F  ");
-	delay(2000);
+	delay(1000);
 	uint32_t _start_time_msd = millis();
 	while(1){
 	    if(!digitalRead(RESUME_BUTTON_PIN)){  // -
@@ -965,7 +978,7 @@ void manualSetDay(){
 			lcd.print(general_control_day);
 			lcd.print("  +F  ");
 
-	    	delay(150);
+	    	delay(200);
 	    	_start_time_msd = millis();
 	    }
 	    else if(!digitalRead(FEED_BUTTON_PIN)){  // +
@@ -977,7 +990,7 @@ void manualSetDay(){
 			lcd.print(general_control_day);
 			lcd.print("  +F  ");
 
-	    	delay(150);
+	    	delay(200);
 	    	_start_time_msd = millis();
 	    }
 	    else if(millis() - _start_time_msd >= 10000){  // delay 10s to auto save
