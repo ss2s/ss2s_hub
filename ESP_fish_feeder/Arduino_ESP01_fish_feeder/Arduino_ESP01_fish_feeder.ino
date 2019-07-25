@@ -91,8 +91,9 @@ BlynkTimer timergfedlop;
 
 // STEPPER PINOUT
 // stepper step dir driver
-#define STEPPER_STEP_PIN 34  // шаговый двигатель step pin
-#define STEPPER_DIR_PIN 36   // шаговый двигатель dir pin
+#define STEPPER_EN_PIN 34    // шаговый двигатель en pin
+#define STEPPER_STEP_PIN 36  // шаговый двигатель step pin
+#define STEPPER_DIR_PIN 38   // шаговый двигатель dir pin
 //  OR
 // stepper l298 driver
 #define C1_EN_PIN 34
