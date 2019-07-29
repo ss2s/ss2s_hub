@@ -13,7 +13,7 @@ It's very tricky to get it working. Please read this article:
 http://help.blynk.cc/hardware-and-libraries/arduino/esp8266-with-at-firmware
 *************************************************************/
 
-#define BLYNK_NOWHILE_PATCH  // эта строка отключает зависание блинка при отсутствии сети
+#define BLYNK_NOWHILE_PATCH  // эта строка отключает зависание блинка при отсутствии сети (в модифицированой библиотеке)
 
 /* Comment this out to disable prints and save space */
 // #define BLYNK_PRINT Serial

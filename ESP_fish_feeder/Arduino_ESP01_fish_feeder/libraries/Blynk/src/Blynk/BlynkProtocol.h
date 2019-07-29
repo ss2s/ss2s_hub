@@ -57,6 +57,9 @@ public:
         {
             run();
         }
+        #ifdef BLYNK_NOWHILE_PATCH
+        return 1;
+        #endif
         return state == CONNECTED;
     }
 
