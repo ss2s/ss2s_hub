@@ -1,4 +1,4 @@
-// bird house V4
+// bird house V5
 // Arduino 1.8.1
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // ВКЛЮЧЕНИЯ
@@ -207,19 +207,27 @@ float temperature()
 		termometer_error = t;
 
 		analogWrite(DEF_LCD_LIGHT_PIN, 1);
-		delay(1000);
+		delay(400);
 		analogWrite(DEF_LCD_LIGHT_PIN, screen_brightnes);
-		delay(500);
+		delay(400);
 		analogWrite(DEF_LCD_LIGHT_PIN, 1);
-		delay(500);
+		delay(400);
 		analogWrite(DEF_LCD_LIGHT_PIN, screen_brightnes);
-		delay(500);
+		delay(400);
 		analogWrite(DEF_LCD_LIGHT_PIN, 1);
-		delay(500);
+		delay(400);
 		analogWrite(DEF_LCD_LIGHT_PIN, screen_brightnes);
-		delay(500);
+		delay(400);
 		analogWrite(DEF_LCD_LIGHT_PIN, 1);
-		delay(1000);
+		delay(400);
+		analogWrite(DEF_LCD_LIGHT_PIN, screen_brightnes);
+		delay(400);
+		analogWrite(DEF_LCD_LIGHT_PIN, 1);
+		delay(400);
+		analogWrite(DEF_LCD_LIGHT_PIN, screen_brightnes);
+		delay(400);
+		analogWrite(DEF_LCD_LIGHT_PIN, 1);
+		delay(400);
 		analogWrite(DEF_LCD_LIGHT_PIN, screen_brightnes);
 	}
 	else{termometer_error = 0;}
@@ -688,13 +696,13 @@ uint32_t start_timer_1 = 0;
 uint32_t timer_set_val = 0;
 void ventControl()
 {
-	if(termometer_error != 0){
-		digitalWrite(RELE_COOLER_PIN, RELE_LOW);
-		flag_cooler_on = 0;
-		// Serial.print(F("\nds_err != 0; return;\n"));
-		// delay(1000);
-		return;
-	}
+	// if(termometer_error != 0){
+	// 	digitalWrite(RELE_COOLER_PIN, RELE_LOW);
+	// 	flag_cooler_on = 0;
+	// 	// Serial.print(F("\nds_err != 0; return;\n"));
+	// 	// delay(1000);
+	// 	return;
+	// }
 
 	if(day_control_val == 0){
 		digitalWrite(RELE_COOLER_PIN, RELE_LOW);
@@ -716,7 +724,7 @@ void ventControl()
 	    return;
 	}
 
-	if(curent_temp > (table_temp + cooling_histerezis)){
+	if((curent_temp > (table_temp + cooling_histerezis)) && (termometer_error == 0)){
 		digitalWrite(RELE_COOLER_PIN, RELE_HIGH);
 		flag_cooler_on = 1;
 		flag_cooler_on_overheating = 1;
@@ -724,7 +732,7 @@ void ventControl()
 		// Serial.print(F("\n*overheat; vent ON;\n"));
 		// delay(1000);
 	}
-	else if(curent_temp <= table_temp){
+	else if((curent_temp <= table_temp) || (termometer_error != 0)){
 
 
 		if(flag_cooler_on_overheating == 1){
