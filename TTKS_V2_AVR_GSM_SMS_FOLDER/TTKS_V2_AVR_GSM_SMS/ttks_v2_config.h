@@ -25,6 +25,7 @@
 	#define RESET_MODEM_PIN 8                  // RESET sim800 optional
 
 	#define STARTER_RELE_PIN A1                // РЕЛЕ СТАРТЕРА 30А ИЛИ МОСФЕТ 30А
+
 	#define AIR_DAMPER_RELE_PIN A2             // РЕЛЕ ВОЗДУШНОЙ ЗАСЛОНКИ
 	#define STOP_GENERATOR_RELE_PIN A3         // РЕЛЕ ОСТАНОВКИ ГЕНЕРАТОРА
 
