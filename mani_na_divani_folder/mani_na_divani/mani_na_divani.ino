@@ -45,6 +45,8 @@
 
 // если LED_TYPE_CODE = 1 или LED_TYPE_CODE = 2
 #define LED_STRIP_BRIGHTNESS 50    // яркость обычных светодиодов (0 - 255)
+
+bool effect_high = 1;      // тип управляющего сигнала реле: 1 = (5V); 0 = (0V);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // РАСПИНОВКА:
 
@@ -328,17 +330,19 @@ void blincWin(int16_t _x){
 		}
 	}
 
-	if(_x != 0){digitalWrite(EFFECT_LED_PIN, HIGH);}
-	else{digitalWrite(EFFECT_LED_PIN, LOW);}
+	if(_x != 0){digitalWrite(EFFECT_LED_PIN, effect_high);}
+	else{digitalWrite(EFFECT_LED_PIN, !effect_high);}
 }
 
 void setup(){
 
-	pinMode(SENSOR_X2_PIN, INPUT_PULLUP);
-	pinMode(SENSOR_X10_PIN, INPUT_PULLUP);
+	// pinMode(SENSOR_X2_PIN, INPUT_PULLUP);
+	// pinMode(SENSOR_X10_PIN, INPUT_PULLUP);
+	pinMode(SENSOR_X2_PIN, INPUT);
+	pinMode(SENSOR_X10_PIN, INPUT);
 
 	pinMode(EFFECT_LED_PIN, OUTPUT);
-	digitalWrite(EFFECT_LED_PIN, LOW);
+	digitalWrite(EFFECT_LED_PIN, !effect_high);
 
 	if(LED_TYPE_CODE == 1 || LED_TYPE_CODE == 2){
 		pinMode(LED_STRIP_X2_PIN, OUTPUT);
@@ -363,16 +367,6 @@ void setup(){
 }
 
 void loop(){
-
-	// blincWin(2);
-	// delay(3000);
-	// blincWin(0);
-	// delay(3000);
-
-	// blincWin(10);
-	// delay(3000);
-	// blincWin(0);
-	// delay(3000);
 
 	if(arrow_state == 0){
 		if(digitalRead(SENSOR_X2_PIN) == SENSOR_HIGH){
