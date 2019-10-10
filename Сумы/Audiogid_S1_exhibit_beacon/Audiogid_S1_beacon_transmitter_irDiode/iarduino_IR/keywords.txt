@@ -1,0 +1,31 @@
+#	####################################################
+#	СИНТАКСИЧЕСКАЯ РАСКРАСКА ДЛЯ БИБИЛИОТЕКИ:
+#	iarduino_IR
+#	####################################################
+#	ТИПЫ ДАННЫХ:							   (KEYWORD1)
+	iarduino_IR_RX	KEYWORD1
+	iarduino_IR_TX	KEYWORD1
+#	####################################################
+#	МЕТОДЫ И ФУНКЦИИ:						   (KEYWORD2)
+	begin	KEYWORD2
+	check	KEYWORD2
+	protocol	KEYWORD2
+	send	KEYWORD2
+	data	KEYWORD2
+	length	KEYWORD2
+	key_press	KEYWORD2
+	frequency	KEYWORD2
+#	####################################################
+#	КОНСТАНТЫ:								   (LITERAL1)
+	IR_UNDEFINED	LITERAL1
+	IR_PAUSE_LENGTH	LITERAL1
+	IR_PULSE_LENGTH	LITERAL1
+	IR_BIPHASIC	LITERAL1
+	IR_BIPHASIC_INV	LITERAL1
+	IR_NRC	LITERAL1
+	IR_RS5	LITERAL1
+	IR_RS5X	LITERAL1
+	IR_RS6	LITERAL1
+	IR_CLEAN	LITERAL1
+	IR_INTERVAL_PACK	LITERAL1
+	IR_INTERVAL_PRESS	LITERAL1

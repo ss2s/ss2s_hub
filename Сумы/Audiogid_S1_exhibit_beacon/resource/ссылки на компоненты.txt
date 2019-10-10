@@ -1,0 +1,14 @@
+Arduino Pro Mini (RobotDyn)                         
+- https://arduino.ua/prod2133-megapower-arduino-promini-atmega328p-5v16mhz-ot-robotdyn
+
+дисплей, 7 сегментный индикатор на 4 цифры TM1637   
+- https://arduino.ua/prod1629-posledovatelnii-4-razryadnii-semisegmentnii-led-indikator-s-i2c-draiverom-tm1637
+
+ir diode                                            
+- http://www.kosmodrom.com.ua/prodlist.php?page=0&name=bm13j4g&okbutton=%CF%EE%E8%F1%EA+%EF%EE+%F1%EA%EB%E0%E4%F3
+
+кнопки                                              
+- https://arduino.ua/prod317-Knopka
+
+резистор 510 Ом                                     
+- https://arduino.ua/prod409-nabor-rezistorov-0-25w-600-sht

@@ -87,7 +87,7 @@
 	SoftwareSerial SoftSerial(SOFT_RX_PIN, SOFT_TX_PIN); // RX, TX
 
 	// настройка портов GSM serial 0: com=hard, gsm=soft.   1: com=soft, gsm=hard.
-	#define GSM_SERIAL_MODE 1
+	#define GSM_SERIAL_MODE 0
 
 	#if GSM_SERIAL_MODE == 1
 	#define Sim800Port Serial
