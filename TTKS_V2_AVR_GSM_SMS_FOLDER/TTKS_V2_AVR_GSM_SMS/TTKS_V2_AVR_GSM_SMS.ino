@@ -1,7 +1,9 @@
 #include <auth.h>
 int pins[3] = {A3, A4, A5};                                      // Пины с подключенными светодиодами
 
+#include <EEPROM.h>
 #include <SoftwareSerial.h>
+#include <TimeLib.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define UART_BRIDGE_EN 0  // 0-для работы системы в штатном режиме. 1-для организации моста с модемом.  // default 0
@@ -58,12 +60,17 @@ String masterPhones = my_phone_number_str;     // мастер телефон
 
 String sms_password = "pasms";         // пароль для смс настроек по умолчанию
 
-// настройки запуска
-uint32_t timeOut_starter_ON = 3000;    // столько работает стартер 2s (1-5s)
-uint8_t  number_launch_attempt = 5;    // количество попыток запуска, при неудачном старте. MAX255
+// настройки запуска, изменяемые через СМС
+// количество повторных пусков:                                nsl=(x)
+// время работы стартера                                       tsl=(x)
+// прирост времени работы стартера при повторном пуске         gsl=(x)
+// время глушения двигателя:                                   srt=(x)
+uint8_t  number_starter_launch = 4;      // количество попыток запуска, при неудачном старте. MAX4  nsl=(x)
+uint32_t timeOut_starter_launch = 3;     // столько работает стартер (2-4s)                      tsl=(x)
+uint32_t gain_starter_launch = 1;        // прирост времени для последующих попыток запуска         gsl=(x)
+uint32_t stop_rele_time = 10;            // столько работает реле глущения генератора (1-10s)    srt=(x)
 
-uint32_t timeOut_stop_rele_ON = 5000;  // столько работает реле глущения генератора 2s (1-5s)
-uint8_t  number_stop_attempt = 3;      // количество попыток остановки, при неудачном старте. MAX255
+uint8_t  number_stop_attempt = 3;        // количество попыток остановки, при неудачном старте. MAX255
 
 // задержки
 #define timeOut_operation 50           // other operation timeout 0.05s
@@ -253,8 +260,7 @@ String waitResponse(){  // сервисная функция ожидания о
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void sendSMS(String phone, String message)
-{
+void sendSMS(String phone, String message){
 	sendATCommand("AT+CMGS=\"" + phone + "\"", true);             // Переходим в режим ввода текстового сообщения
 	sendATCommand(message + "\r\n" + (String)((char)26), true);   // После текста отправляем перенос строки и Ctrl+Z
 }
@@ -281,7 +287,7 @@ void parseSMS(String msg) {                                   // Парсим SM
 	ComPort.println("Message: " + msgbody);                      // Выводим текст SMS
 
 	if (msgphone.length() > 6 && phones.indexOf(msgphone) > -1) { // Если телефон в белом списке, то...
-		processingComands(msgbody, msgphone);                           // ...выполняем команду
+		processingCommands(msgbody, msgphone);                           // ...выполняем команду
 	}
 	else {
 		ComPort.println("Unknown phonenumber");
@@ -307,7 +313,7 @@ int16_t startEngineSingleF(){  // функция запуска двигател
 	delay(timeOut_prev_starter_DEL);
 	// - Подаем напряжение +12В на стартер, используем реле 30А, длительность 2 сек (1-5 сек)
 	digitalWrite(STARTER_RELE_PIN, STARTER_RELE_HIGH);
-	delay(timeOut_starter_ON);
+	delay(timeOut_starter_launch * 1000);
 	digitalWrite(STARTER_RELE_PIN, STARTER_RELE_LOW);
 	delay(timeOut_operation);
 	delay(timeOut_operation_2);
@@ -329,17 +335,17 @@ int16_t startEngineSingleF(){  // функция запуска двигател
 //   оператор  должен получить сигнал об ошибке и генератор переходит в режим откл.
 int16_t startEngineLoopF(){  // функция запуска двигателя пока не заведется
 	int16_t _startEngStatus = 0;
-	for(int i=0; i<number_launch_attempt; i++){
+	for(int i=0; i<number_starter_launch; i++){
 		// - Посылаем команду на запуск двигателя и смотрим ответ от функции
 		_startEngStatus = startEngineSingleF();
 		if(_startEngStatus != 0){return _startEngStatus;}  // если генератор запустился выходим из цикла запуска
 		// - Если генератор не запустился, проводим повторный запуск через 5-15 сек (возможность настройки интервала), 
-		if(i < (number_launch_attempt - 1)){
+		if(i < (number_starter_launch - 1)){
 			ComPort.println(F("__dvigatel_ne_zapustilsa_poprobuem_eshe_raz"));
 			delay(timeOut_next_start);
 		}
 		// - Если генератор не запустился после указанного количества запусков, оператор  должен получить сигнал об ошибке и генератор переходит в режим откл.
-		else if(i == (number_launch_attempt - 1)){
+		else if(i == (number_starter_launch - 1)){
 			ComPort.println(F("__dvigatel_ne_zapustilsa_popitok_bolshe_net_avariynaya_ostanovka"));
 			// ВЫПОЛНИТЬ АВАРИЙНУЮ ОСТАНОВКУ:
 		}
@@ -350,7 +356,7 @@ int16_t startEngineLoopF(){  // функция запуска двигателя
 int16_t stopGeneratorF(){  // функция остановки генератора
 	for(int i=0; i<number_stop_attempt; i++){ 
 		digitalWrite(STOP_GENERATOR_RELE_PIN, RELE_HIGH);
-		delay(timeOut_stop_rele_ON);
+		delay(stop_rele_time * 1000);
 		if(digitalRead(VOLTAGE_OUT_SENSOR_PIN) == N_220){
 			// генератор остановился
 			digitalWrite(STOP_GENERATOR_RELE_PIN, RELE_LOW);
@@ -369,92 +375,114 @@ int16_t stopGeneratorF(){  // функция остановки генерато
 
 // general algoritme F
 
-void processingComands(String _sms_comand, String _phone){  // функция обработки команд
+void processingCommands(String _sms_command, String _phone){  // функция обработки команд
 
-	// ComPort.println("Key: " + _sms_comand);                // Выводим в ComPort для контроля, что ничего не потерялось
+	// ComPort.println("Key: " + _sms_command);                // Выводим в ComPort для контроля, что ничего не потерялось
 
 	bool correct = false;                                       // Для оптимизации кода, переменная корректности команды
 	String msgToSend = "";
-	if (_sms_comand.length() >= 4 && _sms_comand.length() <= 30) {
-		String _first_simbol = (String)_sms_comand[0] + (String)_sms_comand[1] + (String)_sms_comand[2] + (String)_sms_comand[3];
+	if (_sms_command.length() >= 4 && _sms_command.length() <= 30) {
+		String _first_simbol = (String)_sms_command[0] + (String)_sms_command[1] + (String)_sms_command[2] + (String)_sms_command[3];
 
 		if(_first_simbol == "star"){  // Исполняем команду START
-			ComPort.println("COMAND START GENERATORA RUN");  // Выводим в ComPort для контроля, что ничего не потерялось
+			ComPort.println(F("COMMAND START GENERATORA RUN"));  // Выводим в ComPort для контроля, что ничего не потерялось
 			startEngineLoopF();
-			ComPort.println("start_OK");
+			ComPort.println(F("command start OK"));
 			correct = true;
 		}
 		else if(_first_simbol == "stop"){  // Исполняем команду STOP
-			ComPort.println("COMAND STOP GENERATORA RUN");  // Выводим в ComPort для контроля, что ничего не потерялось
+			ComPort.println(F("COMMAND STOP GENERATORA RUN"));  // Выводим в ComPort для контроля, что ничего не потерялось
 			stopGeneratorF();
-			ComPort.println("stop_OK");
+			ComPort.println(F("command stop OK"));
 			correct = true;
 		}
 		else if(_first_simbol == "stat"){  // Исполняем команду STATUS
-			ComPort.println("COMAND STATUS GENERATORA RUN");  // Выводим в ComPort для контроля, что ничего не потерялось
+			ComPort.println(F("COMMAND STATUS GENERATORA RUN"));  // Выводим в ComPort для контроля, что ничего не потерялось
 			if(digitalRead(VOLTAGE_OUT_SENSOR_PIN) == Y_220){
-				ComPort.println("__dvigatel_zapushen");
-				ComPort.println("__dvigatel_rabotaet X minut");
-				ComPort.println("__timers");
+				ComPort.println(F("__dvigatel_zapushen"));
+				ComPort.println(F("__dvigatel_rabotaet X minut"));
+				ComPort.println(F("__timers"));
 			}
 			else{
-				ComPort.println("__dvigatel_ostanovlen");
+				ComPort.println(F("__dvigatel_ostanovlen"));
 			}
-			ComPort.println("status_OK");
+			ComPort.println(F("status_OK"));
 			correct = true;
 		}
 		else if(_first_simbol == "set_"){  // переходим к проверке пароля и настройкам set_pasms()()()
-			ComPort.println("COMAND SETTING RUN");  // Выводим в ComPort для контроля, что ничего не потерялось
-			String _pass = (String)_sms_comand[4] + (String)_sms_comand[5] + (String)_sms_comand[6] + (String)_sms_comand[7] + (String)_sms_comand[8];
+			ComPort.println(F("COMMAND SETTING RUN"));  // Выводим в ComPort для контроля, что ничего не потерялось
+			String _pass = (String)_sms_command[4] + (String)_sms_command[5] + (String)_sms_command[6] + (String)_sms_command[7] + (String)_sms_command[8];
 			if(_pass == sms_password){
-				ComPort.println("pass_OK");
+				ComPort.println(F("pass_OK"));
 
-				// количество повторных пусков:                                kpp=(x)
-				// время работы стартера, прирост для следующей попытки 1 сек: vrs=(x)
-				// время глушения двигателя:                                   vgd=(x)
+				// количество повторных пусков:                                nsl=(x)
+				// время работы стартера                                       tsl=(x)
+				// прирост времени работы стартера при повторном пуске         gsl=(x)
+				// время глушения двигателя:                                   srt=(x)
 
-				String _set_com = (String)_sms_comand[10] + (String)_sms_comand[11] + (String)_sms_comand[12] + (String)_sms_comand[13] + (String)_sms_comand[14];
+				ComPort.print(F("\n nsl = "));
+				ComPort.println(number_starter_launch);
+				ComPort.print(F(" tsl = "));
+				ComPort.println(timeOut_starter_launch);
+				ComPort.print(F(" gsl = "));
+				ComPort.println(gain_starter_launch);
+				ComPort.print(F(" srt = "));
+				ComPort.println(stop_rele_time);
+				ComPort.println(F("\n"));
+
+				String _set_com = (String)_sms_command[10] + (String)_sms_command[11] + (String)_sms_command[12] + (String)_sms_command[13] + (String)_sms_command[14];
 				String _set_val_str = "";
-				for(int i=15; i<_sms_comand.length(); i++){
-					if((String)_sms_comand[i] == ")"){break;}
-				    _set_val_str += (String)_sms_comand[i];
+				for(int i=15; i<_sms_command.length(); i++){
+					if((String)_sms_command[i] == ")"){break;}
+				    _set_val_str += (String)_sms_command[i];
 				}
 
 				int _set_val_int = 0;
 				for(int i=0; i<_set_val_str.length(); i++){
 					_set_val_int *= 10;
-				    _set_val_int = ((String)_set_val_str[0]).toInt();               // Получаем первую цифру
+				    _set_val_int += ((String)_set_val_str[i]).toInt();               // Получаем первую цифру
 				}
 
-				ComPort.print("...setting value = ");
+				ComPort.print(F("...setting value = "));
 				ComPort.println(_set_val_int);
 
-				if(_set_com == "kpp=("){}
-				if(_set_com == "vrs=("){}
-				if(_set_com == "vgd=("){}
+				if(_set_com == "nsl=(" && _set_val_int <= 4){number_starter_launch = _set_val_int;}
+				if(_set_com == "tsl=(" && _set_val_int <= 4){timeOut_starter_launch = _set_val_int;}
+				if(_set_com == "gsl=(" && _set_val_int <= 1){gain_starter_launch = _set_val_int;}
+				if(_set_com == "srt=(" && _set_val_int <= 10){stop_rele_time = _set_val_int;}
+
+				ComPort.print(F("\n nsl = "));
+				ComPort.println(number_starter_launch);
+				ComPort.print(F(" tsl = "));
+				ComPort.println(timeOut_starter_launch);
+				ComPort.print(F(" gsl = "));
+				ComPort.println(gain_starter_launch);
+				ComPort.print(F(" srt = "));
+				ComPort.println(stop_rele_time);
+				ComPort.println(F("\n"));
 			}	
-			ComPort.println("setting_OK");
+			ComPort.println(F("setting_OK"));
 			correct = true;
 		}
 		else if(_first_simbol == "time"){  // переходим к настройке таймеров
-			ComPort.println("timers_OK");
+			ComPort.println(F("timers_OK"));
 			correct = true;
 		}
 		else if(_first_simbol == "help"){  // справка
-			ComPort.println("COMAND HELP RUN");  // Выводим в ComPort для контроля, что ничего не потерялось
-			ComPort.println("help_OK");
+			ComPort.println(F("COMMAND HELP RUN"));  // Выводим в ComPort для контроля, что ничего не потерялось
+			ComPort.println(F("help_OK"));
 			correct = true;
 		}
 	}
 	if (!correct) {
-		msgToSend = "Incorrect command: " + _sms_comand;               // Статус исполнения
+		msgToSend = "Incorrect command: " + _sms_command;               // Статус исполнения
 	}
 	ComPort.println(msgToSend);                                  // Выводим результат в терминал
 }
 
 
 
-void processingComands2 (String result, String _phone) {
+void processingCommands2 (String result, String _phone) {
   bool correct = false;                                       // Для оптимизации кода, переменная корректности команды
   String msgToSend = "";
   if (result.length() == 2) {

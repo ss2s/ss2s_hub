@@ -39,7 +39,7 @@ char pass[] = "YourPassword";  // пароль точки доступа
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define DRIVER_SET 1  // driver setting. 0-step dir type; 1-l298n std type(11-impulse); 2-l298n double coil(22-impulse);
 #define STEP_DIVIDER 1  // делитель для степ дир драйвера 1-32. если DRIVER_SET > 0 (l298n) то должен быть 1
-#define STEPS_PER_RONUD 200  // шагов на оборот
+#define STEPS_PER_ROUND 200  // шагов на оборот
 uint16_t speed_deg_per_sec = 90;  // скорость градусов в секунду (360 = 1 оборот в секунду)
 unsigned long step_high_delay = 10000;  // микросекунд будет высокий уровень при шаге (шум, нагрев/мощность)
 const bool forward_dir = 1;  // направление вперед 1 или 0. Альтернатива поменять местами провода любой катушки

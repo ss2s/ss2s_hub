@@ -588,7 +588,7 @@ int32_t weightUpdate(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // cnc driwer
 unsigned long step_low_delay = 
-((1000000/((1/((360 / STEPS_PER_RONUD)/STEP_DIVIDER))*speed_deg_per_sec))-step_high_delay);  // микросекунд между шагами
+((1000000/((1/((360 / STEPS_PER_ROUND)/STEP_DIVIDER))*speed_deg_per_sec))-step_high_delay);  // микросекунд между шагами
 
 uint8_t curent_step_val = 1;
 
