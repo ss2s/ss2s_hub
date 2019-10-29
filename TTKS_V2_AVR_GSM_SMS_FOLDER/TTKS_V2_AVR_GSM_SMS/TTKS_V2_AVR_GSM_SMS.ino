@@ -1,5 +1,4 @@
 #include <auth.h>
-int pins[3] = {A3, A4, A5};                                      // Пины с подключенными светодиодами
 
 #include <EEPROM.h>
 #include <SoftwareSerial.h>
@@ -75,7 +74,7 @@ uint8_t  number_stop_attempt = 3;        // количество попыток 
 // задержки
 #define timeOut_operation 50           // other operation timeout 0.05s
 #define timeOut_operation_2 1000       // other operation timeout 2 = 0.5s // задержка после отключения стартера
-#define timeOut_prev_starter_DEL 500   // задержка перед запуском стартера, после открытия заслонки 0.5s
+#define prev_starter_DEL 500   // задержка перед запуском стартера, после открытия заслонки 0.5s
 #define timeOut_airDamper_OFF 2000     // задержка перед закрытием воздушной заслонки 2s
 #define timeOut_next_start 10000       // задержка между попытками запуска, при неудачном старте
 
@@ -126,6 +125,13 @@ SoftwareSerial SoftSerial(SOFT_RX_PIN, SOFT_TX_PIN); // RX, TX
 #define SIM800 Sim800Port  // sys
 
 // variables
+uint32_t vremya_zapuska_dvigatelya = 0;
+
+uint32_t zapushen_s_popitki = 0;
+
+uint32_t obshaya_narabotka_v_motominutah = 0;
+uint32_t obshaya_narabotka_v_motochasah = 0;
+
 String _response = "R";  // Переменная для хранения ответа модуля
 String lastPhoneNumber = masterPhones;  // последний номер телефона для ответного смс с показаниями
 bool alarmFlag1 = 0;
@@ -137,6 +143,67 @@ bool hasmsg = false;                                              // Флаг н
 
 long lastUpdate = millis();                                   // Время последнего обновления
 long updatePeriod   = 60000;                                  // Проверять каждую минуту
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// EEPROM
+
+// nsl=(x)
+// tsl=(x)
+// gsl=(x)
+// srt=(x)
+
+// eeKey
+#define EEPROM_SETUP_KEY 124  // любое число от 1 до 254. измените это число если нужно перепрошить EEPROM
+// addr
+#define EEPROM_SETUP_KEY_ADDR 0           // ключ перезаписи
+#define NUMBER_STARTER_LAUNCH_ADDR 4
+#define TIMEOUT_STARTER_LAUNCH_ADDR 8
+#define GAIN_STARTER_LAUNCH_ADDR 12
+#define STOP_RELE_TIME_ADDR 16
+#define OBSHAYA_NARABOTKA_V_MOTOCHASAH_ADDR 20
+#define OBSHAYA_NARABOTKA_V_MOTOMINUTAH_ADDR 24
+
+void eeSetup(){  // write and reed EEPROM setup settings...
+	// write
+	uint8_t _temp_ee_key;
+	EEPROM.get(EEPROM_SETUP_KEY_ADDR, _temp_ee_key);
+	if(_temp_ee_key != EEPROM_SETUP_KEY){
+		// записать начальные значения в EEPROM
+		EEPROM.put(EEPROM_SETUP_KEY_ADDR, EEPROM_SETUP_KEY);
+
+		EEPROM.put(NUMBER_STARTER_LAUNCH_ADDR, number_starter_launch);
+		EEPROM.put(TIMEOUT_STARTER_LAUNCH_ADDR, timeOut_starter_launch);
+		EEPROM.put(GAIN_STARTER_LAUNCH_ADDR, gain_starter_launch);
+		EEPROM.put(STOP_RELE_TIME_ADDR, stop_rele_time);
+		EEPROM.put(OBSHAYA_NARABOTKA_V_MOTOCHASAH_ADDR, obshaya_narabotka_v_motochasah);
+		EEPROM.put(OBSHAYA_NARABOTKA_V_MOTOMINUTAH_ADDR, obshaya_narabotka_v_motominutah);
+	}
+
+	// reed
+	EEPROM.get(NUMBER_STARTER_LAUNCH_ADDR, number_starter_launch);
+	EEPROM.get(TIMEOUT_STARTER_LAUNCH_ADDR, timeOut_starter_launch);
+	EEPROM.get(GAIN_STARTER_LAUNCH_ADDR, gain_starter_launch);
+	EEPROM.get(STOP_RELE_TIME_ADDR, stop_rele_time);
+	EEPROM.get(OBSHAYA_NARABOTKA_V_MOTOCHASAH_ADDR, obshaya_narabotka_v_motochasah);
+	EEPROM.get(OBSHAYA_NARABOTKA_V_MOTOMINUTAH_ADDR, obshaya_narabotka_v_motominutah);
+
+	ComPort.print(F("\n nsl = "));
+	ComPort.println(number_starter_launch);
+	ComPort.print(F(" tsl = "));
+	ComPort.println(timeOut_starter_launch);
+	ComPort.print(F(" gsl = "));
+	ComPort.println(gain_starter_launch);
+	ComPort.print(F(" srt = "));
+	ComPort.println(stop_rele_time);
+
+	ComPort.print(F(" obshaya_narabotka_v_motochasah = "));
+	ComPort.println(obshaya_narabotka_v_motochasah);
+	ComPort.print(F(" obshaya_narabotka_v_motominutah = "));
+	ComPort.println(obshaya_narabotka_v_motominutah);
+
+	ComPort.println(F("\n"));
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -302,26 +369,34 @@ void parseSMS(String msg) {                                   // Парсим SM
 // ЗАПУСК
 // - Повернуть ключ в положение ON (размыкаем контакт на глушение генератора), руками.
 // - Посылаем команду на запуск (с телефона)
-int16_t startEngineSingleF(){  // функция запуска двигателя 1 раз
+int16_t startEngineSingleF(uint32_t _gain){  // функция запуска двигателя 1 раз
 	// - Проверяем наличие напряжения на генераторе (контроль того, что генератор не запущен)
+	ComPort.println(F("SE: 220 sensor read"));
 	if(digitalRead(VOLTAGE_OUT_SENSOR_PIN) == Y_220){
 		ComPort.println(F("__dvigatel_uzhe_zapushen"));
 		return -1;  // ДВИГАТЕЛЬ УЖЕ ЗАПУЩЕН
 	}
 	// - Подаем напряжение +12В на привод воздушной заслонки, реле 10 А
 	digitalWrite(AIR_DAMPER_RELE_PIN, RELE_HIGH);
-	delay(timeOut_prev_starter_DEL);
+	ComPort.println(F("SE: airdamper rele ON"));
+	delay(prev_starter_DEL);
 	// - Подаем напряжение +12В на стартер, используем реле 30А, длительность 2 сек (1-5 сек)
 	digitalWrite(STARTER_RELE_PIN, STARTER_RELE_HIGH);
-	delay(timeOut_starter_launch * 1000);
+	ComPort.println(F("SE: STARTER rele ON"));
+	delay((timeOut_starter_launch * 1000) + (_gain * gain_starter_launch * 1000));
 	digitalWrite(STARTER_RELE_PIN, STARTER_RELE_LOW);
 	delay(timeOut_operation);
 	delay(timeOut_operation_2);
+
+	zapushen_s_popitki ++;
+
 	// - Контролируем запуск генератора появлением напряжения на выходе 200В
+	ComPort.println(F("SE: 220 sensor re-read"));
 	if(digitalRead(VOLTAGE_OUT_SENSOR_PIN) == Y_220){
 		// - Если запуск был успешным, снимаем напряжение с привода воздушной заслонки
 		ComPort.println(F("__dvigatel_zapushen"));
 		digitalWrite(AIR_DAMPER_RELE_PIN, RELE_LOW);
+		vremya_zapuska_dvigatelya = millis();
 		return 1;  // ДВИГАТЕЛЬ УСПЕШНО ЗАПУЩЕН
 	}
 	else{
@@ -337,7 +412,7 @@ int16_t startEngineLoopF(){  // функция запуска двигателя
 	int16_t _startEngStatus = 0;
 	for(int i=0; i<number_starter_launch; i++){
 		// - Посылаем команду на запуск двигателя и смотрим ответ от функции
-		_startEngStatus = startEngineSingleF();
+		_startEngStatus = startEngineSingleF(i);
 		if(_startEngStatus != 0){return _startEngStatus;}  // если генератор запустился выходим из цикла запуска
 		// - Если генератор не запустился, проводим повторный запуск через 5-15 сек (возможность настройки интервала), 
 		if(i < (number_starter_launch - 1)){
@@ -354,6 +429,7 @@ int16_t startEngineLoopF(){  // функция запуска двигателя
 }
 
 int16_t stopGeneratorF(){  // функция остановки генератора
+	if(digitalRead(VOLTAGE_OUT_SENSOR_PIN) == N_220){return -1;}
 	for(int i=0; i<number_stop_attempt; i++){ 
 		digitalWrite(STOP_GENERATOR_RELE_PIN, RELE_HIGH);
 		delay(stop_rele_time * 1000);
@@ -361,6 +437,10 @@ int16_t stopGeneratorF(){  // функция остановки генерато
 			// генератор остановился
 			digitalWrite(STOP_GENERATOR_RELE_PIN, RELE_LOW);
 			ComPort.println(F("__dvigatel_ostanovlen"));
+			obshaya_narabotka_v_motochasah += (millis() - vremya_zapuska_dvigatelya) / 1000 / 60 / 60;
+			obshaya_narabotka_v_motominutah += (millis() - vremya_zapuska_dvigatelya) / 1000 / 60;
+			EEPROM.put(OBSHAYA_NARABOTKA_V_MOTOCHASAH_ADDR, obshaya_narabotka_v_motochasah);
+			EEPROM.put(OBSHAYA_NARABOTKA_V_MOTOMINUTAH_ADDR, obshaya_narabotka_v_motominutah);
 			return 1;
 		}
 	}
@@ -376,39 +456,96 @@ int16_t stopGeneratorF(){  // функция остановки генерато
 // general algoritme F
 
 void processingCommands(String _sms_command, String _phone){  // функция обработки команд
+	// String msgToSend = "";
+	// msgToSend = "LED:" + (String)ledIndex + " set to " + (ledState == 0 ? "OFF" : "ON"); // Статус исполнения  // ex...
 
 	// ComPort.println("Key: " + _sms_command);                // Выводим в ComPort для контроля, что ничего не потерялось
 
 	bool correct = false;                                       // Для оптимизации кода, переменная корректности команды
-	String msgToSend = "";
+	String msgToSend = "ok!";
 	if (_sms_command.length() >= 4 && _sms_command.length() <= 30) {
 		String _first_simbol = (String)_sms_command[0] + (String)_sms_command[1] + (String)_sms_command[2] + (String)_sms_command[3];
 
-		if(_first_simbol == "star"){  // Исполняем команду START
-			ComPort.println(F("COMMAND START GENERATORA RUN"));  // Выводим в ComPort для контроля, что ничего не потерялось
-			startEngineLoopF();
-			ComPort.println(F("command start OK"));
-			correct = true;
-		}
-		else if(_first_simbol == "stop"){  // Исполняем команду STOP
-			ComPort.println(F("COMMAND STOP GENERATORA RUN"));  // Выводим в ComPort для контроля, что ничего не потерялось
-			stopGeneratorF();
-			ComPort.println(F("command stop OK"));
-			correct = true;
-		}
-		else if(_first_simbol == "stat"){  // Исполняем команду STATUS
+
+
+		if(_first_simbol == "stat"){  // Исполняем команду STATUS
 			ComPort.println(F("COMMAND STATUS GENERATORA RUN"));  // Выводим в ComPort для контроля, что ничего не потерялось
 			if(digitalRead(VOLTAGE_OUT_SENSOR_PIN) == Y_220){
-				ComPort.println(F("__dvigatel_zapushen"));
-				ComPort.println(F("__dvigatel_rabotaet X minut"));
-				ComPort.println(F("__timers"));
+				ComPort.println(F("__dvigatel zapushen"));
+
+				uint32_t _temp_h_var = (millis() - vremya_zapuska_dvigatelya) / 1000 / 60 / 60;
+				uint32_t _temp_m90_var = (millis() - vremya_zapuska_dvigatelya) / 1000 / 60;
+				uint32_t _temp_m60_var = _temp_m90_var - (_temp_h_var * 60);
+				ComPort.print(F("__dvigatel rabotaet "));
+				ComPort.print(_temp_h_var);
+				ComPort.print(F(":"));
+				ComPort.println(_temp_m60_var);
+
+				ComPort.print(F("obshaya_narabotka_v_motochasah - "));
+				ComPort.println(obshaya_narabotka_v_motochasah);
+				ComPort.print(F("obshaya_narabotka_v_motominutah - "));
+				ComPort.println(obshaya_narabotka_v_motominutah);
 			}
 			else{
-				ComPort.println(F("__dvigatel_ostanovlen"));
+				ComPort.println(F("__dvigatel ostanovlen"));
 			}
+			ComPort.println(F("__timers"));  //...
+
 			ComPort.println(F("status_OK"));
 			correct = true;
 		}
+
+
+
+		else if(_first_simbol == "star"){  // Исполняем команду START >
+			ComPort.println(F("COMMAND START GENERATORA RUN"));  // Выводим в ComPort для контроля, что ничего не потерялось
+			zapushen_s_popitki = 0;
+			int16_t _strt_ansver = startEngineLoopF();
+
+			if(_strt_ansver == 1){msgToSend = "dvigatel zapushen s " + (String)zapushen_s_popitki + " popitki";}
+			else if(_strt_ansver == -1){msgToSend = "dvigatel re-zapushen";}
+			else if(_strt_ansver == 0){msgToSend = "dvigatel ne zapushen, trebuetsa vmeshatelstvo operatora";}
+
+			// __dvigatel_zapushen
+			ComPort.println(F("command start OK"));
+			correct = true;
+		}
+
+
+
+		else if(_first_simbol == "stop"){  // Исполняем команду STOP >
+			ComPort.println(F("COMMAND STOP GENERATORA RUN"));  // Выводим в ComPort для контроля, что ничего не потерялось
+			int16_t _stp_ansver = stopGeneratorF();
+
+			if(_stp_ansver == 1){msgToSend = "dvigatel ostanovlen";}
+			else if(_stp_ansver == -1){msgToSend = "dvigatel re-ostanovlen";}
+			else if(_stp_ansver == 0){msgToSend = "dvigatel ne ostanovilsa, trebuetsa vmeshatelstvo operatora";}
+
+			ComPort.println(F("command stop OK"));
+			correct = true;
+		}
+
+
+
+		else if(_first_simbol == "rese"){  // Исполняем команду RESET >
+			ComPort.println(F("COMMAND RESET sbrosit motochasi"));  // Выводим в ComPort для контроля, что ничего не потерялось
+			obshaya_narabotka_v_motochasah = 0;
+			obshaya_narabotka_v_motominutah = 0;
+			EEPROM.put(OBSHAYA_NARABOTKA_V_MOTOCHASAH_ADDR, obshaya_narabotka_v_motochasah);
+			EEPROM.put(OBSHAYA_NARABOTKA_V_MOTOMINUTAH_ADDR, obshaya_narabotka_v_motominutah);
+
+			ComPort.println(F("command reset OK"));
+
+			ComPort.print(F(" obshaya_narabotka_v_motochasah = "));
+			ComPort.println(obshaya_narabotka_v_motochasah);
+			ComPort.print(F(" obshaya_narabotka_v_motominutah = "));
+			ComPort.println(obshaya_narabotka_v_motominutah);
+
+			correct = true;
+		}
+
+
+
 		else if(_first_simbol == "set_"){  // переходим к проверке пароля и настройкам set_pasms()()()
 			ComPort.println(F("COMMAND SETTING RUN"));  // Выводим в ComPort для контроля, что ничего не потерялось
 			String _pass = (String)_sms_command[4] + (String)_sms_command[5] + (String)_sms_command[6] + (String)_sms_command[7] + (String)_sms_command[8];
@@ -446,10 +583,22 @@ void processingCommands(String _sms_command, String _phone){  // функция 
 				ComPort.print(F("...setting value = "));
 				ComPort.println(_set_val_int);
 
-				if(_set_com == "nsl=(" && _set_val_int <= 4){number_starter_launch = _set_val_int;}
-				if(_set_com == "tsl=(" && _set_val_int <= 4){timeOut_starter_launch = _set_val_int;}
-				if(_set_com == "gsl=(" && _set_val_int <= 1){gain_starter_launch = _set_val_int;}
-				if(_set_com == "srt=(" && _set_val_int <= 10){stop_rele_time = _set_val_int;}
+				if(_set_com == "nsl=(" && _set_val_int <= 4){
+					number_starter_launch = _set_val_int;
+					EEPROM.put(NUMBER_STARTER_LAUNCH_ADDR, number_starter_launch);
+				}
+				if(_set_com == "tsl=(" && _set_val_int <= 4){
+					timeOut_starter_launch = _set_val_int;
+					EEPROM.put(TIMEOUT_STARTER_LAUNCH_ADDR, timeOut_starter_launch);
+				}
+				if(_set_com == "gsl=(" && _set_val_int <= 1){
+					gain_starter_launch = _set_val_int;
+					EEPROM.put(GAIN_STARTER_LAUNCH_ADDR, gain_starter_launch);
+				}
+				if(_set_com == "srt=(" && _set_val_int <= 10){
+					stop_rele_time = _set_val_int;
+					EEPROM.put(STOP_RELE_TIME_ADDR, stop_rele_time);
+				}
 
 				ComPort.print(F("\n nsl = "));
 				ComPort.println(number_starter_launch);
@@ -464,10 +613,16 @@ void processingCommands(String _sms_command, String _phone){  // функция 
 			ComPort.println(F("setting_OK"));
 			correct = true;
 		}
+
+
+
 		else if(_first_simbol == "time"){  // переходим к настройке таймеров
 			ComPort.println(F("timers_OK"));
 			correct = true;
 		}
+
+
+
 		else if(_first_simbol == "help"){  // справка
 			ComPort.println(F("COMMAND HELP RUN"));  // Выводим в ComPort для контроля, что ничего не потерялось
 			ComPort.println(F("help_OK"));
@@ -478,26 +633,7 @@ void processingCommands(String _sms_command, String _phone){  // функция 
 		msgToSend = "Incorrect command: " + _sms_command;               // Статус исполнения
 	}
 	ComPort.println(msgToSend);                                  // Выводим результат в терминал
-}
-
-
-
-void processingCommands2 (String result, String _phone) {
-  bool correct = false;                                       // Для оптимизации кода, переменная корректности команды
-  String msgToSend = "";
-  if (result.length() == 2) {
-    int ledIndex = ((String)result[0]).toInt();               // Получаем первую цифру команды - адрес устройства (1-3)
-    int ledState = ((String)result[1]).toInt();               // Получаем вторую цифру команды - состояние (0 - выкл, 1 - вкл)
-    if (ledIndex >= 1 && ledIndex <= 3 && (ledState == 0 or ledState == 1)) { // Если все нормально, исполняем команду
-      msgToSend = "LED:" + (String)ledIndex + " set to " + (ledState == 0 ? "OFF" : "ON"); // Статус исполнения
-      digitalWrite(pins[ledIndex - 1], ledState);             // Исполняем команду
-      correct = true;                                         // Флаг корректности команды
-    }
-  }
-  if (!correct) {
-    msgToSend = "Incorrect command: " + result;               // Статус исполнения
-  }
-  ComPort.println(msgToSend);                                  // Выводим результат в терминал
+	sendSMS(masterPhones, msgToSend);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -559,10 +695,6 @@ void generalLoop(){  // главная функция обработки вхо�
 // ЛупСэтап F
 void setup(){
 
-	for (int i = 0; i < 3; i++) {
-		pinMode(pins[i], OUTPUT);                                 // Настраиваем пины в OUTPUT
-	}
-
 	// инициализация выводов микроконтроллера:
 
 	// модем
@@ -613,6 +745,8 @@ void setup(){
 
 	sendATCommand("AT+CMGDA=\"DEL ALL\"", true);      // Удалить все сообщения, чтобы не забивали память модуля (txt mode)
   	// sendSMS(masterPhones, "controller RESTARTED\nall previous SMS deleted");
+	
+	eeSetup();
 }
 
 
