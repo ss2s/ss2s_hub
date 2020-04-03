@@ -233,19 +233,20 @@ public:
 /////////////////////////////
 
 // // init:
+// #include "Utimer.h"
 // Utimer t1(1000);  // t1 init 1s
 // Utimer t2(2000);  // t2 init 2s
 
 // // function:
 
 // t1.run(anyFunc);     // run 1s period anyFunc();
-// t2.run(anyFunc2,10);  // run 10s period anyFunc2();
+// t2.run(anyFunc2,10000);  // run 10s period anyFunc2();
 
 // if(t1.over()){  // if 1s period over
 // 	// run any action this
 // }
 
-// if(t2.over(10)){  // if 10s period over
+// if(t2.over(10000)){  // if 10s period over
 // 	// run any action this
 // }
 

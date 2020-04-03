@@ -32,6 +32,7 @@ public:
 				return 1;
 			}
 		}
+		return 0;
 	}
 
 	bool run(void (&func)(), long _temp_timer_period = 0){
@@ -49,6 +50,7 @@ public:
 				return 1;
 			}
 		}
+		return 0;
 	}
 
 	void resetall(){
@@ -92,11 +94,11 @@ public:
 // 	// run any action this
 // }
 
-// t1.end(0, 0, 1, 30);   // free 1m 30s
-// t1.end(0, 0, 30);      // free 30m
-// t1.end(0, 1, 30);      // free 1h 30m
-// t1.end(1, 1, 30);      // free 1d 1h 30m
-// t1.end(1);             // free 1d
+// t1.end(0, 0, 1, 30);   // 1m 30s
+// t1.end(0, 0, 30);      // 30m
+// t1.end(0, 1, 30);      // 1h 30m
+// t1.end(1, 1, 30);      // 1d 1h 30m
+// t1.end(1);             // 1d
 
 /////////////////////////////
 

@@ -5,8 +5,8 @@
 //=====================================================================================================
 
 // РАСПИНОВКА Arduino
-#define STEP_PIN 3      // step драйвера (Z)
-#define DIR_PIN 6       // dir драйвера (Z)
+#define STEP_PIN 4      // step драйвера (Z)
+#define DIR_PIN 7       // dir драйвера (Z)
 #define LIMIT_PIN 10    // концевик
 #define SWITCH_P 9      // кнопка + скорость
 #define SWITCH_M 11     // кнопка - скорость
@@ -17,7 +17,9 @@
 
 // настройка параметров
 
-unsigned int sectorVal = 104;            // сектор работы маятника в градусах
+unsigned int sectorVal = 5040;            // сектор работы маятника в градусах
+
+unsigned int degresPerSecond = 2160;      // скорость, градусов в секунду
 
 unsigned int stepDivider = 32;           // деление шага на драйвере 1-2-4-8-16-32. без делителя 1
 
@@ -29,10 +31,7 @@ bool limitSwitchSet = 0;                 // режим работы концев
 
 bool limitSwitchEnable = 0;              // разрешить использовать концевик 1 : запретить 0
 
-unsigned int degresPerSecond = 69;       // скорость, градусов в секунду
-
-
-unsigned long stepHighDelay = 1;       // микросекунд будет высокий уровень при шаге (шум/мощность)
+unsigned long stepHighDelay = 10;       // микросекунд будет высокий уровень при шаге (шум/мощность)
 
 //=====================================================================================================
 // КОНЕЦ НАСТРОЕК
@@ -118,6 +117,18 @@ stepLowDelay = ((1000000/((1/(degresInStep/stepDivider))*degresPerSecond))-stepH
 void buttonChekForLoop(){
 }
 
+char s_api_date_key;
+unsigned int s_api_date_val;
+void parseSerialAPI(){
+	if (Serial.available() > 0) {
+	    s_api_date_key = Serial.read();
+	    s_api_date_val = Serial.parseInt();
+	    // if(s_api_date_key == 's'){degresPerSecond = Serial.parseInt();}
+	    // else if(s_api_date_key == 'd'){sectorVal = Serial.parseInt();}
+	    // else{}
+	}
+}
+
 void setup() {
 
 	if(readFromMemory(2) != EEPROM_WRITE_KEY){
@@ -134,5 +145,5 @@ void setup() {
 void loop() {
 
 	stepRuner();
-	buttonChekForLoop();
+	// buttonChekForLoop();
 }
