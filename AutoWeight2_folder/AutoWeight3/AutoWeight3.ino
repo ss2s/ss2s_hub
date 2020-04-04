@@ -11,6 +11,7 @@
 #define MAX_AVERAGE_COUNT 10.0L  // коефициент усреднения, столько последних значений при закрытой защелке
 #define TRIGGERR_TRESHOLD 1.0L   // порог сбрасывания защелки в см, открытие
 #define ADAPTIVE_INCREMENT 1.0L  // инкремент для адаптивгого фильтра в см скорость закрытия 
+#define CM_LATCH_COEF 1.0L       // коефициент от 0.0 до 1.0 для защелки индикации сантиметров (cm)
 
 #define RS_UART_TYPE 0  // 0-SOFT 1-HARD выбор сериал хард2 или софт
 
@@ -51,6 +52,8 @@ float duration_x, duration_y, duration_z;
 float size_volume;
 
 float size_density;
+
+float x_shov_adaptive_coef, y_shov_adaptive_coef, z_shov_adaptive_coef;
 
 // init obj
 SoftwareSerial mySerial(10, 11); // RX, TX
@@ -111,6 +114,8 @@ float expRunningAverageAdaptive4_x(float newVal) {
 
 	if(adaptive_coef > MAX_AVERAGE_COUNT){adaptive_coef = MAX_AVERAGE_COUNT;}
 
+	x_shov_adaptive_coef = adaptive_coef;  // !
+
 	k = 1.0L / adaptive_coef;
 
 	filVal += (newVal - filVal) * k;
@@ -134,6 +139,8 @@ float expRunningAverageAdaptive4_y(float newVal) {
 
 	if(adaptive_coef > MAX_AVERAGE_COUNT){adaptive_coef = MAX_AVERAGE_COUNT;}
 
+	y_shov_adaptive_coef = adaptive_coef;  // !
+
 	k = 1.0L / adaptive_coef;
 
 	filVal += (newVal - filVal) * k;
@@ -156,6 +163,8 @@ float expRunningAverageAdaptive4_z(float newVal) {
 	else adaptive_coef += ADAPTIVE_INCREMENT;
 
 	if(adaptive_coef > MAX_AVERAGE_COUNT){adaptive_coef = MAX_AVERAGE_COUNT;}
+
+	z_shov_adaptive_coef = adaptive_coef;  // !
 
 	k = 1.0L / adaptive_coef;
 
@@ -229,8 +238,6 @@ inline void getFilteredSize(){
 	// if(size_x < 1 && size_x > -1){size_x = 0;}
 	// if(size_y < 1 && size_y > -1){size_y = 0;}
 	// if(size_z < 1 && size_z > -1){size_z = 0;}
-
-	size_volume = size_x * size_y * size_z / 1000000;
 }
 
 //////////////////////////////////////////
@@ -247,31 +254,54 @@ void send_data() {
 inline void drawAndSendData(){
 	
 	// размер
+	// getSize();
 	getFilteredSize();
 
 	lcd.setCursor(0, 0);
 	lcd.print("X ");
 	lcd.print(size_x, 1);
+	if(size_x < 10){lcd.print(" ");}
 	lcd.print(" ");
-	// lcd.setCursor(8, 0);
-	// lcd.print("cm");
+	if(x_shov_adaptive_coef >= MAX_AVERAGE_COUNT * CM_LATCH_COEF){
+		lcd.setCursor(8, 0);
+		lcd.print("cm");
+	}
+	else{
+		lcd.setCursor(8, 0);
+		lcd.print("  ");
+	}
 
 	lcd.setCursor(0, 1);
 	lcd.print("Y ");
 	lcd.print(size_y, 1);
+	if(size_y < 10){lcd.print(" ");}
 	lcd.print(" ");
-	// lcd.setCursor(8, 1);
-	// lcd.print("cm");
+	if(y_shov_adaptive_coef >= MAX_AVERAGE_COUNT * CM_LATCH_COEF){
+		lcd.setCursor(8, 1);
+		lcd.print("cm");
+	}
+	else{
+		lcd.setCursor(8, 1);
+		lcd.print("  ");
+	}
 
 	lcd.setCursor(0, 2);
 	lcd.print("Z ");
 	lcd.print(size_z, 1);
+	if(size_z < 10){lcd.print(" ");}
 	lcd.print(" ");
-	// lcd.setCursor(8, 2);
-	// lcd.print("cm");
+	if(z_shov_adaptive_coef >= MAX_AVERAGE_COUNT * CM_LATCH_COEF){
+		lcd.setCursor(8, 2);
+		lcd.print("cm");
+	}
+	else{
+		lcd.setCursor(8, 2);
+		lcd.print("  ");
+	}
 
 	// обьем
 	size_volume = size_x * size_y * size_z / 1000000;
+	if(size_volume < 0.000000){size_volume = 0.000000;}
 
 	lcd.setCursor(0, 3);
 	lcd.print("V ");
